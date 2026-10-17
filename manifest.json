@@ -1,0 +1,16 @@
+{
+  "name": "Krepšinio klubų finansai",
+  "short_name": "Krepšinio finansai",
+  "description": "Krepšinio klubų biudžetai, lankomumas ir žaidėjų algos",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#faf6ee",
+  "theme_color": "#0a1020",
+  "lang": "lt",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
