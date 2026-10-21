@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Basketball Player Tax Calculator — 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#07090F; --panel:#0F1420; --surface:#121827; --surface2:#171F31; --border:#1E2638; --border2:#171E2E;
+    --text:#E8ECF4; --text2:#B1BACB; --text3:#7A869E; --text-muted:#7A869E;
+    --amber:#FFB020; --amber2:#E89A00; --amber-line:rgba(255,176,32,.35); --amber-glow:rgba(255,176,32,.06);
+    --green-bg:rgba(61,245,176,.12); --green-tx:#3DF5B0;
+    --amber-bg:rgba(255,176,32,.12); --amber-tx:#FFC24A;
+    --red-bg:rgba(255,92,115,.12); --red-tx:#FF8A9A;
+    --blue-bg:rgba(77,163,255,.10); --blue-tx:#A9CBFF;
+    --radius:14px; --radius-sm:10px;
+    --display:"Barlow Condensed","Oswald","Arial Narrow",system-ui,sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+    color-scheme:dark;
+  }
+  @media (prefers-color-scheme:light){:root:not([data-t=dark]){
+    --bg:#F3F5F9; --panel:#FFFFFF; --surface:#F7F8FB; --surface2:#EEF1F6; --border:#DDE2EC; --border2:#E8ECF3;
+    --text:#10141F; --text2:#3E4A62; --text3:#5E6A82; --text-muted:#5E6A82;
+    --amber:#E08A00; --amber2:#C77700; --amber-line:rgba(224,138,0,.4); --amber-glow:rgba(224,138,0,.06);
+    --green-bg:rgba(10,158,107,.10); --green-tx:#0A9E6B; --amber-bg:rgba(224,138,0,.12); --amber-tx:#9A5B00;
+    --red-bg:rgba(214,58,82,.10); --red-tx:#D63A52; --blue-bg:rgba(43,95,168,.08); --blue-tx:#2B5FA8; color-scheme:light}}
+  :root[data-t=light]{
+    --bg:#F3F5F9; --panel:#FFFFFF; --surface:#F7F8FB; --surface2:#EEF1F6; --border:#DDE2EC; --border2:#E8ECF3;
+    --text:#10141F; --text2:#3E4A62; --text3:#5E6A82; --text-muted:#5E6A82;
+    --amber:#E08A00; --amber2:#C77700; --amber-line:rgba(224,138,0,.4); --amber-glow:rgba(224,138,0,.06);
+    --green-bg:rgba(10,158,107,.10); --green-tx:#0A9E6B; --amber-bg:rgba(224,138,0,.12); --amber-tx:#9A5B00;
+    --red-bg:rgba(214,58,82,.10); --red-tx:#D63A52; --blue-bg:rgba(43,95,168,.08); --blue-tx:#2B5FA8; color-scheme:light}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{background:var(--bg)}
+  body{font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--text);line-height:1.6;padding:2rem 1.25rem 3rem;max-width:980px;margin:0 auto;min-height:100vh;
+    background:radial-gradient(900px 420px at 92% -6%,rgba(255,184,28,.13),transparent 60%),radial-gradient(700px 420px at 0% 0%,rgba(40,90,200,.12),transparent 60%),linear-gradient(180deg,#0b1428 0%,#081020 100%);background-color:var(--bg)}
+  h1{font-family:var(--display);font-size:36px;font-weight:700;letter-spacing:.01em;margin-bottom:4px;line-height:1.1}
+  .subtitle{font-size:13.5px;color:var(--text2);margin-bottom:.5rem}
+  .asof{font-size:12.5px;color:var(--text3);margin:0 0 1.25rem}
+  .asof b{color:var(--amber);font-weight:600}
+  .sec{display:table;font-family:var(--display);font-size:21px;font-weight:700;color:var(--text);letter-spacing:.01em;margin:1.9rem 0 .9rem;padding-bottom:6px;border-bottom:3px solid var(--amber)}
+  .corr{background:var(--blue-bg);border:1px solid #1f3a70;border-radius:var(--radius-sm);padding:12px 16px;font-size:12px;color:var(--blue-tx);line-height:1.65;margin-bottom:1.25rem}
+  .corr b{font-weight:600;color:#fff}
+  .corr-wrap{margin-top:2rem;margin-bottom:1.25rem}
+  .corr-wrap summary{cursor:pointer;display:inline-block;font-family:var(--display);font-size:15px;font-weight:700;letter-spacing:.03em;color:#1a1200;background:linear-gradient(180deg,#ffc83d,#f59e0b);border-radius:999px;padding:5px 16px;list-style:none;box-shadow:0 0 16px rgba(255,184,28,.22)}
+  .corr-wrap summary::-webkit-details-marker{display:none}
+  .corr-wrap summary:before{content:'\25B8\0020';display:inline}
+  .corr-wrap[open] summary{margin-bottom:10px}
+  .corr-wrap[open] summary:before{content:'\25BE\0020'}
+  .conv{border:1px solid var(--amber-line);box-shadow:0 0 28px var(--amber-glow),0 10px 40px rgba(0,0,0,.35);border-radius:18px;padding:1.5rem;background:linear-gradient(180deg,#0e1a38 0%,#0c1630 100%);}
+  .top{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:20px;align-items:start}
+  @media (max-width:760px){.top{grid-template-columns:1fr}}
+  .row{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+  .row label{font-size:13px;color:var(--text2);min-width:90px}
+  input[type=number]{padding:9px 13px;border-radius:12px;border:1px solid var(--amber-line);background:var(--surface);color:var(--text);font-size:14px;width:160px;font-family:inherit}
+  select{padding:9px 13px;border-radius:12px;border:1px solid var(--amber-line);background:var(--surface);color:var(--text);font-size:14px;font-family:inherit;max-width:100%}
+  input[type=number]:focus,select:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 3px rgba(255,184,28,.15)}
+  select option,select optgroup{background:#101c3a;color:var(--text)}
+  input[type=range]{width:100%;accent-color:var(--amber)}
+  .datebox{background:linear-gradient(180deg,#122044,#0f1a38);border:1px solid rgba(255,184,28,.55);border-radius:var(--radius);padding:13px 16px 12px;box-shadow:0 0 26px rgba(255,184,28,.10)}
+  .db-h{font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--text3);font-weight:600}
+  .db-v{font-family:var(--display);font-size:25px;font-weight:700;color:#fff;line-height:1.15;margin:1px 0 9px}
+  .db-sep{height:1px;background:var(--border);margin:0 0 9px}
+  .db-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:12px;color:var(--text2);padding:3px 0}
+  .db-row b{font-family:var(--display);font-size:16px;font-weight:600;color:var(--amber);white-space:nowrap;letter-spacing:.01em}
+  .spain-extra{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 16px;margin-top:10px;display:none}
+  .spain-extra .row{margin-bottom:8px}
+  .split-bar{display:flex;height:28px;border-radius:8px;overflow:hidden;margin:8px 0}
+  .split-seg{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:16px 0}
+  .card{background:linear-gradient(180deg,#111f42,#0f1b3a);border:1px solid var(--amber-line);box-shadow:0 0 18px var(--amber-glow);border-radius:var(--radius);padding:13px 16px}
+  .card-lbl{font-size:12.5px;color:var(--text2);margin-bottom:4px}
+  .card-val{font-family:var(--display);font-size:23px;font-weight:700;color:var(--text);line-height:1.15;letter-spacing:.01em}
+  .card-sub{font-size:11px;color:var(--text3);margin-top:4px}
+  .bwrap{display:grid;grid-template-columns:minmax(0,400px) minmax(0,1fr);gap:36px;align-items:center;margin-top:14px}
+  .bwrap .breakdown{margin-top:0}
+  .pie{display:flex;gap:18px;align-items:center;justify-content:center;flex-wrap:wrap;padding:6px 0}
+  .pie svg{width:185px;height:185px;flex:none}
+  .pie .ring{fill:none;stroke-width:6.5;transform:rotate(-90deg);transform-origin:50% 50%}
+  .pie .ctr1{fill:var(--text3);font-size:2.4px;text-anchor:middle;letter-spacing:.05em;text-transform:uppercase}
+  .pie .ctr2{fill:var(--text);font-size:3.9px;font-weight:700;text-anchor:middle;font-family:var(--display)}
+  .pleg{display:flex;flex-direction:column;gap:9px;font-size:12px;color:var(--text2)}
+  .pleg div{display:flex;align-items:center;gap:9px}
+  .pleg i{width:11px;height:11px;border-radius:3px;flex:none}
+  .pleg b{color:var(--text);margin-left:auto;padding-left:14px;font-variant-numeric:tabular-nums}
+  .pleg em{font-style:normal;color:var(--text3);min-width:48px;text-align:right;font-variant-numeric:tabular-nums}
+  @media (max-width:860px){.bwrap{grid-template-columns:1fr}}
+  .tabs{display:flex;gap:26px;margin:1.9rem 0 .9rem;flex-wrap:wrap;border-bottom:1px solid var(--border2)}
+  .tab{background:none;border:none;border-bottom:3px solid transparent;margin-bottom:-1px;padding:0 0 6px;cursor:pointer;font-family:var(--display);font-size:21px;font-weight:700;letter-spacing:.01em;color:var(--text3)}
+  .tab:hover{color:var(--text2)}
+  .tab.on{color:var(--text);border-bottom-color:var(--amber)}
+  details.rates{margin:0 0 14px;font-size:12.5px;color:var(--text2)}
+  details.rates summary{cursor:pointer;color:var(--text3);width:fit-content}
+  details.rates summary:hover{color:var(--amber)}
+  .rates-grid{display:flex;gap:14px;flex-wrap:wrap;margin:10px 0 6px}
+  .rates-grid label{display:flex;align-items:center;gap:7px}
+  .rates-grid input{width:92px}
+  .rates-note{font-size:11.5px;color:var(--text3);line-height:1.55;max-width:760px}
+  .inl{font-size:13px;color:var(--text2)}
+  .bnote{font-size:11.5px;color:var(--text3);margin-bottom:6px;line-height:1.5}
+  .card-hi{border-color:var(--amber);box-shadow:0 0 22px rgba(255,184,28,.22)}
+  .card-hi .card-val{color:var(--amber)}
+  .card-val.sm{font-size:18px}
+  #sal,#c-sal{width:130px}
+  .card-lbl{white-space:nowrap}
+  .card-sub2{font-size:11px;color:var(--text3);margin-top:2px}
+  .cmp-sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:16px 0}
+  .cmp-leg{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--text2);margin:6px 0 12px}
+  .cmp-leg i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+  .cb{display:grid;grid-template-columns:minmax(150px,230px) minmax(0,1fr) 112px;gap:12px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border2)}
+  .cb:last-child{border-bottom:none}
+  .cb-lbl b{display:block;font-size:13px;color:var(--text);font-weight:600}
+  .cb-lbl span{display:block;font-size:11px;color:var(--text3);line-height:1.35}
+  .cb-bar{display:flex;height:20px;border-radius:5px;overflow:hidden;min-width:2px}
+  .cb-bar i{display:block;height:100%}
+  .cb-val{text-align:right;font-size:12.5px;font-weight:600;color:var(--text);font-variant-numeric:tabular-nums}
+  .cb-val small{display:block;font-size:10.5px;font-weight:400;color:var(--text3)}
+  @media (max-width:640px){.cb{grid-template-columns:1fr 96px}.cb-bar{grid-column:1/3;order:3}}
+  table.cmp{width:100%;border-collapse:collapse;font-size:12.5px;min-width:980px}
+  table.cmp th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);font-weight:600;text-align:right;padding:8px 10px;border-bottom:1px solid var(--border)}
+  table.cmp th:first-child,table.cmp td:first-child{text-align:left}
+  table.cmp td{padding:7px 10px;border-bottom:1px solid var(--border2);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--text2)}
+  table.cmp td:first-child{white-space:normal;min-width:240px;color:var(--text)}
+  table.cmp td:first-child small{display:block;color:var(--text3);font-size:11px}
+  table.cmp td.tot{color:var(--green-tx);font-weight:700}
+  table.cmp tr:last-child td{border-bottom:none}
+  .cmp-note{font-size:11.5px;color:var(--text3);line-height:1.6;margin-top:12px}
+  .chk{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);cursor:pointer}
+  .notes-panel{padding:1.2rem 1.5rem}
+  .notes-intro{font-size:13px;color:var(--text2);line-height:1.6;padding-bottom:10px;border-bottom:1px solid var(--border)}
+  .notes-intro b{color:var(--text);font-weight:600}
+  ol.qa{list-style:none;margin:0;padding:0}
+  ol.qa li{display:grid;grid-template-columns:46px minmax(0,1fr);gap:14px;padding:13px 0;border-bottom:1px solid var(--border2);font-size:13px;line-height:1.65;color:var(--text2)}
+  ol.qa li:last-child{border-bottom:none}
+  ol.qa .qn{font-family:var(--display);font-size:26px;font-weight:700;color:var(--amber);line-height:1.05}
+  ol.qa b{color:var(--text);font-weight:600}
+  ol.qa .qd{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:3px}
+  .rates-panel{padding:1.1rem 1.5rem}
+  .rates-panel .rates-title{font-size:13px;color:var(--text2);margin-bottom:10px}
+  .rates-panel .rates-grid label{font-size:13px;color:var(--text2)}
+  .rates-panel .rates-note{font-size:12px;color:var(--text3);line-height:1.6;max-width:none}
+  .breakdown{font-size:12.5px;color:var(--text2);line-height:1.8;margin-top:14px}
+  .bline{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border2)}
+  .bline:last-child{border-bottom:none;font-weight:700;color:var(--text)}
+  .bhead{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-top:10px;margin-bottom:2px}
+  .info{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:13px 17px;font-size:12.5px;color:var(--text2);line-height:1.65;margin-top:14px}
+  .info b{color:var(--text);font-weight:600}
+  .warn{font-size:11.5px;padding:8px 12px;border-radius:9px;margin-top:8px;line-height:1.5;display:none}
+  .warn-y{background:var(--amber-bg);color:var(--amber-tx);border:1px solid #5a4210}
+  .warn-r{background:var(--red-bg);color:var(--red-tx);border:1px solid #7a2433}
+  .slider-lbl{display:flex;justify-content:space-between;font-size:12.5px;color:var(--text2);margin-bottom:4px}
+  table.ref{width:100%;min-width:1180px;border-collapse:collapse;font-size:12px}
+  table.ref td:nth-child(1){min-width:120px}
+  table.ref td:nth-child(5){min-width:260px}
+  table.ref td:nth-child(6){min-width:230px}
+  table.ref th{text-align:left;font-family:var(--display);color:#8db4ff;font-weight:700;font-size:15px;letter-spacing:.02em;padding:8px 10px;border-bottom:1px solid var(--border);white-space:nowrap}
+  table.ref td{padding:9px 10px;border-bottom:1px solid var(--border2);vertical-align:top;font-size:12px;color:var(--text2)}
+  table.ref td:first-child{color:var(--text);font-weight:500}
+  table.ref tr:last-child td{border-bottom:none}
+  table.ref tbody tr:hover td{background:rgba(255,184,28,.04)}
+  table.ref td:nth-child(2),table.ref td:nth-child(3),table.ref td:nth-child(4){text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .tbl-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius);padding:6px 8px;background:rgba(13,23,48,.6)}
+  .tag{display:inline-block;font-size:9.5px;padding:1px 6px;border-radius:5px;margin-left:4px;vertical-align:middle;font-weight:600}
+  .tg-f{background:var(--green-bg);color:var(--green-tx)}
+  .tg-fix{background:#0f2c57;color:#7cc0ff}
+  .lawline{margin-top:10px;font-size:12px;color:var(--text2);border-top:1px solid var(--border2);padding-top:8px}
+  footer{margin-top:2rem;font-size:11px;color:var(--text3);line-height:1.65}
+
+  /* ===== Naujas dizainas: fintech × sports data ===== */
+  html{background:var(--bg)}
+  body{max-width:1100px;padding:calc(1.5rem + env(safe-area-inset-top,0px)) 1.25rem calc(3rem + env(safe-area-inset-bottom,0px));
+    background:radial-gradient(900px 400px at 50% -12%,color-mix(in srgb,var(--amber) 9%,transparent),transparent),var(--bg);background-attachment:fixed}
+  body::after{content:"";position:fixed;inset:0;pointer-events:none;opacity:.5;
+    background:radial-gradient(circle at 100% 100%,transparent 0 238px,color-mix(in srgb,var(--text3) 22%,transparent) 239px 240px,transparent 241px);
+    -webkit-mask:linear-gradient(135deg,transparent 55%,#000);mask:linear-gradient(135deg,transparent 55%,#000)}
+  .conv,.card,.datebox,.info,.spain-extra,.tbl-wrap,.cmp-sum>*{position:relative}
+  /* stiklo kortelės be švytėjimo, plona gradientinė linija viršuje */
+  .conv,.card,.datebox{border:1px solid var(--border);box-shadow:none;
+    background:linear-gradient(180deg,color-mix(in srgb,var(--text) 4%,var(--panel)),var(--panel))}
+  .conv{border-radius:18px}
+  .conv::before,.card::before,.datebox::before{content:"";position:absolute;left:16px;right:16px;top:0;height:1px;
+    background:linear-gradient(90deg,transparent,var(--amber),transparent);opacity:.55;pointer-events:none}
+  .card-hi{border-color:color-mix(in srgb,var(--amber) 50%,var(--border));box-shadow:none}
+  .card-hi .card-val{color:var(--amber)}
+  /* skaičiai – monospaced, lygiuojasi */
+  .card-val,.db-row b,.pleg b,.pleg em,.cb-val,.bline span:last-child,.slider-lbl b{font-family:var(--mono);font-weight:600;letter-spacing:0}
+  .card-val{font-size:21px}.card-val.sm{font-size:16px}
+  .db-v{font-family:var(--display);color:var(--text)}
+  .db-row b{font-size:14px;color:var(--amber)}
+  table.cmp td,table.ref td:nth-child(2),table.ref td:nth-child(3),table.ref td:nth-child(4){font-family:var(--mono);font-size:12px}
+  table.cmp td:first-child{font-family:inherit;font-size:12.5px}
+  table.cmp td.tot{color:var(--green-tx)}
+  table.ref th{color:var(--text3);font-size:14px}
+  table.ref tbody tr:hover td,table.cmp tbody tr:hover td{background:color-mix(in srgb,var(--amber) 7%,transparent)}
+  .tbl-wrap{background:var(--panel);border-color:var(--border);border-radius:14px}
+  /* laukai */
+  input[type=number],select{border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:10px;font-family:var(--mono);font-size:14px}
+  select{font-family:inherit}
+  input[type=number]:focus,select:focus{border-color:var(--amber);box-shadow:0 0 0 3px color-mix(in srgb,var(--amber) 18%,transparent)}
+  select option,select optgroup{background:var(--panel);color:var(--text)}
+  /* skirtukai ir antraštės */
+  .sec{border-bottom-width:2px}
+  .tab.on{border-bottom-color:var(--amber)}
+  .tabs{border-bottom-color:var(--border)}
+  /* mygtukas „Exchange rates“ – plokščias gintaro pill'as */
+  .corr-wrap summary{background:var(--amber);color:#1a1200;box-shadow:none;border:0}
+  /* info ir įspėjimo blokai */
+  .corr,.info{background:var(--surface);border:1px solid var(--border);color:var(--text2)}
+  .corr b{color:var(--text)}
+  .warn-y{border-color:color-mix(in srgb,var(--amber) 35%,transparent)}
+  .warn-r{border-color:color-mix(in srgb,var(--red-tx) 35%,transparent)}
+  .tg-fix{background:var(--blue-bg);color:var(--blue-tx)}
+  .asof b{color:var(--amber)}
+  .split-bar,.cb-bar{border-radius:99px}
+  .cb-bar i:first-child{border-radius:99px 0 0 99px}
+  ol.qa .qn{font-family:var(--mono);font-size:20px}
+  @media (max-width:760px){body{padding-left:.9rem;padding-right:.9rem}h1{font-size:30px}}
+</style>
+<script>
+/* Tema: seka pagrindinį puslapį (jei įdėta per iframe), arba ?t=light|dark */
+(function(){var d=document.documentElement;
+try{var q=new URLSearchParams(location.search).get("t");if(q==="light"||q==="dark")d.setAttribute("data-t",q)}catch(e){}
+try{if(parent!==window){var pd=parent.document.documentElement,sync=function(){var t=pd.getAttribute("data-t");if(t)d.setAttribute("data-t",t);else d.removeAttribute("data-t")};sync();new MutationObserver(sync).observe(pd,{attributes:true,attributeFilter:["data-t"]})}}catch(e){}
+addEventListener("message",function(e){var m=e.data;if(m&&(m.t==="light"||m.t==="dark"))d.setAttribute("data-t",m.t)})})();
+</script>
+</head>
+<body>
+
+<h1>Basketball player tax calculator — 2026</h1>
+<p class="subtitle">Net &rarr; gross &rarr; total club cost across 9 countries. Income tax + employee & employer social security, with foreign vs local regimes.</p>
+<p class="asof">Rates and laws last updated <b>19 Oct 2026</b>. The box next to the calculator shows, for the selected regime, when the rules were last updated and when the underlying law came into force.</p>
+
+<div class="tabs" role="tablist">
+  <button class="tab on" id="tabbtn-calc" role="tab" onclick="showTab('calc')">Calculator</button>
+  <button class="tab" id="tabbtn-cmp" role="tab" onclick="showTab('cmp')">Compare the countries</button>
+</div>
+<details class="corr-wrap" id="rates" style="margin-top:.4rem">
+<summary>Exchange rates used (editable, click to expand)</summary>
+<div class="conv rates-panel">
+  <div class="rates-title">Units of each currency per &euro;1</div>
+  <div class="rates-grid">
+    <label>USD <input type="number" id="rate-USD" value="1.17" step="0.01" min="0"></label>
+    <label>TRY <input type="number" id="rate-TRY" value="53.6" step="0.1" min="0"></label>
+    <label>RSD <input type="number" id="rate-RSD" value="117.35" step="0.05" min="0"></label>
+    <label>ILS <input type="number" id="rate-ILS" value="3.95" step="0.01" min="0"></label>
+  </div>
+  <div class="rates-note">TRY, RSD and ILS are the mid-July 2026 rates the tax thresholds were built on. USD is an approximate rate &mdash; edit it to today&rsquo;s. Changing a rate only changes how amounts are entered and displayed; the legal thresholds inside each country&rsquo;s tax model stay fixed.</div>
+</div>
+</details>
+
+<div id="tab-calc">
+<div class="conv">
+  <div class="top"><div class="top-left">
+  <div class="row">
+    <label>Salary</label>
+    <input type="number" id="sal" value="1000000" min="0" step="1000">
+    <select id="cur-in" title="Currency you type the salary in"></select>
+    <select id="stype">
+      <option value="net">Net (take-home)</option>
+      <option value="gross">Gross (pre-tax)</option>
+    </select>
+  </div>
+  <div class="row">
+    <label>Entered as</label>
+    <select id="period">
+      <option value="contract">Whole contract (one season / year)</option>
+      <option value="month">Monthly salary</option>
+    </select>
+    <span class="inl" id="months-x">&times;</span>
+    <input type="number" id="months" value="10" min="1" max="24" step="1" style="width:74px">
+    <span class="inl">months</span>
+  </div>
+  <div class="row">
+    <label>Regime</label>
+    <select id="country" style="width:100%;max-width:520px;flex:1 1 300px">
+      <optgroup label="Serbia">
+        <option value="RS_loc">Serbia — employment contract (residents and foreign players)</option>
+      </optgroup>
+      <optgroup label="Lithuania">
+        <option value="LT_for">Lithuania — foreign player (income tax only, 15–32%)</option>
+        <option value="LT_loc">Lithuania — local player (income tax + social security)</option>
+      </optgroup>
+      <optgroup label="Turkey">
+        <option value="TR_eff">Turkey BSL — local or US foreign (full SGK)</option>
+        <option value="TR_for">Turkey BSL — EU/UK foreign (SGK-exempt by treaty)</option>
+      </optgroup>
+      <optgroup label="Greece">
+        <option value="GR_std">Greece — standard resident (9–44%)</option>
+        <option value="GR_50">Greece — Art.5C new-resident (50% exempt, 7 yrs; non-resident 5 of last 6 yrs)</option>
+      </optgroup>
+      <optgroup label="Italy">
+        <option value="IT_loc">Italy — local player, standard IRPEF</option>
+        <option value="IT_imp">Italy — foreign player, Impatriati (50% exempt; only if eligible)</option>
+      </optgroup>
+      <optgroup label="France">
+        <option value="FR_loc">France — local player, standard</option>
+        <option value="FR_imp">France — foreign player, impatriate (30% of pay exempt, 8 yrs)</option>
+      </optgroup>
+      <optgroup label="Germany">
+        <option value="DE_loc">Germany — all players, standard</option>
+      </optgroup>
+      <optgroup label="Spain — resident (local players, or year 2+)">
+        <option value="ES_mad">Spain — Madrid resident (45% top, progressive)</option>
+        <option value="ES_cat">Spain — Catalonia resident: Barcelona, Badalona (50% top)</option>
+        <option value="ES_val">Spain — Valencia resident (54% top)</option>
+        <option value="ES_and">Spain — Andalucía resident: Málaga (47% top)</option>
+        <option value="ES_can">Spain — Canary Islands resident (50.5% top)</option>
+        <option value="ES_mur">Spain — Región de Murcia resident (47% top)</option>
+        <option value="ES_bas">Spain — Basque Country resident: Baskonia/Álava, Bilbao/Bizkaia (49% foral, from €208k)</option>
+      </optgroup>
+      <optgroup label="Spain — foreign player options">
+        <option value="ES_single">Spain — foreign, one season only (leaves by early July)</option>
+        <option value="ES_multi">Spain — foreign, multi-year (partial yr 1 discount)</option>
+      </optgroup>
+      <optgroup label="Israel">
+        <option value="IL_std">Israel — established resident (up to 50%)</option>
+        <option value="IL_for">Israel — foreign athlete (flat 25%, reduced National Insurance)</option>
+      </optgroup>
+    </select>
+  </div>
+  <div class="row">
+    <label>Show results in</label>
+    <select id="cur-out" title="Currency for all results"></select>
+    <span class="inl" id="months-hint"></span>
+  </div>
+  </div>
+  <aside class="datebox" id="datebox"></aside></div>
+
+  <div class="spain-extra" id="spain-extra">
+    <div class="row">
+      <label>Player origin</label>
+      <select id="sp-origin">
+        <option value="eu">EU/EEA (19% non-resident rate)</option>
+        <option value="noneu">Non-EU (24% non-resident rate)</option>
+      </select>
+    </div>
+    <div class="row">
+      <label>Club region</label>
+      <select id="sp-region">
+        <option value="mad">Madrid (45% resident rate)</option>
+        <option value="cat">Catalonia — Barcelona, Badalona (50% resident rate)</option>
+        <option value="val">Valencia (54% resident rate)</option>
+        <option value="and">Andalucía — Málaga (47% resident rate)</option>
+        <option value="can">Canary Islands (50.5% resident rate)</option>
+        <option value="mur">Región de Murcia (47% resident rate)</option>
+        <option value="bas">Basque Country — Baskonia/Álava, Bilbao/Bizkaia (49% foral, from €208k)</option>
+      </select>
+    </div>
+    <div id="split-section">
+      <div class="slider-lbl">
+        <span>Non-resident portion of salary (first calendar year only)</span>
+        <span id="sp-split-out">40%</span>
+      </div>
+      <input type="range" id="sp-split" min="0" max="100" value="40" step="5">
+    </div>
+    <div class="split-bar" id="split-bar"></div>
+  </div>
+
+  <div class="spain-extra" id="bas-extra">
+    <div class="row">
+      <label>Basque athlete tax reduction (% of salary treated as exempt)</label>
+      <input type="number" id="bas-red" value="0" min="0" max="50" step="5">
+    </div>
+    <div style="font-size:12.5px;color:var(--text-muted);margin-top:2px">What-if only, default 0. No such athlete-specific reduction is confirmed in force in 2026. Sports press sometimes reports Basque clubs paying roughly half the normal tax; entering 50 reproduces that claim (the 2019 Bizkaia &ldquo;irregular income&rdquo; decree, which was later withdrawn). See the notes at the bottom of the page.</div>
+  </div>
+
+  <div class="spain-extra" id="greece-extra">
+    <div class="row">
+      <label>Signing / transfer / renewal bonus (€, gross, optional)</label>
+      <input type="number" id="gr-bonus" value="0" min="0" step="10000">
+    </div>
+    <div style="font-size:12.5px;color:var(--text-muted);margin-top:2px">Taxed separately from regular salary: ≤€40,000 in the tax year is folded into the normal progressive scale; above €40,000 the whole bonus is a flat 22% final withholding instead. Not subject to EFKA.</div>
+  </div>
+
+  <div class="cards" id="cards"></div>
+  <div class="bwrap"><div class="bleft"><div class="bnote" id="bnote"></div><div class="breakdown" id="breakdown"></div></div><div class="pie" id="pie"></div></div>
+  <div class="info" id="info"></div>
+  <div class="warn warn-y" id="warn-y"></div>
+  <div class="warn warn-r" id="warn-r"></div>
+</div>
+</div>
+
+<div id="tab-cmp" style="display:none">
+<div class="conv">
+  <div class="row">
+    <label>Salary</label>
+    <input type="number" id="c-sal" value="1000000" min="0" step="1000">
+    <select id="c-cur-in"></select>
+    <select id="c-stype">
+      <option value="net">Net (take-home)</option>
+      <option value="gross">Gross (pre-tax)</option>
+    </select>
+  </div>
+  <div class="row">
+    <label>Entered as</label>
+    <select id="c-period">
+      <option value="contract">Whole contract (one season / year)</option>
+      <option value="month">Monthly salary</option>
+    </select>
+    <span class="inl">&times;</span>
+    <input type="number" id="c-months" value="10" min="1" max="24" step="1" style="width:74px">
+    <span class="inl">months</span>
+  </div>
+  <div class="row">
+    <label>Show results in</label>
+    <select id="c-cur-out"></select>
+    <label class="chk" style="min-width:0"><input type="checkbox" id="c-best"> Cheapest regime per country only</label>
+  </div>
+  <div class="cmp-sum" id="cmp-sum"></div>
+  <div class="cmp-leg"><span><i style="background:#4ade80"></i>True net</span><span><i style="background:#ffb81c"></i>Income tax</span><span><i style="background:#6ea8fe"></i>Employee social security</span><span><i style="background:#c084fc"></i>Employer social security</span></div>
+  <div id="cmp-chart"></div>
+  <details class="corr-wrap" style="margin-top:1.2rem;margin-bottom:0">
+  <summary>Details table (click to expand)</summary>
+  <div class="tbl-wrap"><table class="cmp"><thead><tr><th>Regime</th><th>True net</th><th>Net / month</th><th>Gross</th><th>Income tax</th><th>Employee SS</th><th>Employer SS</th><th>Total club cost</th><th>vs cheapest</th><th>&times; net</th></tr></thead><tbody id="cmp-body"></tbody></table></div>
+  </details>
+  <div class="cmp-note" id="cmp-note"></div>
+</div>
+</div>
+
+<details class="corr-wrap">
+<summary>Reference &mdash; 2026 values (click to expand)</summary>
+<div class="tbl-wrap">
+<table class="ref">
+<thead><tr><th>Regime</th><th>Income tax</th><th>Employee SS</th><th>Employer SS</th><th>Note</th><th>Law / in force since</th></tr></thead>
+<tbody>
+<tr><td>Serbia (all players)</td><td>10% + annual surtax<span class="tag tg-fix">fixed</span></td><td>19.9% (cap ~€74.9k)<span class="tag tg-fix">fixed</span></td><td>15.15% (cap ~€74.9k)<span class="tag tg-fix">fixed</span></td><td>Surtax now included: 10%/15% on net above ~€92.7k (under-40 exemption)</td><td>Personal Income Tax Law; non-taxable amount RSD 34,221/mo — 1 Jan 2026</td></tr>
+<tr><td>Lithuania foreign</td><td>15% ≤ €27.7k, 20% ≤ €83k, 25% ≤ €139k, 32% above<span class="tag tg-fix">fixed</span></td><td>none</td><td>none</td><td>Athlete income bands per VMI 2026 (12/36/60 VDU); foreign players exempt from SS, so income tax only<span class="tag tg-f">foreign</span></td><td>GPMĮ + VMI 2026 table — 1 Jan 2026</td></tr>
+<tr><td>Lithuania local</td><td>15% ≤ €27.7k, 20% ≤ €83k, 25% ≤ €139k, 32% above<span class="tag tg-fix">fixed</span></td><td>22.5% × 90% base (base cap €99.4k)<span class="tag tg-fix">fixed</span></td><td>none</td><td>SS at most ~€22.4k/yr; total club cost = gross</td><td>Sodra 2026: 90% base from 1 Jul 2026; base cap 43 VDU</td></tr>
+<tr><td>Turkey local / US foreign</td><td>20% flat (final) up to ~€99k, then 15–40% progressive on all income<span class="tag tg-fix">merged</span></td><td>15% (cap ~€66.5k)</td><td>22.75% (cap ~€66.5k)</td><td>Full SGK; US players have no treaty exemption. A net input picks the lower (20%-final) gross when two gross amounts give the same net</td><td>GVK Geçici 72 + GVİ 2026 tariff, SGK 2026 — 1 Jan 2026</td></tr>
+<tr><td>Turkey EU/UK foreign</td><td>20% flat (final) up to ~€99k, then 15–40% progressive on all income</td><td>none</td><td>none</td><td>SGK-exempt by bilateral treaty; income tax identical<span class="tag tg-f">foreign</span></td><td>Bilateral SGK treaties; GVİ 2026 tariff</td></tr>
+<tr><td>Greece standard</td><td>9–44%<span class="tag tg-fix">fixed</span></td><td>13.87% (cap €93k)<span class="tag tg-fix">fixed</span></td><td>21.79% (cap €93k)</td><td>Top rate above €60k — 2026 reform (Law 5246/2025); signing/transfer bonus &gt;€40k = flat 22%<span class="tag tg-fix">new</span></td><td>Law 5246/2025 — 1 Jan 2026</td></tr>
+<tr><td>Greece Art.5C</td><td>~22% eff.</td><td>13.87% (cap €93k)<span class="tag tg-fix">fixed</span></td><td>21.79% (cap €93k)</td><td>50% exempt 7 yrs. Must have been non-resident in Greece for 5 of the previous 6 years, moving from an EU/EEA or tax-cooperation country; bonus rule applies on top<span class="tag tg-f">foreign</span></td><td>Income Tax Code Art. 5C; EFKA 2026</td></tr>
+<tr><td>Italy local</td><td>23/33/43% + surt.</td><td>9.19%→10.19% (cap €122k)<span class="tag tg-fix">fixed</span></td><td>30% (cap €122k)</td><td>2026: middle bracket cut to 33% (confirmed current)</td><td>Legge di Bilancio 2026 — 1 Jan 2026</td></tr>
+<tr><td>Italy Impatriati</td><td>~21.5% eff. (up to €600k)<span class="tag tg-fix">fixed</span></td><td>9.19%→10.19% (cap €122k)</td><td>30% (cap €122k)</td><td>50% exempt, capped at €600k/yr (2024+ regime); INPS on full gross. Eligibility uncertain for athletes: general rules need a qualifying degree and 3 years non-residence<span class="tag tg-f">foreign</span></td><td>D.Lgs. 209/2023 art. 5 — arrivals from 1 Jan 2024</td></tr>
+<tr><td>France local</td><td>0–45% + surtax<span class="tag tg-fix">fixed</span></td><td>~21% → ~12% (capped)<span class="tag tg-fix">fixed</span></td><td>~42% → ~26% (capped)<span class="tag tg-fix">fixed</span></td><td>Capped at PASS &euro;48,060 &amp; 8×PASS &euro;384,480; income tax on gross &minus; deductible SS &minus; 10% allowance</td><td>Loi de finances 2026 (scale +0.9%); PASS 2026</td></tr>
+<tr><td>France Impatriate</td><td>Same scale, 30% of net pay exempt<span class="tag tg-fix">fixed</span></td><td>~21% → ~12% (capped)</td><td>~42% → ~26% (capped)</td><td>30% flat exemption (up to 50% cap with a contract-fixed bonus) for up to 8 yrs; SS unchanged vs. local<span class="tag tg-f">foreign</span></td><td>Art. 155 B CGI</td></tr>
+<tr><td>Germany</td><td>14–45% + Soli<span class="tag tg-fix">fixed</span></td><td>two-tier capped</td><td>two-tier capped</td><td>No special athlete/foreign regime; brackets corrected to 2026 §32a EStG values</td><td>§32a EStG 2026; 2026 SV ceilings — 1 Jan 2026</td></tr>
+<tr><td>Spain Madrid resident</td><td>45% top, progressive<span class="tag tg-fix">fixed</span></td><td>6.5% (cap €61.2k) + solidarity</td><td>32.65% (cap €61.2k) + solidarity</td><td>Now progressive; athletes excluded from Beckham</td><td>LIRPF + Madrid scale; SS Orden 2026 / RDL 3/2026</td></tr>
+<tr><td>Spain Catalonia resident</td><td>50% top, progressive<span class="tag tg-fix">fixed</span></td><td>6.5% (cap €61.2k) + solidarity</td><td>32.65% (cap €61.2k) + solidarity</td><td>Barcelona, Badalona; corrected down from 54% — that rate is Valencia's</td><td>LIRPF + Catalan scale; SS 2026</td></tr>
+<tr><td>Spain Valencia resident</td><td>54% top, progressive<span class="tag tg-fix">fixed</span></td><td>6.5% (cap €61.2k) + solidarity</td><td>32.65% (cap €61.2k) + solidarity</td><td>Highest common-regime top rate in Spain</td><td>LIRPF + Valencian scale; SS 2026</td></tr>
+<tr><td>Spain Andalucía resident</td><td>47% top, progressive<span class="tag tg-fix">fixed</span></td><td>6.5% (cap €61.2k) + solidarity</td><td>32.65% (cap €61.2k) + solidarity</td><td>Málaga</td><td>LIRPF + Andalusian scale; SS 2026</td></tr>
+<tr><td>Spain Canary Islands resident</td><td>50.5% top, progressive<span class="tag tg-fix">fixed</span></td><td>6.5% (cap €61.2k) + solidarity</td><td>32.65% (cap €61.2k) + solidarity</td><td>IRPF same as mainland; IGIC (not IVA) is unrelated to payroll</td><td>LIRPF + Canary scale; SS 2026</td></tr>
+<tr><td>Spain Región de Murcia resident</td><td>47% top, progressive<span class="tag tg-fix">fixed</span></td><td>6.5% (cap €61.2k) + solidarity</td><td>32.65% (cap €61.2k) + solidarity</td><td></td><td>LIRPF + Murcian scale; SS 2026</td></tr>
+<tr><td>Spain Basque resident</td><td>23% → 49% (49% from €208k), own foral scale<span class="tag tg-fix">fixed</span></td><td>6.5% (cap €61.2k) + solidarity</td><td>32.65% (cap €61.2k) + solidarity</td><td>Baskonia/Álava, Bilbao/Bizkaia, Gipuzkoa — foral, NOT summed with state scale; SS still national</td><td>NF 13/2013 (Bizkaia), NF 3/2014 as amended by 6/2025 (Gipuzkoa), NF 33/2013 as amended by 21/2025 (Álava) — 2026</td></tr>
+<tr><td>Spain foreign 1 season</td><td>19% EU / 24% non-EU</td><td>6.5% (cap €61.2k) + solidarity</td><td>32.65% (cap €61.2k) + solidarity</td><td>Entire season if departs by ~July 2<span class="tag tg-f">foreign</span></td><td>TRLIRNR (long-standing); SS 2026</td></tr>
+<tr><td>Spain foreign multi-yr</td><td>blended</td><td>6.5% (cap €61.2k) + solidarity</td><td>32.65% (cap €61.2k) + solidarity</td><td>Only partial yr 1 at IRNR rate<span class="tag tg-f">foreign</span></td><td>TRLIRNR + LIRPF art. 9; SS 2026</td></tr>
+<tr><td>Israel standard</td><td>10–50%<span class="tag tg-fix">fixed</span></td><td>3.5% to NIS 7.5k/mo, then 12% (cap ~€154k)<span class="tag tg-fix">fixed</span></td><td>3.55% then 7.6% (cap ~€154k)</td><td>47% + 3% surtax above NIS 721,560; 2026 budget widened the 20% and 31% bands</td><td>2026 Budget brackets; NI rates 2025</td></tr>
+<tr><td>Israel foreign athlete</td><td>25% flat<span class="tag tg-fix">new</span></td><td>~1% (approx.)</td><td>~1% (approx.)</td><td>1998 Foreign Athlete regs; stay non-resident, up to 4 yrs; produces the ~1.25x vs ~2x gross-to-net gap<span class="tag tg-f">foreign</span></td><td>Foreign Athlete Regulations 1998</td></tr>
+</tbody>
+</table>
+</div>
+</details>
+
+<footer>
+All figures are 2026 estimates for orientation, not tax advice — always verify with a local advisor. Exchange rates: 53.6 TRY/€, 3.95 NIS/€, 117.35 RSD/€ (mid-July 2026). Employee social security is deducted from gross to reach net; employer social security is added on top of gross to reach total club cost. France social security uses a capped PASS/8×PASS model; the AT/MP (workplace accident) component is a rough placeholder since it genuinely varies by club. Spain SS is capped at €61,214.40/yr (2026) plus a small uncapped solidarity surcharge above that. Serbia's mandatory annual surtax is now included directly in the tax figure, modeled with the under-40 exemption. Israel National Insurance uses the 2025 ceiling and threshold (2026 values not confirmed). Lithuanian athlete tax bands follow the VMI 2026 table; Spanish foral (Basque) figures follow the 2026 scale with no athlete-specific reduction unless you enter one.
+</footer>
+
+<details class="corr-wrap">
+<summary>QA corrections &amp; methodology notes (click to expand)</summary>
+<div class="conv notes-panel">
+<div class="notes-intro"><b>Corrections log, newest first.</b> Items 18&ndash;32: October 2026 review (19&ndash;21 Oct 2026) &mdash; every country re-checked for 2026 changes and athlete-specific rules. Items 1&ndash;15: Opus review, July 2026. Items 16&ndash;17: earlier fixes.</div>
+<ol class="qa">
+<li><span class="qn">32</span><div><span class="qd">Update, 21 Oct 2026</span><b>Italy &mdash; impatriate eligibility flagged.</b> Italian commentary says that since 2024 athletes no longer have a sports-specific route and must meet the general &ldquo;high qualification&rdquo; test (a degree or certified higher qualification) plus 3 years of prior non-residence. The Impatriati option is kept but labelled &ldquo;only if eligible&rdquo; and the note says to use the local option unless an adviser confirms.</div></li>
+<li><span class="qn">31</span><div><span class="qd">Update, 21 Oct 2026</span><b>France &mdash; impatriate regime corrected.</b> Three independent sources describe a 30% flat exemption (or a contract-fixed bonus up to a 50% cap) for up to 8 years, with no 2024 reform to 50%/5 years. The option now uses 30% of net pay exempt. Also fixed the French taxable base: it previously deducted a flat 23.5% of gross for social contributions, far above the real deductible share at high salaries; it now uses the actual deductible employee contributions.</div></li>
+<li><span class="qn">30</span><div><span class="qd">Update, 21 Oct 2026</span><b>Tax base now net of employee social contributions (Spain, Germany, Italy, Greece, Turkey, France).</b> Several countries applied the income-tax scale to raw gross although employee social contributions are deductible, which overstated tax (and gross) by roughly 2&ndash;7% of pay at mid-range salaries. Germany now uses taxable income (work-expense allowance and deductible pension/health/care contributions) with the correct solidarity phase-in; Spain deducts social security and the &euro;2,000 expense allowance and credits the &euro;5,550 personal minimum; Italy and Greece deduct employee contributions; Turkey deducts SGK above the withholding threshold. Serbia, Lithuania and Israel were checked and left unchanged. The Turkey overlap zone moved accordingly.</div></li>
+<li><span class="qn">29</span><div><span class="qd">Update, 21 Oct 2026</span><b>Serbia &mdash; simplified to one option.</b> The &ldquo;newly-settled foreign player (Art.15v)&rdquo; option was removed: the relief needs an indefinite-term employment contract and a job requiring special vocational education, which sports contracts (fixed-term, up to 5 years) probably do not meet, and none of the sources mention athletes. Residents and foreigners are taxed the same on an employment contract. Athletes engaged under a non-employment sports contract are taxed differently (20% withheld on gross minus 50% standardised expenses, about 10% effective, plus contributions); this is noted but not modelled.</div></li>
+<li><span class="qn">28</span><div><span class="qd">Update, 20 Oct 2026</span><b>Greece &mdash; Art.5C conditions clarified.</b> The option label and notes now state that the player must have been non-resident in Greece for 5 of the previous 6 years, must move residence from an EU/EEA or tax-cooperation country (US eligibility unconfirmed), needs a Greek employer in a new position and must declare a stay of at least 2 years. The unsupported remark that most foreign EuroLeague players use Art.5C was removed.</div></li>
+<li><span class="qn">27</span><div><span class="qd">Update, 20 Oct 2026</span><b>Turkey &mdash; three options merged into two.</b> The separate &ldquo;withholding (&le; ~&euro;99k)&rdquo; option was removed: it gave the same result as the high-earner option for any salary above the threshold. Both remaining options (local/US with full SGK; EU/UK foreign, SGK-exempt) now apply the 20% final withholding up to ~&euro;98,881 gross and the progressive scale on all income above it. For a net input the calculator solves for the gross that gives that final net and, where two gross amounts give the same net (a band of net amounts just below the threshold-level net), uses the lower one. The &ldquo;Target net unreachable&rdquo; message cannot occur with the current numbers (there is an overlap, not a gap).</div></li>
+<li><span class="qn">26</span><div><span class="qd">October 2026 review</span><b>Israel:</b> the &ldquo;new immigrant&rdquo; option was removed as not relevant for imported players; only the established-resident (~1.9&ndash;2.0&times; gross-to-net) and foreign-athlete (flat 25%, ~1.34&times;) options remain.</div></li>
+<li><span class="qn">25</span><div><span class="qd">October 2026 review</span><b>Lithuania &mdash; follow-up checks (19 Oct 2026):</b> (a) the 43 VDU Sodra base cap <b>does</b> apply to sportsmen paid by a non-employer payer (Sodra 2026 table: 19.5%, +3% pension add-on, 50% base to 30 Jun, 90% from 1 Jul); (b) non-residents are taxed on the same 2026 bands &mdash; no flat 15% for foreigners; (c) in 2025 the 15% band ran to 120 VDU with 20% above (club withholding 15%), which is why 2026 is a large increase for high earners; (d) classification: sports income is individual activity only when self-employed, otherwise &ldquo;not individual activity&rdquo;; (e) if the club is the player&rsquo;s employer the Sodra is employee 15.52% to 60 VDU + 6.98% uncapped + ~1.5% employer &mdash; shown in the notes as the alternative reading. Salary figures used in testing were leaks, not official data.</div></li>
+<li><span class="qn">24</span><div><span class="qd">October 2026 review</span><b>Athlete-specific rules found:</b> Turkey &ndash; fixed withholding by league tier (20%/10%/5%); Lithuania &ndash; own athlete income rows in the tax table and a separate Sodra regime; Italy &ndash; athletes are in the FPSP pension fund (33% pension rate, 9.19% employee share); France &ndash; none (impatriate regime available to athletes); Spain &ndash; special employment relationship (RD 1006/1985) but no tax relief; Greece, Germany, Serbia &ndash; none found beyond the general rules; Israel &ndash; the foreign-athlete regime. Not modeled: Turkey&rsquo;s 10%/5% lower-league tiers, benefits in kind, French CDHR minimum tax on very high incomes.</div></li>
+<li><span class="qn">23</span><div><span class="qd">October 2026 review</span><b>Checked, no change needed:</b> Germany (2026 &sect;32a tariff, Soli allowance &euro;20,350, ceilings), France (scale +0.9% for 2026, CEHR unchanged; the scale for 2026 income is not yet published), Italy (23/33/43%, INPS ceiling &euro;122,295), Greece (Law 5246/2025 scale and 2026 EFKA), Turkey (2026 tariff, sports withholding 20% for the top league).</div></li>
+<li><span class="qn">22</span><div><span class="qd">October 2026 review</span><b>Serbia.</b> The 2026 non-taxable amount (RSD 34,221/month, up from 28,423) is now deducted before the 10% tax.</div></li>
+<li><span class="qn">21</span><div><span class="qd">October 2026 review</span><b>Spain.</b> 2026 employee social security 6.5% (MEI 0.15%), employer about 32.65%; confirmed again that professional athletes are excluded from the Beckham regime (Ley 26/2014, from 2015).</div></li>
+<li><span class="qn">20</span><div><span class="qd">October 2026 review</span><b>Israel.</b> Income-tax brackets updated to the 2026 budget (20% band to NIS 228,000, 31% to NIS 301,200, 35% to NIS 560,280); employee National Insurance was understated at a flat 6.4% and is now tiered (3.5% to NIS 7,522/month, 12% above); the 2026 ceiling was not confirmed so the 2025 value is kept.</div></li>
+<li><span class="qn">19</span><div><span class="qd">October 2026 review</span><b>Basque Country &mdash; scale corrected, claim not reproduced.</b> The earlier bracket limits did not match the official 2026 foral scale (23% to &euro;18,080 &hellip; 47% to &euro;208,390, then 49%, identical in &Aacute;lava, Bizkaia and Gipuzkoa). On a multi-million salary the Basque marginal rate (49%) is higher than Madrid&rsquo;s (45%). The widely quoted &ldquo;about 25% vs 50%&rdquo; traces to (a) a 2019 Bizkaia decree exempting 50% of &ldquo;irregular&rdquo; income such as athletes&rsquo; pay without a cap, which was withdrawn in September 2019; (b) a 2011 comparison of 24% vs 43% from when Bizkaia and &Aacute;lava let imported players use an impatriate regime (the common regime closed it to athletes in 2015; I could not confirm the foral position); and (c) mixing net-contract and gross-contract budgets. An optional what-if field lets you apply a reduction to test the press claim.</div></li>
+<li><span class="qn">18</span><div><span class="qd">October 2026 review</span><b>Lithuania &mdash; income tax corrected.</b> The VMI table for 2026 taxes sportsmen&rsquo;s income in four marginal bands: 15% to 12 VDU (&euro;27,746), 20% to 36 VDU (&euro;83,237), 25% to 60 VDU (&euro;138,729), 32% above (VDU 2026 = &euro;2,312.15). This supersedes item (1), which used 15% to 120 VDU / 20% above. Sodra: the contribution base is 90% of pay only from 1 July 2026 (50% before) and is capped at 43 VDU (&euro;99,422.45), so local players&rsquo; social security now tops out near &euro;22.4k instead of growing without limit.</div></li>
+<li><span class="qn">17</span><div><b>Turkey withholding — real bug fixed:</b> the "20%, income &le; ~&euro;99k" option was computing a flat 20% withholding for <b>any</b> salary size, with no cap actually enforced in the code — the &euro;99k figure only lived in the label text. A &euro;1M net target was incorrectly resolving to a &euro;1.26M gross taxed at a flat 20%, when Turkish law requires the full progressive scale (up to 40%) via mandatory annual declaration above that threshold. Fixed: this option now automatically falls through to the same full-progressive calculation as the high-earner option once gross exceeds ~&euro;98,881/yr, matching the confirmed 20%-stopaj mechanics discussed for the Mike James case. Net-input mode also correctly handles the ~&euro;57k&ndash;&euro;69k zone right at the threshold where crossing it makes tax worse (net drops) rather than better — unlike Italy's Impatriati cap, this creates an overlap (two valid gross solutions) rather than a gap, and the calculator automatically resolves to the cheaper, lower-gross one.</div></li>
+<li><span class="qn">16</span><div><b>Serbia:</b> the SS contribution cap was <b>corrected from ~&euro;90,000/yr to ~&euro;74,940/yr</b> — the old figure didn't match the official 2026 maximum monthly base (732,820 RSD, published by the PIO fund) converted at the current ~117.35 RSD/&euro; rate. The mandatory <b>annual surtax (godišnji porez na dohodak građana) is now included</b> directly in the tax calculation rather than left out as a warning-only caveat — it's genuinely material at basketball-level salaries: 10% on net income above roughly &euro;46,354 (3&times; average annual salary), rising to 15% above about &euro;139,000 total, modeled using the extra under-40 personal deduction that applies to local and foreign players alike (not just Art.15v users). Also corrected the "Art.15v" option's framing: the primary qualifying path for the 70% payroll-tax-base reduction is not having predominantly resided in Serbia for 24 months, with <b>no hard age-40 cutoff</b> on that main path — the under-40 condition only applies to a separate, narrower path for people returning from study abroad.</div></li>
+<li><span class="qn">15</span><div><span class="qd">Opus review, July 2026</span>Germany — the income tax formula was using <b>stale §32a EStG bracket boundaries and coefficients</b> from an earlier tax year (e.g. the 42%-bracket threshold was €68,500 instead of the correct 2026 value €69,879, with outdated zone-4/5 formula constants). Corrected to the current 2026 tariff. Also fixed the Pflegeversicherung (care insurance) employer share to the confirmed-fixed 1.7% (was 1.8%). Confirmed via multiple sources: Germany has <b>no special regime for athletes or foreign players</b> — once a player signs and relocates, they're taxed as an ordinary employee regardless of nationality; the only nationality-relevant nuance is a narrow &sect;50a withholding for one-off foreign appearances without German residency, not relevant to a season-long contract.</div></li>
+<li><span class="qn">14</span><div><span class="qd">Opus review, July 2026</span>Israel — added a third, previously-missing regime: <b>foreign athlete (flat 25%)</b>, under the 1998 Foreign Athlete tax regulations. This is separate from both the standard resident scale (up to 50%) and the new-immigrant/oleh-chadash track (which is about becoming an Israeli resident, more relevant to a returning national than a genuine import). Foreign athletes who remain non-residents get a flat 25% rate plus sharply reduced National Insurance (~2% vs. the resident rate), for up to 4 years — this is what produces the commonly-cited ~1.25x gross-to-net multiplier for imports vs. ~2x for local players.</div></li>
+<li><span class="qn">13</span><div><span class="qd">Opus review, July 2026</span>Italy Impatriati — CORRECTED after further review: the initial rebuild wrongly applied an athlete-specific &euro;1,000,000/yr income floor (with age-20 and 0.5% levy requirements) sourced from art.16 of D.Lgs.147/2015 — but that article was <b>repealed by D.Lgs.209/2023</b> for anyone transferring Italian residence from 2024 onward, and only survives for players who signed contracts by 31 Dec 2023. The regime now correctly reflects the current D.Lgs.209/2023 art.5 rules that apply to athletes the same as any other qualifying worker: <b>50% exemption up to a &euro;600,000/yr cap</b> (not a floor) — income above &euro;600k is fully taxed at ordinary rates with no cliff or gap. No age requirement, no 0.5% levy in the current regime.</div></li>
+<li><span class="qn">12</span><div><span class="qd">Opus review, July 2026</span>Italy verified: the calculator's 23/33/43% brackets already matched the correct, current 2026 scale (2026 Budget Law cut the middle bracket from 35% to 33%) — several third-party sites still show the old 35%. Employee INPS <b>fixed to a two-tier structure</b> (9.19% up to &euro;56,224/yr, then 10.19% up to the &euro;122,295 cap) instead of a flat 9.19%.</div></li>
+<li><span class="qn">11</span><div><span class="qd">Opus review, July 2026</span>Turkey verified against the official GİB 2026 tariff: the calculator's wage-income brackets (15/20/27/35/40% at TRY 190k/400k/1.5M/5.3M) match exactly, confirming several third-party sites showing lower thresholds (e.g. TRY 110k/230k/870k/3M) are using stale pre-2026 figures. No nationality-based income-tax exemption found for foreigners, non-residents, or new taxpayers under Geçici Madde 72 — it applies identically regardless of residency. Added a clarification that press-reported "net" salaries for high earners typically reflect only the in-season 20% stopaj, not the true final net after the mandatory annual declaration (which applies above the ~TRY 5.3M threshold) — a large gap between the two is normal, not evidence of a hidden exemption. Also noted: Turkey's Constitutional Court (3 June 2026) struck down the rule that a club's withheld tax had to be remitted before a player could credit it against their declared liability.</div></li>
+<li><span class="qn">10</span><div><span class="qd">Opus review, July 2026</span>Greece — added an optional signing/transfer/renewal bonus field: under Law 4646/2019 art.76, a contract bonus over &euro;40,000 (explicitly covering basketball, per AADE circular Ε.2026/2020) is taxed at a flat 22% final withholding instead of the ordinary 9&ndash;44% scale, and is not subject to EFKA. Applies equally to local and foreign players since it depends on payment structure, not nationality.</div></li>
+<li><span class="qn">9</span><div><span class="qd">Opus review, July 2026</span>Greece verified against multiple 2026 sources: the calculator's 9/20/26/34/39/44% bracket scale (top rate starting at &euro;60k) is the current, reformed scale under Law 5246/2025 — several third-party sites still show the older pre-reform 9/22/28/36/44% scale with the 44% threshold at &euro;40k, which is now out of date. Employee EFKA <b>corrected from 13.37% to 13.87%</b> to match the confirmed 2026 rate; employer 21.79% and the &euro;93,143/yr cap were already correct.</div></li>
+<li><span class="qn">8</span><div><span class="qd">Opus review, July 2026</span>Spain — <b>Catalonia's top rate corrected from 54% to 50%</b>; the 54% figure was actually Valencia's and the two had been incorrectly merged into one option. Valencia, Andalucía (M&aacute;laga), Canary Islands, and Regi&oacute;n de Murcia added as separate regions. The Basque Country (Baskonia/&Aacute;lava, Bilbao/Bizkaia) is now modeled as its own <b>self-contained foral scale</b> (23%&ndash;49%) rather than reusing the common-regime brackets with a different top rate, since foral IRPF is not summed with the state scale. Spain SS is now capped at &euro;61,214.40/yr (2026 PASS-equivalent) plus the small uncapped "cuota de solidaridad" tiers introduced for high earners.</div></li>
+<li><span class="qn">7</span><div><span class="qd">Opus review, July 2026</span>France social security is now a <b>capped two-tier model</b> (uncapped CSG/CRDS/maladie/famille + a PASS tier &euro;48,060 + an AGIRC-ARRCO tier to 8&times;PASS &euro;384,480) instead of a flat rate — confirmed applicable to professional basketball via the LNB's Convention Collective, for local and foreign players alike, with no sport-specific reduced regime.</div></li>
+<li><span class="qn">6</span><div><span class="qd">Opus review, July 2026</span>France — income tax and CEHR are now computed on taxable income (gross &minus; employee SS &minus; the 10% professional-expense allowance, capped &euro;14,430) instead of raw gross; the previous version overstated French income tax by roughly a third at multi-million-euro salaries. The Impatriate regime is updated to the Finance Law 2024 reform — <b>50% exemption for 5 years</b> for arrivals from Jan 2024 onward — replacing the earlier 30%/8-year modeling, which reflected pre-2024 rules.</div></li>
+<li><span class="qn">5</span><div><span class="qd">Opus review, July 2026</span>Spain resident regimes use a progressive scale.</div></li>
+<li><span class="qn">4</span><div><span class="qd">Opus review, July 2026</span>Israel new-immigrant caps the exemption at NIS 1M.</div></li>
+<li><span class="qn">3</span><div><span class="qd">Opus review, July 2026</span>France — confirmed there is <b>no social-charge exclusion</b> for foreign players signing directly with a French club (A1/posting does not apply to direct hires); the Impatriate regime cuts income tax only (30&ndash;50%), employer charges unchanged.</div></li>
+<li><span class="qn">2</span><div><span class="qd">Opus review, July 2026</span>Turkey — added the <b>foreign-player SGK exemption</b>: EU/UK players (bilateral treaty) are exempt from Turkish social security; US players are not (no treaty). Income tax is identical for all. FX updated to 53.6 TRY/&euro;, brackets TRY 190k/400k/1.5M/5.3M, SGK cap ~&euro;66.5k/yr.</div></li>
+<li><span class="qn">1</span><div><span class="qd">Opus review, July 2026</span>Lithuania rebuilt to the athlete sports-activity model per Sodra: income tax 15% up to &euro;253,065.60 (120 VDU) then 20%, with <b>foreign players exempt from social security</b> and local players paying 22.5% on 90% of the payment; total club cost = gross.</div></li>
+</ol>
+</div>
+</details>
+
+<script>
+const EUR_TRY=1/53.6, NIS_EUR=1/3.95;
+const TR_B=[[190000,.15],[400000,.20],[1500000,.27],[5300000,.35],[Infinity,.40]];
+const IL_B=[[84120,.10],[120720,.14],[228000,.20],[301200,.31],[560280,.35],[721560,.47],[Infinity,.50]];
+const GR_B=[[10000,.09],[20000,.20],[30000,.26],[40000,.34],[60000,.39],[Infinity,.44]];
+const FR_B=[[11600,0],[29579,.11],[84577,.30],[181917,.41],[Infinity,.45]];
+const IT_B=[[28000,.23],[50000,.33],[Infinity,.43]];
+function italyEmpSS(g){return prog(g,[[56224,.0919],[122295,.1019],[Infinity,0]]);}
+const RS_SUR_3X=46354, RS_SUR_6X=92709;
+const RS_NT=34221*12/117.35;
+function serbiaSurtax(net,under40){const exemption=RS_SUR_3X*(under40?2:1);const base=Math.max(0,net-exemption);return Math.min(base,RS_SUR_6X)*0.10+Math.max(0,base-RS_SUR_6X)*0.15;}
+const LT_VDU=2312.15;
+const LT_B=[[12*LT_VDU,.15],[36*LT_VDU,.20],[60*LT_VDU,.25],[Infinity,.32]];
+const LT_SS_BASE_CAP=43*LT_VDU;
+const TR_SGK_CAP_EUR=3567240*EUR_TRY;
+const TR_DECL_EUR=5300000*EUR_TRY;
+const IL_SS_CAP_EUR=50695*12*NIS_EUR;
+const IL_NI_LOW_EUR=7522*12*NIS_EUR;
+function ilEmpSS(g){return Math.min(g,IL_NI_LOW_EUR)*0.035+Math.max(0,Math.min(g,IL_SS_CAP_EUR)-IL_NI_LOW_EUR)*0.12;}
+function ilEmrSS(g){return Math.min(g,IL_NI_LOW_EUR)*0.0355+Math.max(0,Math.min(g,IL_SS_CAP_EUR)-IL_NI_LOW_EUR)*0.076;}
+const FR_PASS=48060, FR_PASS8=FR_PASS*8;
+
+function prog(g,brackets,scale=1){let t=0,p=0;for(const[c,r] of brackets){if(g/scale<=p)break;t+=(Math.min(g/scale,c)-p)*r;p=c;}return t*scale;}
+function spainTax(g,topRate){return prog(g,[[12450,.19],[20200,.24],[35200,.30],[60000,.37],[Infinity,topRate]]);}
+let BAS_RED=0;
+function spainResTax(region,top,g,ss,f){const base=Math.max(0,g-ss-2000*f);return region==='bas'?basqueTax(base):Math.max(0,spainTax(base,top)-spainTax(5550*f,top));}
+function basqueTax(g){return prog(g*(1-BAS_RED),[[18080,.23],[36160,.28],[54240,.35],[77450,.40],[107260,.45],[142960,.46],[208390,.47],[Infinity,.49]]);}
+const ES_TOP={mad:.45,cat:.50,val:.54,and:.47,can:.505,mur:.47,bas:.49};
+const ES_SS_CAP=61214.40, ES_SOL_T1=67335.84, ES_SOL_T2=91821.60;
+function spainEmpSS(g){return Math.min(g,ES_SS_CAP)*0.065+prog(g,[[ES_SS_CAP,0],[ES_SOL_T1,.0019],[ES_SOL_T2,.0021],[Infinity,.0024]]);}
+function spainEmrSS(g){return Math.min(g,ES_SS_CAP)*0.3265+prog(g,[[ES_SS_CAP,0],[ES_SOL_T1,.0096],[ES_SOL_T2,.0104],[Infinity,.0122]]);}
+function germanyTax(g){let t;if(g<=12348)t=0;else if(g<=17799){const y=(g-12348)/10000;t=(882.4*y+1400)*y;}else if(g<=69878){const z=(g-17799)/10000;t=(181.19*z+2397)*z+1025.38;}else if(g<=277825)t=0.42*g-10637.32;else t=0.45*g-18971.07;if(t>20350)t+=Math.min(t*0.055,(t-20350)*0.119);return t;}
+function germanyDedSS(g){return 0.093*Math.min(g,101400)+(0.0875*0.96+0.025)*Math.min(g,69750);}
+function germanyTaxGross(g){return germanyTax(Math.max(0,g-1266-germanyDedSS(g)));}
+function germanyEmpSS(g){const pu=Math.min(g,101400),hc=Math.min(g,69750);return pu*(0.093+0.013)+hc*(0.0875+0.025);}
+function germanyEmrSS(g){const pu=Math.min(g,101400),hc=Math.min(g,69750);return pu*(0.093+0.013+0.0015)+hc*(0.0875+0.017);}
+function franceTaxableBase(g,exemptRate){const emp=franceEmpSS(g);const ded=Math.max(0,emp-0.0285*g);const exempt=(exemptRate||0)*Math.max(0,g-emp);const b=Math.max(0,g-ded-exempt);return Math.max(0,b-Math.min(b*0.10,14430));}
+function franceTax(base){let t=prog(base,FR_B);if(base>500000)t+=(base-500000)*0.04+(Math.min(base,500000)-250000)*0.03;else if(base>250000)t+=(base-250000)*0.03;return t;}
+function franceEmpSS(g){return g*0.1010+prog(g,[[FR_PASS,.1091],[FR_PASS8,.0972],[Infinity,0]]);}
+function franceEmrSS(g){return g*0.236+prog(g,[[FR_PASS,.1881],[FR_PASS8,.1457],[Infinity,0]]);}
+function turkeyTax(g){return prog(g,TR_B,EUR_TRY);}
+function israelTax(g){return prog(g,IL_B,NIS_EUR);}
+function ltTax(g){return prog(g,LT_B);}
+
+function getTax(key,g){
+  if(key==='DE_loc')return germanyTaxGross(g);
+  if(key==='FR_loc')return franceTax(franceTaxableBase(g));
+  if(key==='FR_imp')return franceTax(franceTaxableBase(g,0.30));
+  if(key==='GR_std')return prog(Math.max(0,g-getEmpSS(key,g)),GR_B);
+  if(key==='GR_50')return prog(Math.max(0,g-getEmpSS(key,g))*0.50,GR_B);
+  if(key==='IT_loc')return prog(Math.max(0,g-italyEmpSS(g)),IT_B)*1.025;
+  if(key==='IT_imp'){const b=Math.max(0,g-italyEmpSS(g));return prog(Math.min(b,600000)*0.50+Math.max(0,b-600000),IT_B)*1.025;}
+  if(key==='TR_eff'||key==='TR_for')return g<=TR_DECL_EUR?g*0.20:turkeyTax(Math.max(0,g-getEmpSS(key,g)));
+  if(key==='IL_std')return israelTax(g);
+  if(key==='IL_for')return g*0.25;
+  if(key==='LT_for'||key==='LT_loc')return ltTax(g);
+  if(key==='RS_loc'){const baseTax=Math.max(0,g-RS_NT)*0.10;const net=g-baseTax-getEmpSS('RS_loc',g);return baseTax+serbiaSurtax(net,true);}
+  if(key==='ES_bas')return spainResTax('bas',ES_TOP.bas,g,spainEmpSS(g),1);
+  if(key==='ES_mad'||key==='ES_cat'||key==='ES_val'||key==='ES_and'||key==='ES_can'||key==='ES_mur')return spainResTax(key.slice(3),ES_TOP[key.slice(3)],g,spainEmpSS(g),1);
+  return 0;
+}
+function getEmpSS(key,g){
+  if(key==='DE_loc')return germanyEmpSS(g);
+  if(key==='IL_std')return ilEmpSS(g);
+  if(key==='LT_for')return 0;
+  if(key==='LT_loc')return Math.min(g*0.90,LT_SS_BASE_CAP)*0.225;
+  if(key==='TR_for')return 0;
+  if(key==='FR_loc'||key==='FR_imp')return franceEmpSS(g);
+  if(key==='ES_mad'||key==='ES_cat'||key==='ES_val'||key==='ES_and'||key==='ES_can'||key==='ES_mur'||key==='ES_bas')return spainEmpSS(g);
+  if(key==='IT_loc'||key==='IT_imp')return italyEmpSS(g);
+  const mp={RS_loc:[.199,74940],TR_eff:[.15,TR_SGK_CAP_EUR],GR_std:[.1387,93143],GR_50:[.1387,93143],IL_std:[.064,IL_SS_CAP_EUR],IL_for:[.01,IL_SS_CAP_EUR]};
+  const d=mp[key]||[0,null];return d[1]?Math.min(g,d[1])*d[0]:g*d[0];
+}
+function getEmrSS(key,g){
+  if(key==='IL_std')return ilEmrSS(g);
+  if(key==='DE_loc')return germanyEmrSS(g);
+  if(key==='LT_for'||key==='LT_loc')return 0;
+  if(key==='TR_for')return 0;
+  if(key==='FR_loc'||key==='FR_imp')return franceEmrSS(g);
+  if(key==='ES_mad'||key==='ES_cat'||key==='ES_val'||key==='ES_and'||key==='ES_can'||key==='ES_mur'||key==='ES_bas')return spainEmrSS(g);
+  const mp={RS_loc:[.1515,74940],TR_eff:[.2275,TR_SGK_CAP_EUR],GR_std:[.2179,93143],GR_50:[.2179,93143],IT_loc:[.30,122295],IT_imp:[.30,122295],IL_std:[.073,IL_SS_CAP_EUR],IL_for:[.01,IL_SS_CAP_EUR]};
+  const d=mp[key]||[0,null];return d[1]?Math.min(g,d[1])*d[0]:g*d[0];
+}
+function solveGross(key,targetNet){let g=targetNet*1.9;for(let i=0;i<200;i++){const net=g-getTax(key,g)-getEmpSS(key,g);const err=net-targetNet;if(Math.abs(err)<0.5)break;g-=err*0.5;}return g;}
+function solveBisect(key,targetNet,lo,hi){for(let i=0;i<100;i++){const mid=(lo+hi)/2;const net=mid-getTax(key,mid)-getEmpSS(key,mid);if(net<targetNet)lo=mid;else hi=mid;}return(lo+hi)/2;}
+const CUR={EUR:{sym:'€',rate:1},USD:{sym:'$',rate:1.17},TRY:{sym:'₺',rate:53.6},RSD:{sym:'RSD ',rate:117.35},ILS:{sym:'₪',rate:3.95}};
+const CUR_ALL=['EUR','USD','TRY','RSD','ILS'];
+const LOCAL_CUR={RS:'RSD',TR:'TRY',IL:'ILS'};
+let OUT='EUR',MONTHS=10;
+function fmt(v){const c=CUR[OUT];const x=Math.round(v*c.rate);return(x<0?'−':'')+c.sym+Math.abs(x).toLocaleString('en-US')}
+function curLabel(c){return c+' ('+CUR[c].sym.trim()+')'}
+function $(id){return document.getElementById(id)}
+function localCurOf(key){return LOCAL_CUR[key.split('_')[0]]||null}
+function fillCur(sel,list){
+  const prev=sel.value;
+  sel.innerHTML=list.map(function(c){return'<option value="'+c+'">'+curLabel(c)+'</option>'}).join('');
+  sel.value=list.indexOf(prev)>=0?prev:'EUR';
+  return prev;
+}
+function refreshCurSelects(){
+  const list=CUR_ALL;
+  const prevIn=fillCur($('cur-in'),list);
+  fillCur($('cur-out'),list);
+  const now=$('cur-in').value;
+  if(prevIn&&prevIn!==now&&CUR[prevIn]){ // keep the same real-world amount when the old currency is no longer offered
+    const a=parseFloat($('sal').value)||0;
+    $('sal').value=Math.round(a/CUR[prevIn].rate*CUR[now].rate);
+  }
+}
+function readMonths(p){return Math.min(24,Math.max(1,Math.round(parseFloat($(p+'months').value)||1)))}
+function annualEUR(p){
+  const amt=parseFloat($(p+'sal').value)||0;
+  const months=readMonths(p);
+  const perEur=CUR[$(p+'cur-in').value].rate;
+  return amt/perEur*($(p+'period').value==='month'?months:1);
+}
+function pct(v){return(v*100).toFixed(0)+'%'}
+function pctF(v){return(v*100).toFixed(1)+'%'}
+function isSpainForeign(key){return key==='ES_single'||key==='ES_multi';}
+function isTR(key){return key.slice(0,3)==='TR_';}
+function isGreece(key){return key==='GR_std'||key==='GR_50';}
+function greeceTax(key,baseGross,bonus){return bonus>40000?getTax(key,baseGross)+bonus*0.22:getTax(key,baseGross+bonus);}
+
+
+const LAW_VERIFIED='19 Oct 2026';
+const LAW={
+ LT:{law:'Law on Personal Income Tax (GPMĮ) as amended by the 2025 tax reform; VMI table for permanent residents (sportsmen: 15% to 12 VDU, 20% to 36, 25% to 60, 32% above; VDU 2026 = €2,312.15). Sodra 2026 (sportsmen not employed by the payer): 19.5% (+3% pension add-on) on 50% of the fee Jan–Jun and 90% from 1 Jul 2026, annual base capped at 43 VDU. Athletes are "not individual activity" unless self-employed; non-residents use the same bands',eff:'tax bands 1 Jan 2026; 90% base 1 Jul 2026'},
+ FR:{law:'Barème IR 2026 (Loi de finances 2026, art. 4: +0.9% indexation, applied to 2025 income); CEHR 3%/4% unchanged; PASS 2026 €48,060; impatriate regime art. 155 B CGI as reformed by the 2024 Finance Law (arrivals from 2024)',eff:'1 Jan 2026 (scale); 1 Jan 2024 (impatriate). The scale for income earned in 2026 is not yet published'},
+ ES:{law:'IRPF state + regional scales (LIRPF; state scale unchanged since 2021); Social Security: Orden de cotización 2026 / RDL 3/2026 (max base €5,101.20/month, MEI 0.9%, cuota de solidaridad). Athletes excluded from the Beckham regime by Ley 26/2014',eff:'1 Jan 2026 (SS); 1 Jan 2015 (Beckham exclusion)'},
+ ES_bas:{law:'Foral IRPF scale 2026: Norma Foral 13/2013 art. 75 (Bizkaia); Norma Foral 3/2014 as amended by NF 6/2025 (Gipuzkoa); Norma Foral 33/2013 as amended by NF 21/2025 (Álava). Same scale in all three. SS is national (see ES)',eff:'2026 tax year'},
+ ES_single:{law:'Non-resident income tax (TRLIRNR): 19% for EU/EEA, 24% otherwise; 183-day residency rule (LIRPF art. 9). SS as in ES',eff:'long-standing; SS 1 Jan 2026'},
+ ES_multi:{law:'Non-resident income tax (TRLIRNR): 19% EU/EEA, 24% otherwise, then ordinary resident IRPF; 183-day residency rule (LIRPF art. 9). SS as in ES',eff:'long-standing; SS 1 Jan 2026'},
+ GR:{law:'Law 5246/2025 (2026 scale 9–44%, top rate above €60k); EFKA 2026 contributions (13.87% employee, 21.79% employer, cap €93,143); art. 76 Law 4646/2019 (bonus >€40k at 22%); Art. 5C Income Tax Code (new residents)',eff:'1 Jan 2026'},
+ IT:{law:'Legge di Bilancio 2026 (IRPEF 23/33/43%); INPS 2026 (FPSP pension fund for professional athletes: 33% pension rate, 9.19% employee share; ceiling €122,295); Impatriati: D.Lgs. 209/2023 art. 5',eff:'1 Jan 2026; Impatriati 1 Jan 2024'},
+ TR:{law:'GVİ 2026 wage-income tariff (GVK art. 103: 15/20/27/35/40%); GVK Geçici Madde 72 (sports withholding: 20% top league, 10% / 5% lower tiers); SGK 2026 ceiling',eff:'1 Jan 2026'},
+ DE:{law:'§32a EStG 2026 tariff (basic allowance €12,348, 42% from €69,879, 45% from €277,826); Soli allowance €20,350; 2026 social-security ceilings (health/care €69,750, pension €101,400)',eff:'1 Jan 2026'},
+ IL:{law:'Income-tax brackets as revised in the 2026 Budget (20% band to NIS 228,000, 31% to NIS 301,200; applied from Jan 2026); 3% surtax above NIS 721,560; National Insurance rates 2025 (ceiling NIS 50,695/month — the 2026 ceiling was not confirmed); Foreign Athlete Regulations 1998',eff:'1 Jan 2026 (brackets); regulations 1998'},
+ RS:{law:'Law on Personal Income Tax: non-taxable amount RSD 34,221/month in 2026 (up from 28,423); max contribution base RSD 732,820/month; newly-settled-taxpayer relief (Art. 15v) deliberately not modelled',eff:'1 Jan 2026'}
+};
+const SINCE={
+ LT:[['Income tax bands','1 Jan 2026'],['Sodra 90% base','1 Jul 2026']],
+ FR:[['Tax scale','1 Jan 2026'],['Impatriate regime','1 Jan 2024']],
+ ES:[['Social security','1 Jan 2026'],['Beckham exclusion','1 Jan 2015']],
+ ES_bas:[['Foral tax scale','2026 tax year']],
+ ES_single:[['Non-resident tax','long-standing'],['Social security','1 Jan 2026']],
+ ES_multi:[['Non-resident tax','long-standing'],['Social security','1 Jan 2026']],
+ GR:[['2026 tax reform','1 Jan 2026']],
+ IT:[['IRPEF / INPS','1 Jan 2026'],['Impatriati regime','1 Jan 2024']],
+ TR:[['Tax tariff & SGK','1 Jan 2026']],
+ DE:[['2026 tariff','1 Jan 2026']],
+ IL:[['Tax brackets','1 Jan 2026'],['Foreign-athlete rules','1998']],
+ RS:[['2026 rules','1 Jan 2026']]
+};
+function lawKey(key){return SINCE[key]?key:key.split('_')[0];}
+function lawLine(key){
+  const l=LAW[key]||LAW[key.split('_')[0]];
+  if(!l)return'';
+  return'<div class="lawline"><b>Legal basis:</b> '+l.law+'.</div>';
+}
+function renderDateBox(key){
+  const el=document.getElementById('datebox');if(!el)return;
+  const rows=SINCE[lawKey(key)]||[];
+  el.innerHTML='<div class="db-h">Last updated</div><div class="db-v">'+LAW_VERIFIED+'</div><div class="db-sep"></div><div class="db-h" style="margin-bottom:3px">Law in force since</div>'+rows.map(r=>'<div class="db-row"><span>'+r[0]+'</span><b>'+r[1]+'</b></div>').join('');
+}
+
+const INFOS={
+RS_loc:{t:'Serbia — employment contract (residents and foreign players)',n:'10% payroll tax on gross minus the monthly non-taxable amount (RSD 34,221 in 2026, up from 28,423 — about \u20ac3,500/yr). Employee SS 19.9% (pension 14% + health 5.15% + unemployment 0.75%), employer 15.15% \u2014 both CORRECTED to the confirmed 2026 cap of ~\u20ac74,940/yr (was ~\u20ac90k, based on stale RSD figures). The mandatory annual surtax (godi\u0161nji porez na dohodak gra\u0111ana) is now INCLUDED rather than excluded: on net income above 3\u00d7 the average annual salary (~\u20ac46,354), 10% applies up to a further 6\u00d7-average band (~\u20ac92,709 of the excess), 15% above that \u2014 modeled here using the extra under-40 personal deduction (doubling the exempt amount to ~\u20ac92,709), since the large majority of professional players qualify for it. There is no separate foreign-player rate: residents and foreigners are taxed the same way on an employment contract. NOT MODELLED: (a) the special regime for athletes engaged under a non-employment sports contract (20% withheld on gross minus 50% standardised expenses, about 10% effective, with social contributions on top \u2014 contribution rules not confirmed); (b) the 70% newly-settled-taxpayer relief (Art. 15v), which requires an indefinite-term contract and a job needing special vocational education, so it probably does not fit fixed-term sports contracts.',wy:'Older players (40+, a minority in professional basketball) would face a somewhat higher effective surtax without the extra deduction modeled here.',wr:'The non-employment sports-contract regime could lower the tax noticeably; it is not modelled because the contribution side could not be confirmed.'},
+LT_for:{t:'Lithuania — foreign player (income tax only)',n:'UPDATED: per the VMI table for 2026, athletes\u2019 income is taxed in four marginal bands \u2014 15% up to 12 VDU (\u20ac27,746), 20% to 36 VDU (\u20ac83,237), 25% to 60 VDU (\u20ac138,729), 32% above (VDU 2026 = \u20ac2,312.15). The earlier assumption (15% up to 120 VDU, 20% above) is not in the 2026 table. Non-residents are taxed on the same bands: the law lists sports income among taxable Lithuanian-source income for non-residents and sets no separate non-resident rate, so a flat 15% for foreigners is NOT supported for 2026 (15% applied only up to 120 VDU in 2025, with the club withholding 15% during the year). Foreign players are assumed to pay NO Lithuanian social security (the club pays nothing more for them), only income tax. Total club cost = gross.',wy:'Classification: sports income counts as individual activity only if the player is self-employed; a club contract is normally income \u201cnot from individual activity\u201d (VMI table, rows for sportsmen paid by an employer or not). Both use these same bands. A player who stays over 183 days in a calendar year is a resident; the bands are the same either way. Leaked salaries are not official \u2014 treat results as estimates, and verify with a Lithuanian adviser before relying on them for a specific contract.',wr:''},
+LT_loc:{t:'Lithuania — local player (income tax + social security)',n:'Same income tax bands as above (15/20/25/32% at 12/36/60 VDU). Plus Sodra at 22.5% (19.5% if you opt out of the second pension pillar, which became voluntary in 2026) on 90% of the contract payment from 1 July 2026 (it was 50% for Jan\u2013Jun 2026). The annual contribution base is capped at 43 VDU (\u20ac99,422.45) \u2014 confirmed in Sodra\u2019s 2026 table for sportsmen not employed by the payer \u2014 so social security tops out at about \u20ac22,370/yr; the 50% vs 90% base only matters below about \u20ac199k gross. Total club cost = gross; no employer-on-top contribution in this model.',wy:'This follows Sodra\u2019s row for sportsmen paid by a payer that is not their employer. If the club is the employer (employment-type relationship), the VMI table instead gives: employee Sodra 12.52% (15.52% with the 3% pension add-on) up to 60 VDU plus 6.98% health uncapped, and about 1.5% employer contributions \u2014 roughly \u20ac140k more on a roster like the one tested, and a closer fit to one leaked pair (\u20ac670k gross / \u20ac400k net). Leaked salaries are not official; the two readings differ by about 2.5% in total.',wr:''},
+TR_eff:{t:'Turkey BSL — local or US foreign (full SGK)',n:'HOW IT WORKS: income up to ~\u20ac98,881/yr (TRY 5.3M) is taxed at a flat 20% withholding that is final; above it the player files an annual return and ALL income is taxed on the progressive scale (the 20% already withheld is credited). That creates a cliff: just over the threshold net drops by roughly \u20ac8k\u201312k. When you enter a NET amount, the calculator finds the gross that delivers that net after the annual return \u2014 the club grosses up so the player keeps the promised amount, and the March settlement is part of the club\u2019s cost. If two gross amounts give the same net (a band of net amounts just below the threshold-level net), it uses the lower, 20%-final one, because the club would never pay more for the same net. Press-reported \"net\" salaries often mean only the in-season take-home after the 20% withholding, which is higher than a true final net. Full wage scale at 53.6 TRY/€: 15% to TRY 190k, 20% to 400k, 27% to 1.5M, 35% to 5.3M, 40% above. Top bracket (40%) starts at ~€99k, so most of a EuroLeague salary is taxed at 40% — effective near 39%. Pays full SGK (employee 15%, employer 22.75%, capped ~€66.5k/yr). US players fall here — Turkey has NO totalization treaty with the US, so after a 3-month grace they pay full Turkish SGK. This figure is the TRUE final net after the mandatory annual declaration — expect it to look noticeably lower than press-reported "net" salaries, which usually reflect only the in-season 20% stopaj before that declaration (see the explanation above). On 3 June 2026 Turkey\u2019s Constitutional Court struck down the rule requiring a club\u2019s withheld tax to have actually been remitted to the tax office before a player could credit it against their annual declared liability — previously, if a club withheld tax but never paid it (a documented recurring problem, even at major clubs), the player could be stuck paying twice; that credit is no longer conditional on the club\u2019s compliance. TAX BASE: above the threshold the progressive scale applies to gross minus the employee SGK contribution (deductible); the 20% withholding below it is on the gross payment.',wy:'2025 Turkish tax crackdown found ~$29M undeclared from basketball players; 310 athletes summoned. If a contract is a "net deal," the club — not the player — is contractually on the hook for the March "fark," so the club\u2019s true all-in cost is quietly higher than any publicly reported gross figure.',wr:''},
+TR_for:{t:'Turkey BSL — EU/UK foreign (SGK-exempt)',n:'HOW IT WORKS: income up to ~\u20ac98,881/yr (TRY 5.3M) is taxed at a flat 20% withholding that is final; above it the player files an annual return and ALL income is taxed on the progressive scale (the 20% already withheld is credited). That creates a cliff: just over the threshold net drops by roughly \u20ac8k\u201312k. When you enter a NET amount, the calculator finds the gross that delivers that net after the annual return \u2014 the club grosses up so the player keeps the promised amount, and the March settlement is part of the club\u2019s cost. If two gross amounts give the same net (a band of net amounts just below the threshold-level net), it uses the lower, 20%-final one, because the club would never pay more for the same net. Press-reported \"net\" salaries often mean only the in-season take-home after the 20% withholding, which is higher than a true final net. Income tax is identical to a local player (same 15–40% wage scale) — nationality does not change income tax, and no exemption exists for foreigners, non-residents, or new taxpayers under Ge\u00e7ici Madde 72 (confirmed: non-resident "dar m\u00fckellef" athletes are taxed on Turkey-source wage income the same way). BUT a foreign player who stays covered by their home social security and comes from a country with a bilateral social security treaty with Turkey (most EU states, the UK) is EXEMPT from Turkish SGK — no employee or employer social security is due in Turkey. This is the one real foreign-player advantage in Turkey.',wy:'Requires the proper A1-equivalent / coverage certificate on file. US players do NOT qualify (no treaty) — use the local/US option instead.',wr:''},
+GR_std:{t:'Greece — standard resident (9–44%)',n:'Brackets 9/20/26/34/39/44% (top above €60k) — this is the reformed 2026 scale under Law 5246/2025, which cut mid-bracket rates and raised the 44% threshold from €40k to €60k; several third-party sites still show the older pre-reform 9/22/28/36/44% scale with the 44% threshold at €40k. Employee EFKA 13.87%, employer 21.79%, both capped €93,143/yr (€7,761.94/mo). NEW: a signing/transfer/renewal contract bonus over €40,000 (Law 4646/2019 art.76 — explicitly names "καλαθοσφαιριστές", basketball players, alongside footballers) is taxed separately at a flat 22% final withholding instead of the ordinary scale, and isn\u2019t subject to EFKA (which applies only to regular monthly pay). Applies equally to local and foreign players — it depends on payment type, not nationality. TAX BASE: the scale is applied to gross minus employee EFKA contributions (deductible). The small low-income tax credit is zero at these salaries and not modelled.',wy:'',wr:'The €40k/22% bonus figures are last confirmed from the 2019\u20132020 reform documents — verify current status with a local advisor.'},
+GR_50:{t:'Greece \u2014 Art.5C new-resident exemption',n:'50% income exemption for 7 tax years from approval (progressive scale applied to half the income). CONDITIONS: (1) you must NOT have been a Greek tax resident in 5 of the 6 years before moving your tax residence to Greece; (2) you must move your residence from an EU/EEA state or from a country with which Greece has an administrative-cooperation agreement in tax matters in force; (3) you work for a Greek employer (or the Greek branch of a foreign company) in a new position; (4) you declare you will stay in Greece at least 2 years. This is about residency HISTORY, not nationality \u2014 a Greek player returning after years abroad (e.g. an NBA stint) can qualify exactly like a genuinely foreign signee. Non-EU origin (e.g. the USA) is not ruled out, but it depends on that cooperation agreement being in force with the country concerned; the sources I found do not confirm the US case, so check with a Greek adviser. I found no rule excluding professional athletes, but none of the sources addresses athletes either way. The signing/transfer/renewal bonus rule (flat 22% above \u20ac40k, see GR_std) is modelled here on top of the 50%-exempt base salary; whether the two can be combined was not confirmed. TAX BASE: the 50% exemption is applied to gross minus employee EFKA contributions.',wy:'A one-year contract may not satisfy the 2-year-stay declaration; a genuine break in Greek residency (e.g. an NBA stint) restarts eligibility only if it covers 5 of the previous 6 years.',wr:'Origin-country condition for non-EU players (including the US) not confirmed \u2014 verify before relying on the 50% exemption.'},
+IT_loc:{t:'Italy — local player, standard IRPEF',n:'2026: 23% to €28k, 33% to €50k (reduced from 35% by the 2026 Budget Law, L.199/2025 — several third-party sites still show the old 35%), 43% above, +~2.5% regional/municipal surtax. Employee INPS 9.19% up to €56,224/yr, then 10.19% up to the €122,295/yr cap (0% above); employer ~30%, same cap. TAX BASE: IRPEF is applied to gross minus employee INPS contributions (fully deductible), then the ~2.5% regional/municipal surtax. Employment tax credits are zero at these salary levels and are not modelled.',wy:'',wr:''},
+IT_imp:{t:'Italy — foreign player, Impatriati',n:'ELIGIBILITY IS UNCERTAIN: since 1 Jan 2024 the sports-specific channel is gone and athletes fall under the general rules, which require high qualification or specialisation (in practice a degree or certified higher qualification) and 3 years of prior non-residence; Italian commentary warns that the tax office may question the link between a degree and sports work, and one source says athletes without a degree are excluded. Players who moved or signed before 31 Dec 2023 keep the older rules. Use the local option unless an adviser confirms eligibility. CORRECTED: the old athlete-specific rules (income floor, age 20+, 0.5% levy) came from art.16 of D.Lgs.147/2015, which was repealed by D.Lgs.209/2023 for anyone transferring Italian residence from 2024 onward — it only survives for players who signed their contract by 31 Dec 2023. For everyone signing now, the current regime (D.Lgs.209/2023 art.5) treats athletes the same as any other qualifying worker: 50% of income is excluded from the taxable base, up to a &euro;600,000/yr CAP (not a floor) — any income above &euro;600k is fully taxed at ordinary rates, smoothly, with no cliff. Requires: not an Italian tax resident for the 3 years before the move (6\u20137 years in some same-employer-return cases), commit to 4 years\u2019 future residency, and elevated qualification or specialisation \u2014 in practice a degree or certified higher qualification (two Italian sources read the rule this way; an earlier version of this note said 5+ years of professional sporting experience could substitute, which these sources do not support). Duration 5 years. INPS applies on the FULL gross regardless — the income-tax exemption does not reduce social security. TAX BASE: as for local players, the 50% reduction is applied to gross minus employee INPS contributions.',wy:'This is about prior non-Italian tax residency, not nationality — an Italian player returning from years abroad can qualify the same as a genuinely foreign signee.',wr:'No official Agenzia delle Entrate ruling specifically confirms how the qualification test applies to basketball players under the new regime — case-by-case, verify with a local advisor.'},
+FR_loc:{t:'France — local player, standard',n:'Progressive IR (0–45%) plus CEHR surtax (3% on €250k–500k, 4% above), applied to taxable income = gross &minus; employee SS &minus; the 10% professional-expense allowance (capped &euro;14,430) — not to raw gross. Social security is capped, not flat: an uncapped slice (CSG/CRDS, maladie, famille, vieillesse d\u00e9plafonn\u00e9e, \u2248 10.1% employee / 23.6% employer) applies to the whole salary, plus a PASS-tier (\u20ac48,060, \u224811% employee / 19% employer) and an AGIRC-ARRCO tier up to 8\u00d7PASS (\u20ac384,480, \u22489.7% employee / 14.6% employer) that phase out entirely above that. Confirmed against the LNB\u2019s official Convention Collective du Basket Professionnel: players are ordinary salari\u00e9s under the r\u00e9gime g\u00e9n\u00e9ral (same caps as any employee), with the one basketball-specific wrinkle being that LNB players are contractually excluded from the "r\u00e9gime de retraite des cadres" (skips two small cadre-only add-ons, already excluded from this model). NO social-charge exclusion exists for foreign players who sign directly with a French club — same caps apply to local and foreign hires alike. TAX BASE (corrected): taxable salary = gross minus the DEDUCTIBLE part of employee contributions (employee SS less the non-deductible CSG/CRDS share, about 2.85% of gross) minus the 10% expense allowance (capped \u20ac14,430). An earlier version deducted a flat 23.5% of gross, which overstated the deduction at high salaries and understated the tax.',wy:'',wr:'Uncapped employer rate includes a rough placeholder for AT/MP (workplace accident insurance), which genuinely varies by club/activity and isn\u2019t precisely known here.'},
+FR_imp:{t:'France \u2014 foreign player, impatriate (Art.155 B)',n:'Impatriate regime: an "impatriation bonus" is exempt from income tax. Modelled with the flat option: 30% of net remuneration (gross minus employee social security) is exempt, for up to 8 years. A contract can instead fix the bonus at its actual amount, up to a cap of 50% of total pay, but only while pay after the exemption stays above a reference salary for comparable work (not modelled). Conditions: not a French tax resident in the 5 full calendar years before, hired from abroad or posted within a group, and you become a French tax resident. Social charges still apply to the full salary, same as a local player; the employer payroll tax is exempt on the exempt part (not modelled). Earlier versions used a 50% exemption for 5 years labelled as a 2024 reform; none of the sources I found support that, so it was replaced.',wy:'Requires the player not to have been a French tax resident in the 5 calendar years before taking up the role.',wr:'The exempt share can be higher than 30% if the contract fixes a larger bonus and the reference-salary test allows it; 30% is the safe flat default. Checked against law-firm and tax-adviser articles, not the statute itself.'},
+DE_loc:{t:'Germany — standard (all players)',n:'CORRECTED: 2026 tariff (§32a EStG) was using stale bracket boundaries/coefficients from an earlier tax year. Now: 0% to €12,348, 14\u201342% rising through two progression zones to €69,879, flat 42% to €277,825, 45% above; Soli (5.5% of tax) above €20,350 tax liability. Two SS caps, both confirmed current for 2026: pension+unemployment €101,400/yr, health+care €69,750/yr. Health ~8.75% each side (7.3% base + ~1.45% average Zusatzbeitrag). Care (Pflegeversicherung) employer share is fixed at 1.7%; employee modeled at the childless-adult rate (2.5%) since family status isn\u2019t tracked here \u2014 with a dependent child it would be lower (~1.9%). TAX BASE: the tariff is applied to taxable income = gross minus the \u20ac1,230 work-expense and \u20ac36 special-expense allowances and the deductible part of employee social contributions (pension 9.3% up to the \u20ac101,400 ceiling, health and care contributions up to \u20ac69,750, health less the 4% sick-pay share) \u2014 not applied to raw gross. Solidarity surcharge uses the 2026 allowance and phase-in.',wy:'No special regime for athletes or foreign players \u2014 confirmed via multiple sources: once a player signs and relocates, they\u2019re treated as an ordinary employee (\u201cnormaler Angestellter\u201d) under standard payroll tax, regardless of nationality. The only nationality-relevant nuance is a separate \u00a750a withholding (~15%) that applies to a foreign athlete\u2019s Germany-source income from a one-off appearance without German residency \u2014 not relevant to a player who signs a season-long contract and relocates.',wr:''},
+ES_mad:{t:'Spain — Madrid resident (45% top)',n:'Progressive to a 45% top rate (24.5% state + 20.5% regional, above ~€60k). Athletes are excluded from the Beckham Law impatriate regime (Ley 26/2014, effective 1 Jan 2015, unchanged by later reforms) — so there is no reduced flat-rate option for foreign players who become residents. Employee SS 6.5%, employer ~32.65% (incl. an estimated workplace-accident premium), both capped at €61,214.40/yr (2026), plus a small uncapped "cuota de solidaridad" above that cap (see note). TAX BASE: IRPF is applied to gross minus employee social security and the \u20ac2,000 other-expenses allowance, less the personal minimum (\u20ac5,550, credited at the lowest bracket rate) \u2014 not to raw gross.',wy:'',wr:''},
+ES_cat:{t:'Spain — Catalonia resident (Barcelona, Badalona)',n:'CORRECTED: top rate is 50% (24.5% state + 25.5% regional, above ~€175k), not 54% as previously modeled — that 54% figure is actually Valencia\u2019s, not Catalonia\u2019s. SS is national — identical to every other region. TAX BASE: IRPF is applied to gross minus employee social security and the \u20ac2,000 other-expenses allowance, less the personal minimum (\u20ac5,550, credited at the lowest bracket rate) \u2014 not to raw gross.',wy:'For the same net, a Catalonia club needs more gross than a Madrid club.',wr:''},
+ES_val:{t:'Spain — Valencia resident (54% top)',n:'NEW: Comunidad Valenciana runs its own regional scale, topping out at 54% (24.5% state + 29.5% regional, above ~€200k) — the highest combined top rate of any common-regime region in Spain, previously conflated with Catalonia in this calculator. TAX BASE: IRPF is applied to gross minus employee social security and the \u20ac2,000 other-expenses allowance, less the personal minimum (\u20ac5,550, credited at the lowest bracket rate) \u2014 not to raw gross.',wy:'',wr:''},
+ES_and:{t:'Spain — Andalucía resident (Málaga)',n:'NEW: progressive to 47% (24.5% state + 22.5% regional). Andalucía has cut its regional rates several times since 2021 and now sits mid-table nationally. TAX BASE: IRPF is applied to gross minus employee social security and the \u20ac2,000 other-expenses allowance, less the personal minimum (\u20ac5,550, credited at the lowest bracket rate) \u2014 not to raw gross.',wy:'',wr:''},
+ES_can:{t:'Spain — Canary Islands resident',n:'NEW: progressive to 50.5% (24.5% state + 26% regional) — IRPF income tax works the same as mainland Spain. The Canaries\u2019 well-known tax differences (IGIC instead of mainland IVA, the REF economic/fiscal regime) are indirect-tax and corporate incentives, not payroll income tax, so they don\u2019t change a player\u2019s salary taxation. TAX BASE: IRPF is applied to gross minus employee social security and the \u20ac2,000 other-expenses allowance, less the personal minimum (\u20ac5,550, credited at the lowest bracket rate) \u2014 not to raw gross.',wy:'',wr:''},
+ES_mur:{t:'Spain — Región de Murcia resident',n:'NEW: progressive to 47% (24.5% state + 22.5% regional) — same top rate as Andalucía. TAX BASE: IRPF is applied to gross minus employee social security and the \u20ac2,000 other-expenses allowance, less the personal minimum (\u20ac5,550, credited at the lowest bracket rate) \u2014 not to raw gross.',wy:'',wr:''},
+ES_bas:{t:'Spain — Basque Country resident (Baskonia/Álava, Bilbao/Bizkaia, Gipuzkoa)',n:'CORRECTED: the 2026 foral scale is the same in all three territories \u2014 23% to \u20ac18,080, 28% to \u20ac36,160, 35% to \u20ac54,240, 40% to \u20ac77,450, 45% to \u20ac107,260, 46% to \u20ac142,960, 47% to \u20ac208,390, 49% above. (The earlier bracket limits in this calculator did not match the official tables.) On a multi-million salary this is about 49% at the margin, i.e. HIGHER than Madrid (45%), not lower. It is lower than the common regime only on mid-sized incomes (roughly \u20ac60\u2013200k). Employee/employer social security is the national system, identical to the rest of Spain. TAX BASE: IRPF is applied to gross minus employee social security and the \u20ac2,000 other-expenses allowance, less the personal minimum (\u20ac5,550, credited at the lowest bracket rate) \u2014 not to raw gross.',wy:'Sports press often reports Basque clubs paying roughly half the normal tax (about 25% vs 50%). I could not reproduce that from the 2026 law. The best-documented source is a 2019 Bizkaia decree that would have exempted 50% of \u201cirregular\u201d income such as athletes\u2019 pay with no cap \u2014 it was withdrawn in September 2019. A 2011 article describes 24% vs 43% when Bizkaia and \u00c1lava let imported players use an impatriate regime; common-regime Spain closed that route to athletes in 2015, and I could not confirm whether the foral regimes cover athletes. Press examples may also compare net-contract budgets (clubs that cover costs) with gross-contract budgets. Use the \u201cBasque athlete tax reduction\u201d what-if field to test the press claim.',wr:'Unconfirmed: whether any athlete-specific reduction (irregular-income exemption, impatriate regime, pension-fund deductions) is in force in 2026 in Bizkaia or \u00c1lava. Check with a Basque tax adviser before relying on a lower rate.'},
+IL_std:{t:'Israel — established resident (up to 50%)',n:'10/14/20/31/35/47% + 3% surtax above NIS 721,560 (about \u20ac183k) = 50% max. UPDATED: the 2026 budget widened the middle brackets (20% now to NIS 228,000, 31% to NIS 301,200; the calculator previously used older limits of 193,800 and 269,280). National Insurance + health tax is now tiered: employee 3.5% up to NIS 7,522/month then 12% up to the ceiling (was a flat ~6.4%), employer 3.55% then 7.6%; ceiling NIS 50,695/month (about \u20ac154k/yr). This is the standard track for Israeli-national or long-term-resident players.',wy:'The National Insurance ceiling and the NIS 7,522 threshold are the 2025 figures; the 2026 values were not confirmed (small effect).',wr:''},
+IL_for:{t:'Israel — foreign athlete (flat 25%)',n:'NEW: under the Income Tax Regulations (Foreign Athlete) 1998, a genuinely foreign player who remains a non-resident for tax purposes pays a flat 25% on sports income — not the up to 50% progressive scale — for up to 48 months (4 years). Real foreign athletes can also deduct accommodation/rent and meal expenses before applying the 25%, lowering it further (not modeled here — this shows the base 25%, so real take-home may be a bit higher). National Insurance (Bituach Leumi) is also sharply reduced to roughly 2% total (modeled here as ~1% employee / ~1% employer, an approximate split) versus the much higher rate paid by resident athletes. This is the regime that produces the roughly 1.25x gross-to-net multiplier for foreign imports vs. roughly 2x for local players — matching what\u2019s commonly reported about the gap between the two.',wy:'US players get a narrow additional treaty exemption (Israel-US Art.17(2)) for income under $400/day, but this has been repeatedly litigated (Hapoel Tel Aviv, Maccabi Rishon LeZion, Nes Ziona, Hapoel Holon cases) and courts have consistently held it doesn\u2019t extend to ordinary professional salaries — not meaningful at real basketball pay levels.',wr:'The exact 2% National Insurance figure and its employee/employer split are approximated from a single secondary source (contrasted against a locally-cited "19%" for resident athletes, which doesn\u2019t cleanly match the 6.4%/7.3% used in IL_std) — verify current rates with a local advisor. Requires remaining a foreign tax resident; becoming an Israeli tax resident forfeits this regime.'}};
+
+function run(){runCore();postRun();}
+function postRun(){
+  document.querySelectorAll('#breakdown .bline > span:first-child').forEach(function(sp){
+    const t=sp.textContent;
+    if(!/annual/.test(t)&&/^[\s −=+]*(Total gross|Gross|Net|Income tax|Employee|Employer|True net|Total club cost)/.test(t))sp.textContent=t+' (annual)';
+  });
+  const bd=$('breakdown');
+  $('bnote').textContent=bd.innerHTML?('Annual figures (whole contract / one year) · shown in '+OUT+' · monthly net = annual net ÷ '+MONTHS+' months'):'';
+  $('months-hint').textContent=$('period').value==='month'
+    ?('Annual salary = monthly × '+MONTHS+' months')
+    :('Monthly net is annual net ÷ '+MONTHS+' months');
+}
+function runCore(){
+  OUT=$('cur-out').value;MONTHS=readMonths('');
+  const raw=annualEUR('');
+  const stype=document.getElementById('stype').value;
+  const key=document.getElementById('country').value;
+  renderDateBox(key);
+  document.getElementById('spain-extra').style.display=isSpainForeign(key)?'block':'none';
+  document.getElementById('greece-extra').style.display=isGreece(key)?'block':'none';
+  const basSel=key==='ES_bas'||(isSpainForeign(key)&&document.getElementById('sp-region').value==='bas');
+  document.getElementById('bas-extra').style.display=basSel?'block':'none';
+  BAS_RED=basSel?Math.min(50,Math.max(0,parseFloat(document.getElementById('bas-red').value)||0))/100:0;
+  document.getElementById('split-section').style.display=key==='ES_multi'?'block':'none';
+
+  if(isTR(key)&&stype==='net'){
+    const THRESH=TR_DECL_EUR;
+    const netAtBelow=THRESH-1-getTax(key,THRESH-1)-getEmpSS(key,THRESH-1);
+    const netAtAbove=THRESH+1-getTax(key,THRESH+1)-getEmpSS(key,THRESH+1);
+    let gross,gapMode=false;
+    if(raw<=netAtBelow){
+      gross=solveBisect(key,raw,0,THRESH-1);
+    } else if(raw>=netAtAbove){
+      let hi=Math.max(THRESH*5,raw*4);
+      while(hi-getTax(key,hi)-getEmpSS(key,hi)<raw)hi*=2;
+      gross=solveBisect(key,raw,THRESH,hi);
+    } else gapMode=true;
+
+    if(gapMode){
+      document.getElementById('cards').innerHTML='';
+      document.getElementById('breakdown').innerHTML='';document.getElementById('pie').innerHTML='';
+      document.getElementById('split-bar').innerHTML='';
+      document.getElementById('info').innerHTML='<b>Target net unreachable at this threshold</b><br>A true net of '+fmt(raw)+' can\u2019t be hit under the withholding option. Turkey\u2019s annual-declaration threshold (~\u20ac98,881 gross) causes a jump: staying just under it (flat 20% stopaj, final) tops out around <b>'+fmt(netAtBelow)+'</b> net, while crossing it (full progressive scale via mandatory declaration) drops to roughly <b>'+fmt(netAtAbove)+'</b> net for a similar gross \u2014 there\u2019s no gross salary that lands exactly on '+fmt(raw)+'. Try a target at or below '+fmt(netAtBelow)+', or at or above '+fmt(netAtAbove)+' (i.e. use the high-earner option directly for realistic EuroLeague salaries).';
+      setWarn('','');
+      return;
+    }
+
+    const tax=getTax(key,gross),ess=getEmpSS(key,gross),emr=getEmrSS(key,gross);
+    const net=gross-tax-ess,total=gross+emr;
+    const mult=net>0?(total/net).toFixed(2):'—';
+    renderCards(net,gross,tax,ess,emr,total,mult);
+    document.getElementById('breakdown').innerHTML=
+      '<div class="bline"><span>Gross salary</span><span>'+fmt(gross)+'</span></div>'+
+      '<div class="bline"><span>&minus; Income tax</span><span>&minus;'+fmt(tax)+'</span></div>'+
+      '<div class="bline"><span>&minus; Employee social security</span><span>&minus;'+fmt(ess)+'</span></div>'+
+      '<div class="bline"><span>= True net</span><span>'+fmt(net)+'</span></div>'+
+      '<div class="bline"><span>+ Employer social security</span><span>+'+fmt(emr)+'</span></div>'+
+      '<div class="bline"><span>Total club cost</span><span>'+fmt(total)+'</span></div>';
+    const d=INFOS[key]||{t:key,n:'',wy:'',wr:''};
+    document.getElementById('info').innerHTML='<b>'+d.t+'</b><br>'+d.n+lawLine(key);
+    setWarn(d.wy,d.wr);
+    document.getElementById('split-bar').innerHTML='';
+    return;
+  }
+
+  if(isGreece(key)){
+    const bonus=parseFloat(document.getElementById('gr-bonus').value)||0;
+    let baseGross;
+    if(stype==='net'){
+      let g=raw*1.9;
+      for(let i=0;i<200;i++){
+        const net=g+bonus-greeceTax(key,g,bonus)-getEmpSS(key,g);
+        const err=net-raw;if(Math.abs(err)<0.5)break;g-=err*0.5;
+      }
+      baseGross=g;
+    } else baseGross=raw;
+    const tax=greeceTax(key,baseGross,bonus),ess=getEmpSS(key,baseGross),emr=getEmrSS(key,baseGross);
+    const gross=baseGross+bonus;
+    const net=gross-tax-ess,total=gross+emr;
+    const mult=net>0?(total/net).toFixed(2):'—';
+    renderCards(net,gross,tax,ess,emr,total,mult);
+    const bonusNote=bonus>0?('<div class="bline"><span>&nbsp;&nbsp;of which bonus ('+(bonus>40000?'flat 22%, final':'folded into scale')+')</span><span>'+fmt(bonus)+'</span></div>'):'';
+    document.getElementById('breakdown').innerHTML=
+      '<div class="bline"><span>Gross salary (base + bonus)</span><span>'+fmt(gross)+'</span></div>'+
+      bonusNote+
+      '<div class="bline"><span>&minus; Income tax</span><span>&minus;'+fmt(tax)+'</span></div>'+
+      '<div class="bline"><span>&minus; Employee social security (base only)</span><span>&minus;'+fmt(ess)+'</span></div>'+
+      '<div class="bline"><span>= True net</span><span>'+fmt(net)+'</span></div>'+
+      '<div class="bline"><span>+ Employer social security (base only)</span><span>+'+fmt(emr)+'</span></div>'+
+      '<div class="bline"><span>Total club cost</span><span>'+fmt(total)+'</span></div>';
+    const d=INFOS[key]||{t:key,n:'',wy:'',wr:''};
+    document.getElementById('info').innerHTML='<b>'+d.t+'</b><br>'+d.n+lawLine(key);
+    setWarn(d.wy,d.wr);
+    document.getElementById('split-bar').innerHTML='';
+    return;
+  }
+
+  if(!isSpainForeign(key)){
+    let gross=stype==='net'?solveGross(key,raw):raw;
+    const tax=getTax(key,gross),ess=getEmpSS(key,gross),emr=getEmrSS(key,gross);
+    const net=gross-tax-ess,total=gross+emr;
+    const mult=net>0?(total/net).toFixed(2):'—';
+    renderCards(net,gross,tax,ess,emr,total,mult);
+    document.getElementById('breakdown').innerHTML=
+      '<div class="bline"><span>Gross salary</span><span>'+fmt(gross)+'</span></div>'+
+      '<div class="bline"><span>&minus; Income tax</span><span>&minus;'+fmt(tax)+'</span></div>'+
+      '<div class="bline"><span>&minus; Employee social security</span><span>&minus;'+fmt(ess)+'</span></div>'+
+      '<div class="bline"><span>= True net</span><span>'+fmt(net)+'</span></div>'+
+      '<div class="bline"><span>+ Employer social security</span><span>+'+fmt(emr)+'</span></div>'+
+      '<div class="bline"><span>Total club cost</span><span>'+fmt(total)+'</span></div>';
+    const d=INFOS[key]||{t:key,n:'',wy:'',wr:''};
+    document.getElementById('info').innerHTML='<b>'+d.t+'</b><br>'+d.n+lawLine(key);
+    setWarn(d.wy,d.wr);
+    document.getElementById('split-bar').innerHTML='';
+    return;
+  }
+
+  const origin=document.getElementById('sp-origin').value;
+  const region=document.getElementById('sp-region').value;
+  const nrRate=origin==='eu'?0.19:0.24;
+  const resTop=ES_TOP[region];
+  function regionTax(g,ss,f){return spainResTax(region,resTop,g,ss,f);}
+  let splitPct=key==='ES_single'?1.0:parseFloat(document.getElementById('sp-split').value)/100;
+  document.getElementById('sp-split-out').textContent=pct(splitPct);
+
+  let gross;
+  if(stype==='net'){
+    let g=raw*1.9;
+    for(let i=0;i<200;i++){
+      const gA=g*splitPct,gB=g*(1-splitPct);
+      const net=(gA-gA*nrRate)+(gB-regionTax(gB,spainEmpSS(g)*(1-splitPct),1-splitPct))-spainEmpSS(g);
+      const err=net-raw;if(Math.abs(err)<0.5)break;g-=err*0.5;
+    }
+    gross=g;
+  } else gross=raw;
+
+  const grossA=gross*splitPct,grossB=gross*(1-splitPct);
+  const taxA=grossA*nrRate,taxB=regionTax(grossB,spainEmpSS(gross)*(1-splitPct),1-splitPct);
+  const tax=taxA+taxB;
+  const ess=spainEmpSS(gross);
+  const emr=spainEmrSS(gross);
+  const net=gross-tax-ess,total=gross+emr;
+  const mult=net>0?(total/net).toFixed(2):'—';
+
+  const barA='<div class="split-seg" style="width:'+(splitPct*100)+'%;background:var(--green-bg);color:var(--green-tx)">'+pct(splitPct)+' @ '+pct(nrRate)+'</div>';
+  const barB=splitPct<1?'<div class="split-seg" style="width:'+((1-splitPct)*100)+'%;background:var(--amber-bg);color:var(--amber-tx)">'+pct(1-splitPct)+' @ '+pct(resTop)+' top</div>':'';
+  document.getElementById('split-bar').innerHTML=barA+barB;
+  renderCards(net,gross,tax,ess,emr,total,mult);
+
+  let bd;
+  if(splitPct>=1){
+    bd='<div class="bhead">Entire season — non-resident ('+pct(nrRate)+' flat)</div>'+
+    '<div class="bline"><span>Gross</span><span>'+fmt(gross)+'</span></div>'+
+    '<div class="bline"><span>Income tax</span><span>&minus;'+fmt(tax)+'</span></div>'+
+    '<div class="bline"><span>Employee SS</span><span>&minus;'+fmt(ess)+'</span></div>'+
+    '<div class="bline"><span>True net</span><span>'+fmt(net)+'</span></div>'+
+    '<div class="bline"><span>+ Employer SS</span><span>+'+fmt(emr)+'</span></div>'+
+    '<div class="bline"><span>Total club cost</span><span>'+fmt(total)+'</span></div>';
+  } else {
+    bd='<div class="bhead">Non-resident portion ('+pct(splitPct)+', '+pct(nrRate)+' flat)</div>'+
+    '<div class="bline"><span>Gross</span><span>'+fmt(grossA)+'</span></div>'+
+    '<div class="bline"><span>Net</span><span>'+fmt(grossA-taxA)+'</span></div>'+
+    '<div class="bhead">Resident portion ('+pct(1-splitPct)+', progressive to '+pct(resTop)+')</div>'+
+    '<div class="bline"><span>Gross</span><span>'+fmt(grossB)+'</span></div>'+
+    '<div class="bline"><span>Net</span><span>'+fmt(grossB-taxB)+'</span></div>'+
+    '<div class="bhead">Combined</div>'+
+    '<div class="bline"><span>Total gross</span><span>'+fmt(gross)+'</span></div>'+
+    '<div class="bline"><span>Income tax</span><span>&minus;'+fmt(tax)+'</span></div>'+
+    '<div class="bline"><span>Employee SS</span><span>&minus;'+fmt(ess)+'</span></div>'+
+    '<div class="bline"><span>True net</span><span>'+fmt(net)+'</span></div>'+
+    '<div class="bline"><span>+ Employer SS</span><span>+'+fmt(emr)+'</span></div>'+
+    '<div class="bline"><span>Total club cost</span><span>'+fmt(total)+'</span></div>';
+  }
+  document.getElementById('breakdown').innerHTML=bd;
+  const info=key==='ES_single'
+    ?'<b>Spain — foreign, one season only.</b> Arriving ~August and leaving by early July keeps the player under 183 days in both calendar years (e.g. 153 + 166 days), so the entire season is taxed at the flat IRNR non-resident rate. Buffer runs out around July 2 of the second year.'
+    :'<b>Spain — foreign, multi-year contract.</b> Staying into a second preseason pushes the second calendar year past 183 days, triggering full resident status for that entire year — covering even the Jan–June stub of season 1. Only the first partial year (slider) keeps the IRNR rate; the resident portion uses the progressive scale.';
+  document.getElementById('info').innerHTML=info+lawLine(key);
+  setWarn('','');
+}
+function renderPie(net,tax,ess,emr,total){
+  const parts=[['True net (take-home)',net,'#4ade80'],['Income tax',tax,'#ffb81c'],['Employee social security',ess,'#6ea8fe'],['Employer social security',emr,'#c084fc']].filter(function(p){return p[1]>0.5});
+  const el=document.getElementById('pie');
+  if(!(total>0)||!parts.length){el.innerHTML='';return;}
+  let off=0,rings='',leg='';
+  parts.forEach(function(p){
+    const share=p[1]/total*100;
+    const d=Math.max(share-(parts.length>1?0.6:0),0);
+    rings+='<circle class="ring" cx="21" cy="21" r="15.9155" stroke="'+p[2]+'" stroke-dasharray="'+d.toFixed(3)+' '+(100-d).toFixed(3)+'" stroke-dashoffset="'+(-off).toFixed(3)+'"><title>'+p[0]+': '+fmt(p[1])+' ('+share.toFixed(1)+'%)</title></circle>';
+    off+=share;
+    leg+='<div><i style="background:'+p[2]+'"></i>'+p[0]+'<b>'+fmt(p[1])+'</b><em>'+share.toFixed(1)+'%</em></div>';
+  });
+  el.innerHTML='<svg viewBox="0 0 42 42" role="img" aria-label="Split of total club cost">'+rings+'<text class="ctr1" x="21" y="19.2">Total club cost</text><text class="ctr2" style="font-size:'+Math.min(5.2,15.8/(fmt(total).length*0.34)).toFixed(2)+'px" x="21" y="25.2">'+fmt(total)+'</text></svg><div class="pleg">'+leg+'</div>';
+}
+function renderCards(net,gross,tax,ess,emr,total,mult){
+  renderPie(net,tax,ess,emr,total);
+  const eff=gross>0?tax/gross:0,ded=gross>0?(gross-net)/gross:0;
+  function val(v,cls){const t=fmt(v);return'<div class="card-val'+(t.length>10?' sm':'')+'"'+(cls||'')+'>'+t+'</div>'}
+  $('cards').innerHTML=
+    '<div class="card"><div class="card-lbl">True net &middot; monthly</div>'+val(net/MONTHS)+'<div class="card-sub">annual net &divide; '+MONTHS+' months</div></div>'+
+    '<div class="card"><div class="card-lbl">True net &middot; annual</div>'+val(net)+'<div class="card-sub">take-home per year</div></div>'+
+    '<div class="card"><div class="card-lbl">Gross salary &middot; annual</div>'+val(gross)+'<div class="card-sub">income tax / gross: '+pctF(eff)+'</div><div class="card-sub2">all deductions incl. employee SS: '+pctF(ded)+'</div></div>'+
+    '<div class="card"><div class="card-lbl">Employer SS &middot; annual</div>'+val(emr)+'<div class="card-sub">on top of gross</div></div>'+
+    '<div class="card"><div class="card-lbl">Total club cost &middot; annual</div>'+val(total,' style="color:var(--green-tx)"')+'<div class="card-sub">'+mult+'&times; true net</div></div>';
+}
+function setWarn(wy,wr){
+  const y=document.getElementById('warn-y'),r=document.getElementById('warn-r');
+  y.textContent=wy||'';y.style.display=wy?'block':'none';
+  r.textContent=wr||'';r.style.display=wr?'block':'none';
+}
+
+/* ---------- pure calculation used by the comparison tab (mirrors run()) ---------- */
+function calcRegime(key,type,raw){
+  const basSel=key==='ES_bas'||(isSpainForeign(key)&&$('sp-region').value==='bas');
+  BAS_RED=basSel?Math.min(50,Math.max(0,parseFloat($('bas-red').value)||0))/100:0;
+  let gross;
+  if(isTR(key)&&type==='net'){
+    const T=TR_DECL_EUR;
+    const nb=T-1-getTax(key,T-1)-getEmpSS(key,T-1),na=T+1-getTax(key,T+1)-getEmpSS(key,T+1);
+    if(raw<=nb)gross=solveBisect(key,raw,0,T-1);
+    else if(raw>=na){let hi=Math.max(T*5,raw*4);while(hi-getTax(key,hi)-getEmpSS(key,hi)<raw)hi*=2;gross=solveBisect(key,raw,T,hi);}
+    else return{gap:true,nb:nb,na:na};
+  }
+  if(isSpainForeign(key)){
+    const nrRate=$('sp-origin').value==='eu'?0.19:0.24,region=$('sp-region').value,resTop=ES_TOP[region];
+    const rt=function(g,ss,f){return spainResTax(region,resTop,g,ss,f)};
+    const sp=key==='ES_single'?1:parseFloat($('sp-split').value)/100;
+    if(type==='net'){let g=raw*1.9;for(let i=0;i<200;i++){const gA=g*sp,gB=g*(1-sp);const n=(gA-gA*nrRate)+(gB-rt(gB,spainEmpSS(g)*(1-sp),1-sp))-spainEmpSS(g);const e=n-raw;if(Math.abs(e)<0.5)break;g-=e*0.5;}gross=g;}else gross=raw;
+    const tax=gross*sp*nrRate+rt(gross*(1-sp),spainEmpSS(gross)*(1-sp),1-sp),ess=spainEmpSS(gross),emr=spainEmrSS(gross);
+    return{gross:gross,tax:tax,ess:ess,emr:emr,net:gross-tax-ess,total:gross+emr};
+  }
+  if(gross===undefined)gross=type==='net'?solveGross(key,raw):raw;
+  const tax=getTax(key,gross),ess=getEmpSS(key,gross),emr=getEmrSS(key,gross);
+  return{gross:gross,tax:tax,ess:ess,emr:emr,net:gross-tax-ess,total:gross+emr};
+}
+const REGIMES=Array.prototype.map.call(document.querySelectorAll('#country option'),function(o){
+  const parts=o.textContent.split(' — ');
+  return{key:o.value,country:parts[0],regime:parts.slice(1).join(' — ')};
+});
+function runCompare(){
+  OUT=$('c-cur-out').value;const months=readMonths('c-');
+  const raw=annualEUR('c-'),type=$('c-stype').value,best=$('c-best').checked;
+  let rows=REGIMES.map(function(r){return Object.assign({},r,{res:calcRegime(r.key,type,raw)})});
+  const gaps=rows.filter(function(r){return r.res.gap});
+  rows=rows.filter(function(r){return!r.res.gap});
+  if(best){
+    const m={};rows.forEach(function(r){if(!m[r.country]||r.res.total<m[r.country].res.total)m[r.country]=r});
+    rows=Object.keys(m).map(function(k){return m[k]});
+  }
+  rows.sort(function(a,b){return a.res.total-b.res.total});
+  if(!rows.length){$('cmp-sum').innerHTML='';$('cmp-chart').innerHTML='';$('cmp-body').innerHTML='';$('cmp-note').textContent='Nothing to show for this input.';return;}
+  const lo=rows[0],hi=rows[rows.length-1],max=hi.res.total;
+  function nm(r){return r.country+(r.regime?' — '+r.regime:'')}
+  function card(l,v,s){return'<div class="card"><div class="card-lbl">'+l+'</div><div class="card-val'+(v.length>11?' sm':'')+'">'+v+'</div><div class="card-sub">'+s+'</div></div>'}
+  $('cmp-sum').innerHTML=
+    card('Cheapest for the club',fmt(lo.res.total),nm(lo))+
+    card('Most expensive for the club',fmt(hi.res.total),nm(hi))+
+    card('Spread',fmt(hi.res.total-lo.res.total),(lo.res.total>0?((hi.res.total/lo.res.total-1)*100).toFixed(0):'0')+'% more than the cheapest')+
+    card(type==='net'?'Same true net, annual':'Same gross, annual',fmt(type==='net'?raw:raw),type==='net'?(fmt(raw/months)+' per month'):('regimes give different nets'));
+  $('cmp-chart').innerHTML=rows.map(function(r){
+    const x=r.res,t=x.total,w=function(v){return(v/t*100).toFixed(3)+'%'};
+    const tip=function(l,v){return l+': '+fmt(v)+' ('+(v/t*100).toFixed(1)+'%)'};
+    return'<div class="cb"><div class="cb-lbl"><b>'+r.country+'</b><span>'+r.regime+'</span></div>'+
+      '<div><div class="cb-bar" style="width:'+Math.max(2,t/max*100).toFixed(2)+'%">'+
+      '<i style="width:'+w(x.net)+';background:#4ade80" title="'+tip('True net',x.net)+'"></i>'+
+      '<i style="width:'+w(x.tax)+';background:#ffb81c" title="'+tip('Income tax',x.tax)+'"></i>'+
+      '<i style="width:'+w(x.ess)+';background:#6ea8fe" title="'+tip('Employee SS',x.ess)+'"></i>'+
+      '<i style="width:'+w(x.emr)+';background:#c084fc" title="'+tip('Employer SS',x.emr)+'"></i></div></div>'+
+      '<div class="cb-val">'+fmt(t)+'<small>'+(r===lo?'cheapest':'+'+fmt(t-lo.res.total))+'</small></div></div>';
+  }).join('');
+  $('cmp-body').innerHTML=rows.map(function(r){
+    const x=r.res;
+    return'<tr><td>'+r.country+'<small>'+r.regime+'</small></td><td>'+fmt(x.net)+'</td><td>'+fmt(x.net/months)+'</td><td>'+fmt(x.gross)+'</td><td>'+fmt(x.tax)+'</td><td>'+fmt(x.ess)+'</td><td>'+fmt(x.emr)+'</td><td class="tot">'+fmt(x.total)+'</td><td>'+(r===lo?'—':'+'+fmt(x.total-lo.res.total))+'</td><td>'+(x.net>0?(x.total/x.net).toFixed(2):'—')+'&times;</td></tr>';
+  }).join('');
+  let note='All figures are annual (whole contract or one year), shown in '+OUT+'; sorted by total club cost. Spain foreign options use the origin / region / split chosen on the Calculator tab, the Basque what-if reduction applies to Basque rows, and Greek signing bonuses are not included.';
+  if(gaps.length)note+=' Not shown: '+gaps.map(nm).join(', ')+' — this net amount cannot be reached under the withholding option (see the Calculator tab for why).';
+  $('cmp-note').textContent=note;
+}
+/* ---------- tabs, shared inputs, exchange rates ---------- */
+const SYNC=['sal','stype','period','months'];
+function syncToCompare(){
+  SYNC.forEach(function(id){$('c-'+id).value=$(id).value});
+  $('c-cur-in').value=$('cur-in').value;$('c-cur-out').value=$('cur-out').value;
+}
+function syncToCalc(){
+  SYNC.forEach(function(id){$(id).value=$('c-'+id).value});
+  const ci=$('c-cur-in').value;
+  if(Array.prototype.some.call($('cur-in').options,function(o){return o.value===ci}))$('cur-in').value=ci;
+  else{ // currency not offered for the selected regime: convert the amount to EUR
+    const a=parseFloat($('c-sal').value)||0;$('sal').value=Math.round(a/CUR[ci].rate);$('cur-in').value='EUR';
+  }
+  const co=$('c-cur-out').value;
+  $('cur-out').value=Array.prototype.some.call($('cur-out').options,function(o){return o.value===co})?co:'EUR';
+}
+let TAB='calc';
+function showTab(t){
+  if(t===TAB)return;
+  if(t==='cmp')syncToCompare();else syncToCalc();
+  TAB=t;
+  $('tab-calc').style.display=t==='calc'?'block':'none';
+  $('tab-cmp').style.display=t==='cmp'?'block':'none';
+  $('tabbtn-calc').classList.toggle('on',t==='calc');
+  $('tabbtn-cmp').classList.toggle('on',t==='cmp');
+  if(t==='cmp')runCompare();else run();
+}
+function refreshAll(){if(TAB==='cmp')runCompare();else run();}
+CUR_ALL.slice(1).forEach(function(c){
+  $('rate-'+c).addEventListener('input',function(){const v=parseFloat(this.value);if(v>0){CUR[c].rate=v;refreshAll();}});
+});
+fillCur($('c-cur-in'),CUR_ALL);fillCur($('c-cur-out'),CUR_ALL);
+['c-sal','c-cur-in','c-stype','c-period','c-months','c-cur-out','c-best'].forEach(function(id){
+  $(id).addEventListener('input',runCompare);$(id).addEventListener('change',runCompare);
+});
+$('country').addEventListener('change',refreshCurSelects);
+refreshCurSelects();
+['sal','cur-in','cur-out','period','months','stype','country','sp-origin','sp-region','sp-split','bas-red','gr-bonus'].forEach(function(id){
+  const el=document.getElementById(id);
+  if(el){el.addEventListener('input',run);el.addEventListener('change',run);}
+});
+run();
+</script>
+</body>
+</html>
