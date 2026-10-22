@@ -1,0 +1,229 @@
+/* Krepšinio finansai – fintech × sports data tema.
+   Įkelkite PO esamo <style> bloko: <link rel="stylesheet" href="redesign.css"> */
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Doto:wght@500;800&display=swap");
+
+:root{--mono:'JetBrains Mono',ui-monospace,Menlo,monospace;--g1:#FFD76A;--g2:#C9D1DE;--g3:#D08A5B}
+@media(prefers-color-scheme:dark){:root:not([data-t=light]){--bg:#07090F;--card:#0F1420;--line:#1E2638;--ink:#E8ECF4;--mute:#7A869E;--a:#FFB020;--b:#4DA3FF;--sv:#C9D1DE;--pos:#3DF5B0;--neg:#FF5C73;--sh:none}}
+:root[data-t=dark]{--bg:#07090F;--card:#0F1420;--line:#1E2638;--ink:#E8ECF4;--mute:#7A869E;--a:#FFB020;--b:#4DA3FF;--sv:#C9D1DE;--pos:#3DF5B0;--neg:#FF5C73;--sh:none}
+@media(prefers-color-scheme:light){:root:not([data-t=dark]){--bg:#F3F5F9;--card:#fff;--line:#DDE2EC;--a:#E08A00;--pos:#0A9E6B;--neg:#D63A52;--sh:none}}
+:root[data-t=light]{--bg:#F3F5F9;--card:#fff;--line:#DDE2EC;--a:#E08A00;--pos:#0A9E6B;--neg:#D63A52;--sh:none}
+
+/* Fonas: gilus, su vos matoma aikštės linija */
+body{background:radial-gradient(520px 520px at 100% 100%,transparent 0 238px,color-mix(in srgb,var(--mute) 16%,transparent) 239px 240px,transparent 241px),
+ radial-gradient(900px 400px at 50% -12%,color-mix(in srgb,var(--a) 9%,transparent),transparent),var(--bg);background-attachment:fixed}
+h1{letter-spacing:.2px}
+
+/* Biržos juosta (kuria redesign.js) */
+.tk{overflow:hidden;white-space:nowrap;background:var(--card);border-bottom:1px solid var(--line);font:13px var(--mono)}
+.tk div{display:inline-flex;gap:36px;padding:9px 0;animation:tk 45s linear infinite}
+.tk span{color:var(--mute)}.tk b{color:var(--ink);font-weight:600}
+@keyframes tk{to{transform:translateX(-50%)}}
+@media(prefers-reduced-motion:reduce){.tk div{animation:none}}
+
+/* KPI: stiklas vietoj gintarinių švytinčių rėmelių; gintaras tik pirmam skaičiui */
+.kp div{position:relative;overflow:hidden;border:1px solid var(--line);box-shadow:none;
+ background:linear-gradient(180deg,color-mix(in srgb,var(--ink) 4%,var(--card)),var(--card))}
+.kp div::before{content:"";position:absolute;left:12px;right:12px;top:0;height:1px;background:linear-gradient(90deg,transparent,var(--a),transparent);opacity:.55}
+.kp b{font:600 20px var(--mono);background:none;-webkit-text-fill-color:var(--ink);color:var(--ink)}
+.kp div:first-child b{-webkit-text-fill-color:var(--a);color:var(--a)}
+.kp b .pos,.kp b .neg{-webkit-text-fill-color:currentColor}
+
+/* Lentelės: tabular skaičiai, plonesni rėmeliai, rangai su medalių spalvomis */
+.tw,.card,.sheet,.lc,.cmpw{box-shadow:none}
+.tw{border-radius:14px}
+td:not(.l){font-family:var(--mono);font-size:14px}
+tbody{counter-reset:rk}
+tr.c td.l:first-child::before{counter-increment:rk;content:counter(rk);display:inline-block;min-width:30px;margin-right:8px;font:700 22px var(--hd);color:var(--mute);text-align:center;vertical-align:middle}
+tr.c:nth-child(1) td.l:first-child::before{color:var(--g1)}
+tr.c:nth-child(2) td.l:first-child::before{color:var(--g2)}
+tr.c:nth-child(3) td.l:first-child::before{color:var(--g3)}
+tr.c:hover td{background:color-mix(in srgb,var(--a) 8%,var(--card))}
+tr.c:hover td.l:first-child{box-shadow:inset 2px 0 var(--a)}
+
+/* Čipai, pill'ai, juostelės */
+.chip[aria-pressed=true]{background:var(--a);color:#1a1200;border-color:var(--a);font-weight:600}
+.pos,.neg{font-family:var(--mono);font-size:.9em}
+.sh{font-family:var(--mono)}
+.sh i{height:6px;background:color-mix(in srgb,var(--mute) 25%,transparent)}
+.sh i b{background:linear-gradient(90deg,color-mix(in srgb,var(--a) 55%,transparent),var(--a))}
+.srcs a{background:transparent}
+
+/* Klubo langas kaip bottom sheet ir kompiuteryje */
+#md{background:#000a;backdrop-filter:blur(3px)}
+@media(min-width:800px){#md{align-items:flex-end}.sheet{border-radius:22px 22px 0 0;width:min(900px,100%)}}
+.sheet{border:1px solid var(--line);border-bottom:0}
+.top::before{content:"";position:absolute;left:50%;top:4px;width:44px;height:4px;margin-left:-22px;border-radius:9px;background:var(--line)}
+.top{padding-top:18px}
+
+/* Telefonas / planšetė: apatinė navigacija */
+@media(max-width:720px){
+ nav{position:fixed;left:0;right:0;bottom:0;z-index:5;max-width:none;margin:0;padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));
+  justify-content:space-around;border:0;border-top:1px solid var(--line);background:color-mix(in srgb,var(--card) 92%,transparent);backdrop-filter:blur(10px)}
+ nav button{flex:1;font-size:15px;padding:8px 4px;border-bottom:0;border-top:2px solid transparent;text-align:center}
+ nav button[aria-selected=true]{border-top-color:var(--a)}
+ main{padding-bottom:96px}
+ .tw tr{box-shadow:none;border-radius:14px}
+}
+
+/* ---- Grafikai: spalvos per CSS (SVG gradientai buvo užkoduoti) ---- */
+#gy stop:first-child{stop-color:var(--a)}
+#gy stop:last-child{stop-color:var(--a);stop-opacity:.22}
+.tw.ch svg rect[fill^="url"]:not([stroke]){opacity:.4}
+.tw.ch svg rect[fill^="url"][stroke]{stroke:none;opacity:1}
+.tw.ch{background:var(--card);border-color:var(--line)}
+.lc{background:var(--card);border:1px solid var(--line);box-shadow:none}
+#lag stop{stop-color:var(--a)}
+.lc [filter]{filter:none}
+.lc .tp rect{stroke:var(--line);stroke-opacity:1}
+
+/* ---- JS papildymai (redesign.js) ---- */
+.sh.hm{padding:2px 9px;border-radius:6px;font-weight:600;color:var(--ink);
+ background:color-mix(in srgb,var(--a) var(--hm),color-mix(in srgb,var(--mute) 22%,transparent))}
+.sh.hm.hi{color:#1a1200}.sh.hm i{display:none}
+.pill{display:inline-block;max-width:100%;padding:2px 10px;border-radius:99px;font:500 12.5px var(--tx);border:1px solid var(--line);color:var(--mute)}
+.pill.s{color:var(--pos);border-color:color-mix(in srgb,var(--pos) 40%,transparent);background:color-mix(in srgb,var(--pos) 10%,transparent)}
+.pill.m{color:var(--a);border-color:color-mix(in srgb,var(--a) 40%,transparent);background:color-mix(in srgb,var(--a) 10%,transparent)}
+.pill.w{color:var(--neg);border-color:color-mix(in srgb,var(--neg) 40%,transparent);background:color-mix(in srgb,var(--neg) 10%,transparent)}
+.spk{vertical-align:middle;margin-right:10px}
+.kp{grid-auto-flow:dense}
+.kp div.hasg{grid-column:span 2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:14px}
+.kp div.hasg small{align-self:flex-start}
+.kp div.hasg b{display:none}
+@media(min-width:721px){.kp div.hasg{grid-row:span 2}}
+.kg{display:block}
+
+/* Logotipai */
+.lw{vertical-align:middle}
+.cl .lw{margin-right:12px}.cl .lg{width:44px;height:44px}.cl .in{font-size:15px}
+.lw .in{display:none}
+
+/* Moneyball */
+.mb-chart{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px;margin:6px 0 4px}
+.mb-chart svg{display:block;width:100%;max-width:620px;margin:0 auto;height:auto}
+.mbd{cursor:pointer}
+.mb-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:720px){.mb-cols{grid-template-columns:1fr}}
+.mb-list{display:flex;flex-direction:column;gap:8px}
+.mb-row{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer;width:100%;text-align:left;color:var(--ink);font:inherit}
+.mb-row:hover{border-color:var(--a)}
+.mb-row b{display:block}.mb-row small{color:var(--mute);font-size:12.5px}
+.mb-d{margin-left:auto;font:600 15px var(--mono)}
+
+/* Tale of the tape */
+.tape{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:6px}
+.tp-h{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;padding:14px 12px;text-align:center}
+.tp-h>div:not(.tp-s){font:700 22px/1.1 var(--hd);overflow-wrap:anywhere}
+.tp-h small{display:block;color:var(--mute);font:400 12px var(--tx)}
+.tp-s{font:600 26px var(--mono);color:var(--a)}.tp-s b{font-weight:600}
+.tp-r{display:grid;grid-template-columns:1fr minmax(96px,34%) 1fr;gap:8px;align-items:center;padding:9px 12px;border-top:1px solid var(--line);text-align:center}
+.tp-l{color:var(--mute);font-size:12.5px}
+.tp-v{font:600 15px var(--mono);padding:3px 6px;border-radius:8px}
+.tp-v.w{color:var(--pos);background:color-mix(in srgb,var(--pos) 14%,transparent)}
+
+/* Žaidimas */
+.gm-top{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:6px}
+.gm-score{margin-left:auto;font:600 15px var(--mono)}
+.gm-q{color:var(--ink);margin:8px 0 12px;font-size:17px}
+.gm-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:720px){.gm-cards{grid-template-columns:1fr}}
+.gm-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;text-align:center;display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;min-height:150px}
+.gm-n{font:700 26px/1.1 var(--hd)}
+.gm-v{font:600 34px var(--mono);color:var(--a)}
+.gm-card.ok{border-color:var(--pos)}.gm-card.ok .gm-v{color:var(--pos)}
+.gm-card.bad{border-color:var(--neg)}.gm-card.bad .gm-v{color:var(--neg)}
+.gm-btns{display:flex;gap:12px;margin-top:12px}
+.gm-b{flex:1;font:700 22px var(--hd);padding:14px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+.gm-b:hover:not(:disabled){border-color:var(--a)}.gm-b:disabled{opacity:.5;cursor:default}
+/* Dalijimosi kortelė */
+.top .shb{margin-left:auto}#cl{margin-left:8px}
+.shov{position:fixed;inset:0;z-index:30;background:#000d;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px}
+.shov img{max-width:100%;max-height:74vh;border-radius:12px;border:1px solid var(--line)}
+.shov .row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.shov .chip{color:var(--ink);text-decoration:none;padding:8px 18px;font-size:15px}
+
+/* LED табло: arenos švieslentės skaičiai */
+:root{--led:'Doto','JetBrains Mono',ui-monospace,monospace}
+.led,.gm-v,.tp-s b,.kp div:first-child b{font-family:var(--led);font-weight:800;letter-spacing:.04em;color:var(--a);
+ text-shadow:0 0 6px color-mix(in srgb,var(--a) 65%,transparent),0 0 20px color-mix(in srgb,var(--a) 30%,transparent)}
+.kp div:first-child{background:#05070b radial-gradient(color-mix(in srgb,var(--a) 13%,transparent) 1px,transparent 1.5px) 0 0/5px 5px;border-color:color-mix(in srgb,var(--a) 28%,#1a1a1a)}
+.kp div:first-child small{color:#8a93a8}
+.kp div:first-child b{font-size:28px;white-space:nowrap}
+.kp div b.long,.kp div:first-child b.long{font-family:var(--mono);font-weight:600;font-size:15px;white-space:normal;overflow-wrap:anywhere;text-shadow:none}
+.gm-v{font-size:42px;background:#05070b radial-gradient(color-mix(in srgb,var(--a) 13%,transparent) 1px,transparent 1.5px) 0 0/5px 5px;border:1px solid color-mix(in srgb,var(--a) 25%,#1a1a1a);border-radius:12px;padding:8px 22px;min-width:60%}
+.gm-card.ok .gm-v{color:var(--pos);text-shadow:0 0 6px color-mix(in srgb,var(--pos) 65%,transparent),0 0 20px color-mix(in srgb,var(--pos) 30%,transparent)}
+.gm-card.bad .gm-v{color:var(--neg);text-shadow:0 0 6px color-mix(in srgb,var(--neg) 65%,transparent),0 0 20px color-mix(in srgb,var(--neg) 30%,transparent)}
+.gm-score .led{font-size:22px;vertical-align:middle}
+.tp-s b{font-size:34px}
+/* Moneyball: paieška, žiedas, eilės numeriai */
+.mb-find{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0}
+.mb-q{width:100%;max-width:320px;padding:9px 16px;border-radius:99px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit}
+.mb-q:focus{outline:none;border-color:var(--a);box-shadow:0 0 0 3px color-mix(in srgb,var(--a) 18%,transparent)}
+.mb-hit{font:13px var(--mono);color:var(--mute)}
+.mb-chart .mbd{transition:opacity .35s ease}
+.mb-chart.hl .mbd:not(.on){opacity:.14}
+.mb-chart .mbd.on .dot{transform-box:fill-box;transform-origin:center;transform:scale(1.55);transition:transform .45s cubic-bezier(.2,1.5,.4,1)}
+.mb-ring{fill:none;stroke:var(--a);stroke-width:2;transform-box:fill-box;transform-origin:center;animation:mbp 1.3s ease-out 2;pointer-events:none}
+@keyframes mbp{from{transform:scale(1);opacity:.9}to{transform:scale(5.5);opacity:0}}
+.mb-lbl{font-size:10px;font-weight:700;fill:var(--ink);paint-order:stroke;stroke:var(--card);stroke-width:3px;stroke-linejoin:round;animation:mbf .45s ease-out;pointer-events:none}
+@keyframes mbf{from{opacity:0}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){.mb-ring,.mb-lbl{animation:none}.mb-chart .mbd,.mb-chart .mbd.on .dot{transition:none}}
+.mb-row{gap:12px}
+.mb-rk{font:700 22px var(--hd);color:var(--mute);min-width:24px;text-align:center}
+/* Klubo kortelė: Rytas logotipas viduryje */
+.cl{position:relative}
+.cl.ry{width:100%}
+.cl.ry .rl{display:none}
+.ry-logo{position:absolute;left:50%;top:calc(50% + 36px);z-index:1;height:132px;width:auto;transform:translate(-50%,-50%);pointer-events:none;filter:drop-shadow(0 8px 28px color-mix(in srgb,var(--a) 22%,transparent))}
+@media(max-width:720px){.ry-logo{left:auto;right:4px;top:calc(50% + 28px);transform:translateY(-50%);height:92px}}
+
+/* LED skaičiai turi tilpti */
+.kp div:first-child b,.gm-v{overflow:hidden;max-width:100%;box-sizing:border-box}
+.kp div:first-child b{display:block}
+/* Moneyball: įskaitomas aprašas, išvalymo mygtukas */
+.mb-root .sum{color:var(--ink);font-size:16px;line-height:1.55;opacity:.92}
+.mb-x{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:99px;padding:8px 14px;font:inherit;cursor:pointer}
+.mb-x:hover{border-color:var(--a)}
+.mb-x[hidden]{display:none}
+.mb-hit{font-size:14px;color:var(--ink)}
+/* Ryto kortelė: juoda · balta · raudona */
+#sh.is-ry{--a:#E4262F;--ryd:#C8102E;border-color:#5a1219;
+ background:radial-gradient(640px 280px at 50% 0%,rgba(200,16,46,.30),transparent 72%),
+  repeating-linear-gradient(135deg,rgba(200,16,46,.07) 0 14px,transparent 14px 28px),var(--card);
+ box-shadow:0 -14px 70px rgba(200,16,46,.22)}
+#sh.is-ry .top::after{content:"";position:absolute;left:26px;right:26px;top:0;height:4px;border-radius:0 0 4px 4px;
+ background:linear-gradient(90deg,#C8102E 0 55%,#f4f4f4 55% 78%,#0a0a0a 78%)}
+#sh.is-ry .top{background:linear-gradient(180deg,rgba(20,6,9,.88),rgba(20,6,9,.0))}
+#sh.is-ry .kp div{border-color:color-mix(in srgb,#C8102E 30%,var(--line))}
+#sh.is-ry .kp div:first-child{background:#0a0405 radial-gradient(rgba(228,38,47,.22) 1px,transparent 1.5px) 0 0/5px 5px;border-color:#7a1620}
+#sh.is-ry .led,#sh.is-ry .kp div:first-child b{color:#ff3b45;text-shadow:0 0 6px rgba(255,59,69,.75),0 0 22px rgba(228,38,47,.45)}
+#sh.is-ry .kp div b.long{color:var(--ink);text-shadow:none}
+#sh.is-ry .cl h2{text-shadow:0 2px 22px rgba(228,38,47,.35)}
+/* Rekordo šventė */
+.cel{position:fixed;inset:0;z-index:60;pointer-events:none;transition:opacity .6s}
+.cel.out{opacity:0}
+.cel-fx{position:absolute;inset:0;width:100%;height:100%}
+.cel-box{position:absolute;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:flex;align-items:center;gap:14px;
+ background:#05070b;border:1px solid color-mix(in srgb,var(--a) 45%,#222);border-radius:20px;padding:12px 18px 12px 12px;box-shadow:0 10px 50px #000c,0 0 40px color-mix(in srgb,var(--a) 25%,transparent);animation:celin .55s cubic-bezier(.2,1.4,.4,1)}
+@keyframes celin{from{transform:translate(-50%,40px) scale(.85);opacity:0}}
+.cel-ph{pointer-events:auto;border:0;padding:0;background:none;cursor:pointer;line-height:0;border-radius:14px;overflow:hidden}
+.cel-ph canvas{width:104px;height:104px;border-radius:14px}
+.cel-bub{display:flex;flex-direction:column}
+.cel-bub small{color:#aab3c6;font:600 14px var(--tx)}
+.cel-bub b{font-size:44px;line-height:1.1}
+@media(prefers-reduced-motion:reduce){.cel-box{animation:none}}
+
+/* Pranešėjai: didesni, rekordas ir nesėkmė */
+.cel-box{flex-direction:row;align-items:flex-end;gap:18px;padding:14px 22px 14px 14px;max-width:calc(100vw - 24px)}
+.cel-ph canvas{width:auto;height:min(44vh,360px);max-width:min(440px,62vw);border-radius:16px;display:block}
+.cel-bub b{font-size:clamp(34px,6vw,60px);white-space:nowrap}
+.cel-sub{color:#aab3c6;font:600 15px var(--mono);margin-top:4px}
+@media(max-width:720px){.cel-box{flex-direction:column;align-items:center;gap:8px;padding:12px}.cel-ph canvas{height:auto;width:min(78vw,380px);max-height:38vh}.cel-bub{align-items:center}}
+.cel.fail::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 100%,rgba(5,10,30,0) 22%,rgba(5,10,30,.66));animation:celfade 1.2s both}
+@keyframes celfade{from{opacity:0}}
+.cel.fail .cel-box{border-color:#3a4766;box-shadow:0 10px 50px #000c,0 0 40px rgba(77,120,200,.25)}
+.cel.fail .cel-ph canvas{animation:celsag 2.6s ease-in forwards;filter:saturate(.75)}
+@keyframes celsag{to{transform:translateY(12px) rotate(-2.5deg)}}
+.cel.fail .cel-bub b{color:#ff5c73;text-shadow:0 0 6px rgba(255,92,115,.7),0 0 20px rgba(255,92,115,.35);animation:celflick 1.8s steps(1) infinite}
+@keyframes celflick{0%,40%,50%,100%{opacity:1}44%{opacity:.25}47%{opacity:.7}70%{opacity:.4}72%{opacity:1}}
+@media(prefers-reduced-motion:reduce){.cel.fail .cel-ph canvas,.cel.fail .cel-bub b,.cel.fail::before{animation:none}}
