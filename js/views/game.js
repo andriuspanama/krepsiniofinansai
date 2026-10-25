@@ -46,7 +46,7 @@ export async function renderGame(container) {
   // Jei game.js yra js/views/ aplanke, reikia eiti dviem lygiais aukštyn.
   try {
     if (!globalLogosData) {
-      const response = await fetch('../../logos.json'); 
+      const response = await fetch('logos.json');
       if (response.ok) {
         globalLogosData = await response.json();
       } else {
