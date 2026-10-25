@@ -149,7 +149,7 @@
       d.dataset.e=1;if(!/Užpildymas|Filling rate/.test(d.querySelector("small")?.textContent||""))return;
       const p=pc(d.querySelector("b")?.textContent);if(p!=null){d.classList.add("hasg");d.insertAdjacentHTML("beforeend",gauge(p))}});
     const she=document.getElementById("sh");if(she)she.classList.toggle("is-ry",!!she.querySelector(".cl.ry"));
-    {const h2=she.querySelector("h2"),PBG=[[/marcus\s+foster/i,"foster-bg.jpg","center 10%"],[/arnas\s+veli[čc]ka/i,"velicka-bg.jpg","center 5%"],[/simas\s+jarumbauskas/i,"jarumbauskas-bg.jpg","center 5%"]],hit=h2&&!she.querySelector(".cl")?PBG.find(p=>p[0].test(h2.textContent)):null;
+    {const h2=she.querySelector("h2"),PBG=[[/marcus\s+foster/i,"foster-bg.jpg","center 10%"],[/arnas\s+veli[čc]ka/i,"velicka-bg.jpg","center 0%"],[/simas\s+jarumbauskas/i,"jarumbauskas-bg.jpg","center 0%"],[/giedrius\s+[žz]ib[ėe]nas/i,"zibenas-bg.jpg","46% 0%"],[/gytis\s+radzevi[čc]ius/i,"radzevicius-bg.jpg","54% 0%"],[/margiris\s+normantas/i,"normantas-bg.jpg","center 0%"],[/speedy\s+smith/i,"smith-bg.jpg","40% 0%"]],hit=h2&&!she.querySelector(".cl")?PBG.find(p=>p[0].test(h2.textContent)):null;
       she.classList.toggle("is-fos",!!hit);if(hit){she.style.setProperty("--pbg","url("+hit[1]+")");she.style.setProperty("--pbgpos",hit[2])}else{she.style.removeProperty("--pbg");she.style.removeProperty("--pbgpos")}}
     fitLed();
     // Klubų logotipai (naudoja jūsų esamą logos.json ir logo() funkciją)
