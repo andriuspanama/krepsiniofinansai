@@ -285,7 +285,17 @@
       :sal?"":`<div class="gm-btns"><button class="gm-b" data-gp="hi" ${!ask?"disabled":""}>▲ ${T("Didesnis","Higher")}</button><button class="gm-b" data-gp="lo" ${!ask?"disabled":""}>▼ ${T("Mažesnis","Lower")}</button></div>`;
     return`<div class="gm-root">${chips}${q}<div class="gm-cards">${cards}</div>${btns}<p class="sum" style="margin-top:12px">${sal?T("Duomenys: visi sezonai","Data: all seasons"):T("Duomenys: sezonas","Data: season")+" "+GS.se}</p></div>`;
   }
-  function renderGm(){const o=document.getElementById("out");if(o&&ok()){o.innerHTML=gmView();annPreload()}}
+  let B3=null;
+  // 3D modelis per vidurį tarp dviejų žaidimo kortelių (vienas egzempliorius, perkeliamas po kiekvieno perpiešimo)
+  function b3Game(){
+    try{
+      const o=document.getElementById("out"),cs=o&&o.querySelector(".gm-cards");
+      if(!cs||!window.Brazys3D)return;
+      if(!B3)B3=Brazys3D.mountCenter(cs);
+      else{cs.style.position="relative";cs.appendChild(B3.el)}
+    }catch(e){}
+  }
+  function renderGm(){const o=document.getElementById("out");if(o&&ok()){o.innerHTML=gmView();annPreload();b3Game()}}
   function gAct(t){const d=t.dataset;
     if(d.gm!==undefined){GS.mode=d.gm;gStart();renderGm();return}
     if(d.gr!==undefined){gStart();renderGm();return}
@@ -476,4 +486,8 @@
   }catch(e){}
   let raf=0;new MutationObserver(()=>{cancelAnimationFrame(raf);raf=requestAnimationFrame(enhance)}).observe(document.body,{childList:true,subtree:true});
   const t=setInterval(()=>{if(!ok())return;clearInterval(t);try{ticker()}catch(x){}try{tmpl()}catch(x){}enhance()},400);
+  // 3D modelis: paspaudus „President“ nuotrauką klubo lange
+  const b3Open=e=>{const f=e.target.closest&&e.target.closest("[data-b3d]");if(f&&window.Brazys3D){e.preventDefault();Brazys3D.openModal()}};
+  document.addEventListener("click",b3Open);
+  document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.matches&&e.target.matches("[data-b3d]"))b3Open(e)});
 })();

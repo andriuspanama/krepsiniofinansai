@@ -12,7 +12,8 @@
 (function () {
   'use strict';
 
-  var API = { base: '' };
+  var cs = document.currentScript;
+  var API = { base: cs && cs.src ? cs.src.replace(/[^/]*$/, '') : '' };
   var THREE_URL = 'https://cdn.jsdelivr.net/npm/three@0.128.0/';
   var threeReady = null;
   var modelReady = null;
@@ -199,7 +200,19 @@
       state.ready = true;
       note.remove();
       resize();
-      renderer.domElement.addEventListener('click', dance);
+      var ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+      renderer.domElement.addEventListener('click', function (e) {
+        var cv = renderer.domElement, r = cv.getBoundingClientRect();
+        ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+        scene.updateMatrixWorld(true);
+        ray.setFromCamera(ndc, camera);
+        if (!opts.passThrough || ray.intersectObject(spin, true).length) { dance(); return; }
+        // Praleista pro modelį: paspaudimą perduodam po juo esančiam elementui (pvz. kortelei)
+        cv.style.pointerEvents = 'none';
+        var under = document.elementFromPoint(e.clientX, e.clientY);
+        cv.style.pointerEvents = '';
+        if (under && under.click) under.click();
+      });
       if (opts.autoDance) setTimeout(dance, 250);
     }).catch(function () {
       note.textContent = 'Nepavyko įkelti 3D modelio';
@@ -220,18 +233,31 @@
     };
   }
 
+  function injectCss() {
+    if (document.getElementById('brazys3d-css')) return;
+    var st = document.createElement('style');
+    st.id = 'brazys3d-css';
+    st.textContent =
+      '.brazys3d-center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:5;' +
+      'width:min(260px,38vw);height:min(360px,60vw)}' +
+      '@media(max-width:720px){.brazys3d-center{left:auto;right:2px;transform:translateY(-50%);width:96px;height:140px}}';
+    document.head.appendChild(st);
+  }
+
   // Modelis per vidurį virš tėvinio elemento (žaidimo kortelių juostos)
   function mountCenter(parent, opts) {
     opts = opts || {};
+    injectCss();
     if (getComputedStyle(parent).position === 'static') parent.style.position = 'relative';
     var box = document.createElement('div');
     box.className = 'brazys3d-center';
-    box.style.cssText =
-      'position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:5;' +
-      'width:' + (opts.width || 'min(260px,38vw)') + ';height:' + (opts.height || 'min(360px,60vw)') + ';';
+    if (opts.width) box.style.width = opts.width;
+    if (opts.height) box.style.height = opts.height;
     parent.appendChild(box);
+    opts.passThrough = true;
     var inst = mount(box, opts);
     var destroy = inst.destroy;
+    inst.el = box;
     inst.destroy = function () { destroy(); box.remove(); };
     return inst;
   }
@@ -275,12 +301,12 @@
     function shut() {
       inst.destroy();
       back.remove();
-      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('keydown', onKey, true);
     }
-    function onKey(e) { if (e.key === 'Escape') shut(); }
+    function onKey(e) { if (e.key === 'Escape') { e.stopImmediatePropagation(); shut(); } }
     close.addEventListener('click', shut);
     back.addEventListener('click', function (e) { if (e.target === back) shut(); });
-    document.addEventListener('keydown', onKey);
+    document.addEventListener('keydown', onKey, true);
   }
 
   // Automatinis užkabinimas: paspaudus kortelę su tekstu „Mindaugas Brazys“ ir „President“
