@@ -306,9 +306,9 @@
     if(d.gp!==undefined&&GS.phase==="ask"){
       const good=GS.mode==="sal"?((d.gp==="L")===(GS.left.v>GS.right.v)):(d.gp==="hi"?GS.right.v>GS.left.v:GS.right.v<GS.left.v);GS.pick=d.gp;
       if(good){const prev=GBEST[GS.mode]||0;GS.streak++;GS.phase="ok";let cel=0;if(GS.streak>prev){GBEST[GS.mode]=GS.streak;gSave();if(!GS.rec&&GS.streak>=3){GS.rec=true;cel=1}}if(cel)celebrate(GS.streak);else if(GS.streak%10===0)celebrate(GS.streak,1);
-        renderGm();clearTimeout(GS.tm);
+        renderGm();if(B3)B3.react(cel?"record":"ok");clearTimeout(GS.tm);
         GS.tm=setTimeout(()=>{if(GM&&GS.phase==="ok"){if(GS.mode==="sal"){GS.left=gRand();GS.right=gDraw(GS.left)}else{GS.left=GS.right;GS.right=gDraw(GS.left)}GS.phase="ask";renderGm()}},1300)}
-      else{GS.phase="over";renderGm();stage("fail",GS.streak)}}
+      else{GS.phase="over";renderGm();if(B3)B3.react("bad");stage("fail",GS.streak)}}
   }
 
   // ---- Pranešėjai: rekordas (fejerverkai) ir nesėkmė (liūdnas lietus) ----
@@ -487,7 +487,7 @@
   let raf=0;new MutationObserver(()=>{cancelAnimationFrame(raf);raf=requestAnimationFrame(enhance)}).observe(document.body,{childList:true,subtree:true});
   const t=setInterval(()=>{if(!ok())return;clearInterval(t);try{ticker()}catch(x){}try{tmpl()}catch(x){}enhance()},400);
   // 3D modelis: paspaudus „President“ nuotrauką klubo lange
-  const b3Open=e=>{const f=e.target.closest&&e.target.closest("[data-b3d]");if(f&&window.Brazys3D){e.preventDefault();Brazys3D.openModal()}};
+  const b3Open=e=>{const f=e.target.closest&&e.target.closest("[data-b3d]");if(f&&window.Brazys3D){e.preventDefault();Brazys3D.walker.toggle(f)}};
   document.addEventListener("click",b3Open);
   document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.matches&&e.target.matches("[data-b3d]"))b3Open(e)});
 })();
