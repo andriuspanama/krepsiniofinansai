@@ -172,7 +172,6 @@
 
   // MB-START ---- Moneyball skirtukas: biudžeto vieta lygoje prieš galutinę vietą ----
   let MB=false,MBS=null,MBN="",MBQ="";
-  let MAP=false,leafletMap=null;
   const T=(lt,en)=>(typeof LANG!=="undefined"&&LANG==="en")?en:lt;
   function mbData(se){
     const g={};budgetRows(se).filter(r=>r.total!=null&&r.place!=null).forEach(r=>{const k=r.nation+"|"+(r.div==null?"":r.div);(g[k]=g[k]||[]).push(r)});
@@ -229,10 +228,10 @@
   document.addEventListener("keydown",e=>{if(e.key==="Escape"&&MB&&MBQ&&document.activeElement&&document.activeElement.id==="mbq")mbClear()});
   document.addEventListener("input",e=>{if(e.target&&e.target.id==="mbq"){e.stopPropagation();MBQ=e.target.value;mbHi()}},true);
   function fixTabs(){const tb=document.getElementById("tabs");if(!tb||!tb.children.length)return;
-    [["mbt","Moneyball",MB],["gmt",T("Žaidimas","Game"),GM],["mapt",T("Žemėlapis","Map"),MAP]].forEach(([c,l,on])=>{let b=tb.querySelector("."+c);
+    [["mbt","Moneyball",MB],["gmt",T("Žaidimas","Game"),GM]].forEach(([c,l,on])=>{let b=tb.querySelector("."+c);
       if(!b){b=document.createElement("button");b.className=c;b.setAttribute("role","tab");b.textContent=l;tb.appendChild(b)}
       b.setAttribute("aria-selected",String(on))});
-    if(MB||GM||MAP)tb.querySelectorAll("button:not(.mbt):not(.gmt):not(.mapt)").forEach(x=>x.setAttribute("aria-selected","false"))}
+    if(MB||GM)tb.querySelectorAll("button:not(.mbt):not(.gmt)").forEach(x=>x.setAttribute("aria-selected","false"))}
 
   // GM-START ---- Žaidimas „Aukščiau ar žemiau" ----
   let GM=false;
@@ -429,20 +428,19 @@
 
   document.addEventListener("click",e=>{
     if(MB&&MBQ&&e.target.closest&&e.target.closest("#out .mb-chart")&&!e.target.closest(".mbd")){mbClear();return}
-    const t=e.target.closest(".mbt,.gmt,.mapt,.shb,[data-tab],[data-mc],[data-mbs],[data-mbn],[data-mbx],[data-gp],[data-gm],[data-gr],[data-gs]");if(!t)return;
+    const t=e.target.closest(".mbt,.gmt,.shb,[data-tab],[data-mc],[data-mbs],[data-mbn],[data-mbx],[data-gp],[data-gm],[data-gr],[data-gs]");if(!t)return;
     if(t.dataset.mbx!==undefined){mbClear();const i=document.getElementById("mbq");if(i)i.focus();return}
-    if(t.classList.contains("mapt")){MAP=true;MB=false;GM=false;fixTabs();renderMap();return}
-    if(t.classList.contains("mbt")){MAP=false;MB=true;GM=false;fixTabs();renderMb();return}
-    if(t.classList.contains("gmt")){MAP=false;GM=true;MB=false;fixTabs();renderGm();return}
+    if(t.classList.contains("mbt")){MB=true;GM=false;fixTabs();renderMb();return}
+    if(t.classList.contains("gmt")){GM=true;MB=false;fixTabs();renderGm();return}
     if(t.classList.contains("shb")){shareCard().catch(()=>{});return}
-    if(t.dataset.tab!==undefined){MAP=false;MB=false;GM=false;return}
+    if(t.dataset.tab!==undefined){MB=false;GM=false;return}
     if(GM){gAct(t);return}
     if(!MB)return;
     if(t.dataset.mc!==undefined&&typeof club==="function"){club(t.dataset.mc,t.dataset.mn,MBS,0);return}
     if(t.dataset.mbs!==undefined){MBS=t.dataset.mbs;renderMb()}
     else if(t.dataset.mbn!==undefined){MBN=t.dataset.mbn;renderMb()}
   },true);
-  const mbCheck=()=>{if(!ok())return;if(MB&&!document.querySelector("#out .mb-root"))renderMb();else if(GM&&!document.querySelector("#out .gm-root"))renderGm();else if(MAP&&!document.querySelector("#out .map-root"))renderMap()};
+  const mbCheck=()=>{if(!ok())return;if(MB&&!document.querySelector("#out .mb-root"))renderMb();else if(GM&&!document.querySelector("#out .gm-root"))renderGm()};
   [["tabs",()=>{fixTabs();mbCheck()}],["out",mbCheck]].forEach(([id,f])=>{const el=document.getElementById(id);if(el)new MutationObserver(f).observe(el,{childList:true})});
   // MB-END
 
@@ -492,106 +490,4 @@
   const b3Open=e=>{const f=e.target.closest&&e.target.closest("[data-b3d]");if(f&&window.Brazys3D){e.preventDefault();Brazys3D.walker.toggle(f)}};
   document.addEventListener("click",b3Open);
   document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.matches&&e.target.matches("[data-b3d]"))b3Open(e)});
-  // MAP-START ---- Palydovinis arenų žemėlapis (Leaflet + Esri) ----
-  const ARENA_DB={
-    "kauno žalgiris":{name:"Žalgirio Arena (Kaunas)",coords:[54.89035,23.91475]},
-    "žalgiris":{name:"Žalgirio Arena (Kaunas)",coords:[54.89035,23.91475]},
-    "vilniaus rytas":{name:"Twinsbet Arena (Vilnius)",coords:[54.71624,25.27993]},
-    "rytas":{name:"Twinsbet Arena (Vilnius)",coords:[54.71624,25.27993]},
-    "vilniaus wolves":{name:"Twinsbet Arena (Vilnius)",coords:[54.71624,25.27993]},
-    "wolves":{name:"Twinsbet Arena (Vilnius)",coords:[54.71624,25.27993]},
-    "klaipėdos neptūnas":{name:"Švyturio Arena (Klaipėda)",coords:[55.68812,21.15785]},
-    "neptūnas":{name:"Švyturio Arena (Klaipėda)",coords:[55.68812,21.15785]},
-    "panevėžio lietkabelis":{name:"Kalnapilio Arena (Panevėžys)",coords:[55.73142,24.35721]},
-    "7bet-lietkabelis":{name:"Kalnapilio Arena (Panevėžys)",coords:[55.73142,24.35721]},
-    "lietkabelis":{name:"Kalnapilio Arena (Panevėžys)",coords:[55.73142,24.35721]},
-    "šiauliai":{name:"Šiaulių Arena (Šiauliai)",coords:[55.92055,23.30391]},
-    "utenos juventus":{name:"Utenos Arena (Utena)",coords:[55.50361,25.61922]},
-    "uniclub betas-juventus":{name:"Utenos Arena (Utena)",coords:[55.50361,25.61922]},
-    "juventus":{name:"Utenos Arena (Utena)",coords:[55.50361,25.61922]},
-    "mažeikių m basket":{name:"Ventos progimnazijos salė (Mažeikiai)",coords:[56.30421,22.33142]},
-    "jonavos cbet":{name:"Jonavos sporto arena",coords:[55.07452,24.26411]},
-    "kėdainių nevėžis":{name:"Kėdainių arena",coords:[55.28445,23.98722]},
-    "nevėžis":{name:"Kėdainių arena",coords:[55.28445,23.98722]},
-    "prienų labas gas":{name:"Prienų sporto arena",coords:[54.63912,23.95421]},
-    "real madrid":{name:"WiZink Center (Madrid)",coords:[40.4241,-3.6717]},
-    "fc barcelona":{name:"Palau Blaugrana (Barcelona)",coords:[41.3791,2.1134]},
-    "baskonia":{name:"Buesa Arena (Vitoria-Gasteiz)",coords:[42.8592,-2.6419]},
-    "valencia":{name:"La Fonteta (Valencia)",coords:[39.4516,-0.3653]},
-    "panathinaikos":{name:"OAKA Altion (Athens)",coords:[38.0384,23.8362]},
-    "olympiacos":{name:"Peace and Friendship Stadium (Piraeus)",coords:[37.9372,23.6677]},
-    "anadolu efes":{name:"Sinan Erdem Dome (Istanbul)",coords:[40.9882,28.8596]},
-    "fenerbahce":{name:"Ülker Sports Arena (Istanbul)",coords:[40.9934,29.1017]},
-    "maccabi tel aviv":{name:"Menora Mivtachim Arena (Tel Aviv)",coords:[32.0601,34.7925]},
-    "partizan":{name:"Belgrade Arena (Belgrade)",coords:[44.8139,20.4206]},
-    "crvena zvezda":{name:"Belgrade Arena (Belgrade)",coords:[44.8139,20.4206]},
-    "virtus bologna":{name:"Virtus Segafredo Arena (Bologna)",coords:[44.5122,11.3698]},
-    "olimpia milano":{name:"Unipol Forum (Milan)",coords:[45.4019,9.1411]},
-    "monaco":{name:"Salle Gaston Médecin (Monaco)",coords:[43.7259,7.4172]},
-    "asvel":{name:"LDLC Arena (Villeurbanne)",coords:[45.7591,4.9351]},
-    "alba berlin":{name:"Uber Arena (Berlin)",coords:[52.5064,13.4442]},
-    "fc bayern munich":{name:"SAP Garden (Munich)",coords:[48.1252,11.5249]},
-    "paris basketball":{name:"Adidas Arena (Paris)",coords:[48.8994,2.3601]},
-    "hapoel tel aviv":{name:"Shlomo Group Arena (Tel Aviv)",coords:[32.1102,34.8251]},
-    "gran canaria":{name:"Gran Canaria Arena",coords:[28.0931,-15.4572]},
-    "ulm":{name:"Ratiopharm Arena (Ulm)",coords:[48.3842,10.0076]},
-    "ratiopharm ulm":{name:"Ratiopharm Arena (Ulm)",coords:[48.3842,10.0076]},
-    "bourg":{name:"Ekinox (Bourg-en-Bresse)",coords:[46.1952,5.2443]},
-    "jl bourg":{name:"Ekinox (Bourg-en-Bresse)",coords:[46.1952,5.2443]},
-    "turk telekom":{name:"Ankara Arena (Ankara)",coords:[39.9419,32.8422]},
-    "cluj-napoca":{name:"BTarena (Cluj-Napoca)",coords:[46.7674,23.5714]},
-    "besiktas":{name:"BJK Akatlar Arena (Istanbul)",coords:[41.0851,29.0202]}
-  };
-  // Raktai normalizuojami taip pat kaip klubų pavadinimai (norm panaikina tarpus ir diakritiką)
-  const ARENAS=Object.entries(ARENA_DB).map(([k,v])=>[norm(k),v]);
-  const findArena=n=>{const k=norm(n);let r=ARENAS.find(a=>a[0]===k);
-    if(!r)r=ARENAS.find(a=>a[0].length>=5&&(k.includes(a[0])||(k.length>=5&&a[0].includes(k))));
-    return r?r[1]:null};
-
-  function renderMap(){
-    const o=document.getElementById("out");
-    if(!o||typeof D==="undefined"||typeof L==="undefined")return;
-    try{if(leafletMap)leafletMap.remove()}catch(x){}
-    leafletMap=null;
-    o.innerHTML=`<div class="map-root"><p class="sum">${T("Interaktyvus krepšinio arenų finansų žemėlapis. Paspauskite ant komandos logotipo, kad kamera nuskristų iš palydovo iki arenos stogo.","Interactive basketball arena finance map. Click a team logo to fly from space down to the arena roof.")}</p><div id="leaflet-basketball-map" style="height:600px;width:100%;border-radius:14px;border:1px solid var(--line);background:#05070b;margin-top:14px;box-shadow:0 4px 25px rgba(0,0,0,.55)"></div></div>`;
-    const map=leafletMap=L.map("leaflet-basketball-map").setView([50,15],3.5);
-    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{
-      maxZoom:19,attribution:"Tiles © Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS Community"}).addTo(map);
-    if(!document.getElementById("map-inline-styles")){
-      const st=document.createElement("style");st.id="map-inline-styles";
-      st.textContent=`.club-map-icon{background:#fff;border:2.5px solid var(--a);border-radius:50%;padding:2px;object-fit:contain;box-shadow:0 4px 14px rgba(0,0,0,.75);transition:transform .2s}
-.club-map-icon:hover{transform:scale(1.15);border-color:var(--pos)}
-.club-map-ini{display:grid;place-items:center;background:#fff;color:#111;border:2.5px solid var(--a);border-radius:50%;font:700 12px var(--hd);box-shadow:0 4px 14px rgba(0,0,0,.75)}
-.map-popup-dark .leaflet-popup-content-wrapper{background:#0f1420!important;color:var(--ink)!important;border:1px solid var(--line);border-radius:12px}
-.map-popup-dark .leaflet-popup-tip{background:#0f1420!important}
-.mp-box{text-align:center;padding:4px;min-width:170px}
-.mp-box img{width:50px;height:50px;object-fit:contain;margin-bottom:6px;background:#fff;padding:2px;border-radius:50%}
-.mp-box h4{margin:4px 0 2px;color:var(--a);font:700 15px var(--hd)}
-.mp-box p{margin:0 0 10px;font:13px var(--mono);color:var(--mute)}
-.mp-box button{background:var(--a);color:#1a1200;border:0;padding:6px 14px;font-size:12px;font-weight:600;border-radius:6px;cursor:pointer;width:100%}`;
-      document.head.appendChild(st)}
-    const seen=new Set();
-    [...new Set(D.bud.map(r=>r.club))].forEach(clubName=>{
-      const info=findArena(clubName);if(!info||seen.has(norm(clubName)))return;seen.add(norm(clubName));
-      const logo=typeof LOGOS!=="undefined"?LOGOS[norm(clubName)]:null;
-      const ini=String(clubName).split(/\s+/).slice(0,2).map(w=>w[0]).join("").toUpperCase();
-      const icon=logo?L.icon({iconUrl:logo,iconSize:[34,34],iconAnchor:[17,17],popupAnchor:[0,-16],className:"club-map-icon"})
-        :L.divIcon({html:esc(ini),iconSize:[34,34],iconAnchor:[17,17],popupAnchor:[0,-16],className:"club-map-ini"});
-      const pop=`<div class="mp-box">${logo?`<img src="${esc(logo)}" alt="">`:""}<h4>${esc(clubName)}</h4><p>${esc(info.name)}</p><button type="button" data-mapclub="${esc(clubName)}">${T("Žiūrėti finansus","View Finances")}</button></div>`;
-      const m=L.marker(info.coords,{icon}).addTo(map);
-      m.bindPopup(pop,{className:"map-popup-dark"});
-      m.on("click",()=>map.flyTo(info.coords,18,{animate:true,duration:2.5,easeLinearity:.25}));
-    });
-    map.on("popupopen",ev=>{const el=ev.popup.getElement(),b=el&&el.querySelector("[data-mapclub]");
-      if(b)b.onclick=()=>{if(typeof club==="function")club(b.getAttribute("data-mapclub"))}});
-    setTimeout(()=>{if(leafletMap===map){map.invalidateSize();map.flyTo([55.1694,23.8813],7.5,{animate:true,duration:2.8})}},500);
-  }
-  // Leaflet biblioteka kraunama tik vieną kartą (CSS + JS)
-  if(!document.querySelector('script[src*="leaflet"]')){
-    const lc=document.createElement("link");lc.rel="stylesheet";lc.href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";document.head.appendChild(lc);
-    const sc=document.createElement("script");sc.src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
-    sc.onload=()=>{if(MAP&&!document.querySelector("#out .map-root"))renderMap()};
-    document.head.appendChild(sc);
-  }
-  // MAP-END
 })();
