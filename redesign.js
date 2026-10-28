@@ -153,9 +153,11 @@
       she.classList.toggle("is-fos",!!hit);if(hit){she.style.setProperty("--pbg","url("+hit[1]+")");she.style.setProperty("--pbgpos",hit[2])}else{she.style.removeProperty("--pbg");she.style.removeProperty("--pbgpos")}}
     fitLed();
     // Klubų logotipai (naudoja jūsų esamą logos.json ir logo() funkciją)
+    {const h2=document.querySelector("#sh .cl h2");if(!h2||!/rytas/i.test(h2.textContent))RY_LIT=false}
     if(typeof LOGOS!=="undefined")document.querySelectorAll("#sh .cl h2:not([data-lg])").forEach(h=>{
       h.dataset.lg=1;
-      if(/rytas/i.test(h.textContent)){const cl=h.closest(".cl");if(cl){cl.classList.add("ry");cl.insertAdjacentHTML("beforeend",`<img class="ry-logo" src="${base}rytas-logo.png" alt="" onerror="this.parentNode.classList.remove('ry');this.remove()">`)}return}
+      if(/rytas/i.test(h.textContent)){const cl=h.closest(".cl");if(cl){cl.classList.add("ry");{const lu=new URL(base+"rytas-logo.png",document.baseURI).href;
+        cl.insertAdjacentHTML("beforeend",`<span class="ry-fx${RY_LIT?" lit":""}" role="button" tabindex="0" aria-label="Rytas" style="--lg:url('${lu}')"><i class="ry-amb"></i><i class="ry-glow"></i><img class="ry-logo" src="${lu}" alt="" onerror="this.closest('.cl').classList.remove('ry');this.closest('.ry-fx').remove()"><i class="ry-shine"></i>${Array.from({length:9},(_,i)=>`<i class="ry-em" style="--x:${8+i*10+(i%2)*4}%;--d:${(2.4+((i*37)%17)/10).toFixed(1)}s;--dl:${(((i*53)%23)/10).toFixed(1)}s;--dx:${(i%2?1:-1)*(6+(i*7)%18)}px"></i>`).join("")}</span>`)}}return}
       if(h.previousElementSibling&&h.previousElementSibling.classList.contains("rl"))return;h.insertAdjacentHTML("beforebegin",lgo(h.textContent))});
     document.querySelectorAll(".kp div b:not([data-l])").forEach(b=>{b.dataset.l=1;if(b.textContent.trim().length>13)b.classList.add("long")});
   }
@@ -172,7 +174,7 @@
 
   // MB-START ---- Moneyball skirtukas: biudžeto vieta lygoje prieš galutinę vietą ----
   let MB=false,MBS=null,MBN="",MBQ="";
-  let MAP=false;
+  let MAP=false,RY_LIT=false;
   const T=(lt,en)=>(typeof LANG!=="undefined"&&LANG==="en")?en:lt;
   function mbData(se){
     const g={};budgetRows(se).filter(r=>r.total!=null&&r.place!=null).forEach(r=>{const k=r.nation+"|"+(r.div==null?"":r.div);(g[k]=g[k]||[]).push(r)});
@@ -499,6 +501,19 @@
     if(c.classList.contains("lit"))ppPing(c);else ppClear(c);
   };
   document.addEventListener("click",ppToggle);
+  // Ryto logotipas: paspaudus „įsijungia“ (blykstelėjimas, aura, apšvietimas, detalumas)
+  const ryToggle=e=>{
+    const f=e.target.closest&&e.target.closest(".ry-fx");if(!f)return;
+    RY_LIT=!f.classList.contains("lit");f.classList.toggle("lit",RY_LIT);
+    if(RY_LIT){f.classList.remove("ping");void f.offsetWidth;f.classList.add("ping");setTimeout(()=>f.classList.remove("ping"),1100)}
+    else["--px","--py","--tx","--ty"].forEach(v=>f.style.removeProperty(v));
+  };
+  document.addEventListener("click",ryToggle);
+  document.addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target.matches&&e.target.matches(".ry-fx")){e.preventDefault();ryToggle(e)}});
+  document.addEventListener("pointermove",e=>{const f=e.target.closest&&e.target.closest(".ry-fx.lit");if(!f)return;const q=f.getBoundingClientRect(),x=e.clientX-q.left,y=e.clientY-q.top;
+    f.style.setProperty("--px",(x/q.width*100).toFixed(1)+"%");f.style.setProperty("--py",(y/q.height*100).toFixed(1)+"%");
+    f.style.setProperty("--tx",(x/q.width*2-1).toFixed(2));f.style.setProperty("--ty",(y/q.height*2-1).toFixed(2))});
+  document.addEventListener("pointerout",e=>{const f=e.target.closest&&e.target.closest(".ry-fx.lit");if(f&&!f.contains(e.relatedTarget)){f.style.removeProperty("--tx");f.style.removeProperty("--ty")}});
   document.addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target.matches&&e.target.matches(".ppl div.pp")){e.preventDefault();ppToggle(e)}});
   document.addEventListener("pointermove",e=>{const c=e.target.closest&&e.target.closest(".ppl .pp.lit");if(!c)return;const r=c.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;c.style.setProperty("--mx",x+"px");c.style.setProperty("--my",y+"px");c.style.setProperty("--tx",(x/r.width*2-1).toFixed(2));c.style.setProperty("--ty",(y/r.height*2-1).toFixed(2))});
   document.addEventListener("pointerout",e=>{const c=e.target.closest&&e.target.closest(".ppl .pp.lit");if(c&&!c.contains(e.relatedTarget)){c.style.removeProperty("--tx");c.style.removeProperty("--ty")}});

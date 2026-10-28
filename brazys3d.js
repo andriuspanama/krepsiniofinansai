@@ -160,9 +160,9 @@
   /*  Poza ir judesiai                                                    */
   /* ------------------------------------------------------------------ */
   function newPose() {
-    var P = { y: 0, sx: 1, sy: 1, fx: 0, fz: 0, yaw: 0, b: new Float32Array(30) };
+    var P = { y: 0, sx: 1, sy: 1, fx: 0, fz: 0, yaw: 0, lean: 0, b: new Float32Array(30) };
     P.reset = function () {
-      P.y = 0; P.sx = 1; P.sy = 1; P.fx = 0; P.fz = 0; P.yaw = 0;
+      P.y = 0; P.sx = 1; P.sy = 1; P.fx = 0; P.fz = 0; P.yaw = 0; P.lean = 0;
       for (var i = 0; i < 30; i++) P.b[i] = 0;
     };
     P.head = function (rx, ry, rz) { P.b[3] = rx; P.b[4] = ry; P.b[5] = rz; };
@@ -179,7 +179,7 @@
       P.b[il * 3] = knee;
     };
     P.isRest = function () {
-      if (P.y || P.fx || P.fz || P.yaw || P.sx !== 1 || P.sy !== 1) return false;
+      if (P.y || P.fx || P.fz || P.yaw || P.lean || P.sx !== 1 || P.sy !== 1) return false;
       for (var i = 0; i < 30; i++) if (P.b[i]) return false;
       return true;
     };
@@ -188,6 +188,14 @@
   function bonesRest(P) { for (var i = 0; i < 30; i++) if (P.b[i]) return false; return true; }
 
   function env(t, d, a, b) { return smooth(0, a, t) * smooth(d, d - b, t); }
+  // Raktinių kadrų interpoliacija: kf(t, [[laikas, reikšmė], ...])
+  function kf(t, k) {
+    if (t <= k[0][0]) return k[0][1];
+    for (var i = 1; i < k.length; i++) {
+      if (t <= k[i][0]) { var a = k[i - 1], b = k[i]; return a[1] + (b[1] - a[1]) * smooth(a[0], b[0], t); }
+    }
+    return k[k.length - 1][1];
+  }
   function pulse(t, t0, d) { var u = (t - t0) / d; return u > 0 && u < 1 ? Math.sin(Math.PI * u) : 0; }
 
   var MOVES = {
@@ -279,6 +287,19 @@
       P.sy = 1 - 0.015 * e; P.fx = 0.12 * e;
       P.leg('R', 0, 0.12 * e, 0); P.leg('L', 0, 0.12 * e, 0);
     } },
+    // Spyris į logotipą: pasilenkia, užsimoja, spiria (kontaktas ties hit), pergalingai pakelia rankas
+    kick: { d: 2.8, hit: 1.12, f: function (P, t, hop) {
+      P.lean = kf(t, [[0, 0], [0.5, 0.5], [0.9, 0.56], [1.02, -0.04], [1.25, -0.2], [1.9, -0.2], [2.4, 0], [2.8, 0]]);
+      P.leg('R', kf(t, [[0, 0], [0.5, 0], [0.9, -0.8], [1.12, 1.55], [1.95, 1.55], [2.4, 0], [2.8, 0]]),
+        kf(t, [[0, 0.1], [0.5, 0.1], [0.9, 1.35], [1.12, 0.06], [1.95, 0.06], [2.4, 0.1], [2.8, 0.1]]), 0.05);
+      P.leg('L', -0.1 * smooth(0.5, 1, t), kf(t, [[0, 0.1], [0.9, 0.5], [2.3, 0.5], [2.8, 0.1]]), 0.04);
+      var sw = smooth(0.3, 0.9, t);
+      P.arm('L', 0.35 * sw, kf(t, [[0, 0], [0.45, 1.15], [0.9, 1.15], [1.12, -0.2], [1.9, -0.2], [2.3, 0], [2.8, 0]]), 0.5 * sw, 0);
+      P.arm('R', kf(t, [[0, 0], [0.9, 0.5], [1.12, 1.5], [1.9, 1.5], [2.1, 2.45], [2.55, 2.45], [2.8, 0]]), 0, 0, 0);
+      P.head(kf(t, [[0, 0], [0.5, 0.38], [1.0, 0.42], [1.2, -0.18], [2.0, -0.18], [2.4, 0], [2.8, 0]]), 0, 0);
+      var hp = Math.sin(Math.PI * clamp01((t - 0.85) / 0.55));
+      P.y = (hop || 0) * hp + 0.04 * hp;
+    } },
     breakdance: { d: 3.8, f: function (P, t) {
       var a = clamp01((t - 0.35) / 0.75), b = clamp01((t - 2.9) / 0.7), s = clamp01((t - 1.1) / 1.8);
       var y = 0, fx = 0;
@@ -312,6 +333,7 @@
   /*  Kitas kodas veikia tik naršyklėje                                   */
   /* ------------------------------------------------------------------ */
   API.MOVES = MOVES;
+  API.kf = kf;
   API._rig = { computeSkin: computeSkin, newPose: newPose, boneMats: boneMats, skinPositions: skinPositions, weightsAt: weightsAt, MOVES: MOVES, J: J };
   G.Brazys3D = API;
   if (typeof document === 'undefined') return;
@@ -527,7 +549,8 @@
     s.textContent =
       '.brazys3d-center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:5;width:min(260px,38vw);height:min(360px,60vw)}' +
       '@media(max-width:720px){.brazys3d-center{left:auto;right:2px;transform:translateY(-50%);width:96px;height:140px}}' +
-      '.b3-load{animation:b3pulse 1s ease-in-out infinite}@keyframes b3pulse{50%{opacity:.55}}';
+      '.b3-load{animation:b3pulse 1s ease-in-out infinite}@keyframes b3pulse{50%{opacity:.55}}' +
+      '#sh.b3-nologo .cl .lw{visibility:hidden}';
     document.head.appendChild(s);
   }
   function mountCenter(parent, opts) {
@@ -595,9 +618,10 @@
       dir: 1, timer: 0, move: null, mt: 0, yaw: 0, face: 0, t: 0, nextAct: 8 + Math.random() * 6, gone: 0, dead: false
     };
     s.x = Math.max(S * 0.6, Math.min(W - S * 0.6, s.x));
+    s.fl = floor; s.kt = null; s.next = null; s.air = 0; s.lp = null;
 
     function setMove(name) { s.mode = 'act'; s.move = name; s.mt = 0; s.face = 0; }
-    function leave() { if (s.mode !== 'leave' && !s.dead) { s.mode = 'leave'; s.dir = s.x < W / 2 ? -1 : 1; } }
+    function leave() { if (s.mode !== 'leave' && !s.dead) { s.mode = 'leave'; s.kt = null; s.next = null; s.fl = floor; s.dir = s.x < W / 2 ? -1 : 1; } }
 
     hit.addEventListener('click', function (e) {
       e.stopPropagation();
@@ -612,6 +636,75 @@
     window.addEventListener('resize', onResize);
 
     var raf = 0, last = performance.now(), figGone = 0;
+    var G_ = 2600, kickDone = false, logoGone = false, noTgt = 0, pollT = 0.4;
+
+    // ---- spyris į Žalgirio logotipą ----
+    function findKick() {
+      var sh = document.getElementById('sh'); if (!sh) return null;
+      var h = sh.querySelector('.cl h2'); if (!h) return null;
+      var nm = h.textContent.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+      if (nm.indexOf('zalgiris') < 0) return null;
+      var el = h.parentElement.querySelector('.lw'); if (!el) return null;
+      var r = el.getBoundingClientRect();
+      if (r.width < 12 || r.bottom < 40 || r.top > H) return null;
+      return { el: el, r: r };
+    }
+    function applyNologo(on) { var sh = document.getElementById('sh'); if (sh) sh.classList.toggle('b3-nologo', on); }
+    function targetAlive() {
+      return s.kt && s.kt.el.isConnected && s.kt.el.getBoundingClientRect().width > 8 && document.getElementById('sh');
+    }
+    function startKick(tg) {
+      var r = tg.r, R = r.width / 2, cx = r.left + R, margin = S * 0.55, side = cx < W / 2 ? 1 : -1;
+      var want = Math.max(floor, H - r.bottom), ledge = Math.max(floor, Math.min(want, H - 1.95 * S));
+      var xk = Math.max(margin, Math.min(W - margin, cx + side * (0.55 * R + 0.82 * S)));
+      var xl = Math.max(margin, Math.min(W - margin, xk + side * 2.0 * S));
+      s.kt = { el: tg.el, side: side, kdir: -side, xk: xk, ledge: ledge, hop: Math.max(0, (want - ledge) / S), hit: false };
+      var h = ledge - s.y;
+      if (h > 30) {
+        var vy0 = Math.sqrt(2 * G_ * h);
+        s.lp = { t: 0, T: vy0 / G_, vy0: vy0, x0: s.x, x1: xl, y0: s.y, dir: xl >= s.x ? 1 : -1 };
+        s.mode = 'leap'; s.face = s.lp.dir * 1.15;
+      } else { s.fl = ledge; s.y = ledge; s.x = xl; s.mode = 'approach'; }
+    }
+    function abortKick() { s.kt = null; s.next = null; s.fl = floor; s.mode = 'idle'; s.timer = 0.8; }
+    function finishKick() { s.kt = null; s.fl = floor; s.mode = 'idle'; s.timer = 1.2; }
+    function impact(x, y, d) {
+      var col = (getComputedStyle(document.getElementById('sh') || document.body).getPropertyValue('--a') || '#ffc82e').trim() || '#ffc82e';
+      var ring = document.createElement('div');
+      ring.style.cssText = 'position:fixed;left:' + x + 'px;top:' + y + 'px;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;border:4px solid ' + col + ';z-index:100003;pointer-events:none;';
+      document.body.appendChild(ring);
+      ring.animate([{ transform: 'scale(.3)', opacity: 1 }, { transform: 'scale(3.4)', opacity: 0 }], { duration: 560, easing: 'ease-out' }).onfinish = function () { ring.remove(); };
+      for (var i = 0; i < 10; i++) {
+        var sp = document.createElement('div'), an = (Math.random() - 0.5) * 2.2 + (d > 0 ? 0 : Math.PI), ds = 50 + Math.random() * 90;
+        sp.style.cssText = 'position:fixed;left:' + x + 'px;top:' + y + 'px;width:7px;height:7px;margin:-3px 0 0 -3px;border-radius:50%;background:' + col + ';z-index:100003;pointer-events:none;';
+        document.body.appendChild(sp);
+        sp.animate([{ transform: 'translate(0,0) scale(1)', opacity: 1 }, { transform: 'translate(' + Math.cos(an) * ds + 'px,' + (Math.sin(an) * ds - 30) + 'px) scale(.2)', opacity: 0 }],
+          { duration: 600 + Math.random() * 300, easing: 'cubic-bezier(.1,.7,.3,1)' }).onfinish = (function (n) { return function () { n.remove(); }; })(sp);
+      }
+      var tx = document.createElement('div');
+      tx.textContent = 'PAF!';
+      tx.style.cssText = 'position:fixed;left:' + x + 'px;top:' + (y - 46) + 'px;z-index:100003;pointer-events:none;font:800 30px/1 var(--hd,Impact,sans-serif);letter-spacing:.04em;color:' + col + ';-webkit-text-stroke:2px #000;paint-order:stroke fill;text-shadow:0 3px 0 #000;';
+      document.body.appendChild(tx);
+      tx.animate([{ transform: 'translate(-50%,0) rotate(-8deg) scale(.3)', opacity: 0 }, { transform: 'translate(-50%,-6px) rotate(-8deg) scale(1.15)', opacity: 1, offset: 0.25 },
+        { transform: 'translate(-50%,-14px) rotate(-8deg) scale(1)', opacity: 1, offset: 0.7 }, { transform: 'translate(-50%,-26px) rotate(-8deg) scale(1)', opacity: 0 }],
+        { duration: 900, easing: 'ease-out' }).onfinish = function () { tx.remove(); };
+    }
+    function kickLogo(K) {
+      var r = K.el.getBoundingClientRect(), img = K.el.querySelector('img.lg') || K.el, d = K.kdir;
+      var c = img.cloneNode(true);
+      c.style.cssText = 'position:fixed;left:' + r.left + 'px;top:' + r.top + 'px;width:' + r.width + 'px;height:' + r.height + 'px;margin:0;z-index:100002;pointer-events:none;object-fit:contain;';
+      document.body.appendChild(c);
+      c.animate([
+        { transform: 'translate(0,0) rotate(0deg) scale(1)', opacity: 1, offset: 0 },
+        { transform: 'translate(' + (d * W * 0.3) + 'px,' + (-H * 0.1) + 'px) rotate(' + (d * 420) + 'deg) scale(.85)', opacity: 1, offset: 0.4 },
+        { transform: 'translate(' + (d * W * 0.95) + 'px,' + (H * 0.55) + 'px) rotate(' + (d * 1100) + 'deg) scale(.4)', opacity: 0, offset: 1 }
+      ], { duration: 1200, easing: 'cubic-bezier(.2,.65,.35,1)', fill: 'forwards' }).onfinish = function () { c.remove(); };
+      logoGone = true; applyNologo(true);
+      impact(r.left + r.width / 2, r.top + r.height / 2, d);
+      var sh = document.getElementById('sh');
+      if (sh && sh.animate) sh.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(-7px,2px)' }, { transform: 'translate(6px,-2px)' }, { transform: 'translate(-3px,1px)' }, { transform: 'translate(0,0)' }], { duration: 340 });
+    }
+
     function frame(now) {
       if (s.dead) return;
       raf = requestAnimationFrame(frame);
@@ -622,10 +715,54 @@
       // ar dar yra „President“ nuotrauka? (uždarius langą – išeina)
       if (!document.querySelector('[data-b3d]')) { figGone += dt; if (figGone > 1.5) leave(); } else figGone = 0;
 
+      // Žalgirio kortelė atidaryta? -> spyris į logotipą
+      pollT -= dt;
+      if (pollT <= 0) {
+        pollT = 0.25;
+        var tg = findKick();
+        if (tg) {
+          noTgt = 0;
+          if (logoGone) applyNologo(true);
+          else if (!kickDone && !s.kt && (s.mode === 'idle' || s.mode === 'walk')) { kickDone = true; startKick(tg); }
+        } else if (++noTgt >= 4) { kickDone = false; logoGone = false; applyNologo(false); }
+      }
+
+      // gravitacija (nusileidimas nuo „lentynos“)
+      if (s.mode !== 'fall' && s.mode !== 'leap' && s.y > s.fl) {
+        s.air = Math.max(s.air, s.y - s.fl);
+        s.vy -= G_ * dt; s.y += s.vy * dt;
+        if (s.y <= s.fl) { s.y = s.fl; s.vy = 0; if (s.air > S * 0.6 && s.mode !== 'leave') setMove('land'); s.air = 0; }
+      }
+
       if (s.mode === 'fall') {
-        s.vy -= 2600 * dt; s.y += s.vy * dt;
+        s.vy -= G_ * dt; s.y += s.vy * dt;
         P.sy = 1 + Math.min(0.05, Math.abs(s.vy) / 40000); P.fx = 0;
-        if (s.y <= floor) { s.y = floor; s.vy = 0; setMove('land'); s.face = 0; }
+        if (s.y <= s.fl) { s.y = s.fl; s.vy = 0; setMove('land'); s.face = 0; }
+      } else if (s.mode === 'leap') {
+        var L = s.lp, tt = Math.min(L.t + dt, L.T); L.t += dt;
+        var u = Math.min(1, L.t / L.T), e = easeInOut(u), mid = smooth(0.15, 0.4, u) * smooth(0.95, 0.7, u);
+        s.x = L.x0 + (L.x1 - L.x0) * u; s.y = L.y0 + L.vy0 * tt - 0.5 * G_ * tt * tt; s.face = L.dir * 1.15;
+        P.fz = -L.dir * e * Math.PI * 2;
+        P.arm('L', 1.5 * mid, 0.3 * mid, 0, 0); P.arm('R', 1.5 * mid, 0.3 * mid, 0, 0);
+        P.leg('L', 0.9 * mid, 1.3 * mid, 0.05); P.leg('R', 0.9 * mid, 1.3 * mid, 0.05);
+        if (!targetAlive()) abortKick();
+        else if (L.t >= L.T) { s.x = L.x1; s.y = s.kt.ledge; s.fl = s.kt.ledge; s.vy = 0; P.fz = 0; setMove('land'); s.next = 'approach'; }
+      } else if (s.mode === 'approach') {
+        if (!targetAlive()) abortKick();
+        else {
+          var K = s.kt, dx = K.xk - s.x, dr = dx >= 0 ? 1 : -1;
+          MOVES.walk.f(P, s.t); s.face = dr * 1.15;
+          if (Math.abs(dx) <= speed * 1.2 * dt + 1) { s.x = K.xk; s.mode = 'kick'; s.mt = 0; s.face = K.kdir * 1.35; }
+          else s.x += dr * speed * 1.2 * dt;
+        }
+      } else if (s.mode === 'kick') {
+        var K2 = s.kt, kv = MOVES.kick; s.mt += dt; s.face = K2.kdir * 1.35;
+        if (!K2.hit && !targetAlive()) abortKick();
+        else {
+          kv.f(P, s.mt, K2.hop);
+          if (!K2.hit && s.mt >= kv.hit) { K2.hit = true; kickLogo(K2); }
+          if (s.mt >= kv.d) finishKick();
+        }
       } else if (s.mode === 'idle') {
         MOVES.idle.f(P, s.t); s.face = 0; s.timer -= dt; s.nextAct -= dt;
         if (s.nextAct <= 0) { s.nextAct = 8 + Math.random() * 7; setMove(pick(RANDOM_OK)); }
@@ -634,7 +771,6 @@
           s.mode = 'walk'; s.timer = 1.8 + Math.random() * 2.6;
         }
       } else if (s.mode === 'walk' || s.mode === 'leave') {
-        if (s.y > floor) { s.vy -= 2600 * dt; s.y = Math.max(floor, s.y + s.vy * dt); if (s.y === floor) s.vy = 0; }
         MOVES.walk.f(P, s.t); s.face = s.dir * 1.15; s.x += s.dir * speed * dt;
         if (s.mode === 'walk') {
           if (s.x > W - margin) { s.x = W - margin; s.dir = -1; }
@@ -644,31 +780,35 @@
         } else if (s.x < -S * 0.7 || s.x > W + S * 0.7) { destroy(); return; }
       } else if (s.mode === 'act') {
         var mv = MOVES[s.move]; s.mt += dt;
-        if (s.mt >= mv.d) { s.mode = 'idle'; s.timer = 0.6 + Math.random() * 1.2; }
-        else mv.f(P, s.mt);
+        if (s.mt >= mv.d) {
+          if (s.next) { s.mode = s.next; s.next = null; }
+          else { s.mode = 'idle'; s.timer = 0.6 + Math.random() * 1.2; }
+        } else mv.f(P, s.mt);
       }
 
-      s.yaw += (s.face - s.yaw) * Math.min(1, dt * 8);
-      ch.root.position.set(s.x, s.y + 0.95 * S * P.sy + P.y * S, 0);
+      s.yaw += (s.face - s.yaw) * Math.min(1, dt * (s.mode === 'kick' ? 10 : 8));
+      // palinkimas sukasi apie pėdas (ne apie kūno vidurį)
+      var lo = s.kt ? s.kt.kdir : 0, lx = lo * 0.95 * Math.sin(P.lean) * S, ly = -0.95 * (1 - Math.cos(P.lean)) * S;
+      ch.root.position.set(s.x + lx, s.y + 0.95 * S * P.sy + P.y * S + ly, 0);
       ch.root.scale.set(P.sx * S, P.sy * S, P.sx * S);
-      ch.flip.rotation.set(P.fx, 0, P.fz);
+      ch.flip.rotation.set(P.fx, 0, P.fz - (s.kt ? s.kt.kdir : 0) * P.lean);
       ch.spin.rotation.y = s.yaw + P.yaw;
       ch.applyPose(P);
-      var air = Math.max(0, s.y - floor) / S + Math.max(0, P.y);
+      var air = Math.max(0, s.y - s.fl) / S + Math.max(0, P.y);
       var k = Math.max(0.4, 1 - air * 0.6);
-      shadow.position.set(s.x, floor + 1, -10);
+      shadow.position.set(s.x, s.fl + 1, -10);
       shadow.rotation.x = 0;
       shadow.scale.set(S * 0.9 * k, S * 0.16 * k, 1);
       shadow.material.opacity = k;
       renderer.render(scene, camera);
       hit.style.width = (S * 0.7) + 'px'; hit.style.height = (S * 1.9) + 'px';
       hit.style.transform = 'translate(' + (s.x - S * 0.35) + 'px,' + (H - S * 1.9 - s.y) + 'px)';
-      hit.style.display = s.mode === 'fall' ? 'none' : 'block';
+      hit.style.display = (s.mode === 'fall' || s.mode === 'leap' || s.mode === 'approach' || s.mode === 'kick') ? 'none' : 'block';
     }
     raf = requestAnimationFrame(frame);
 
     function destroy() {
-      s.dead = true; cancelAnimationFrame(raf);
+      s.dead = true; cancelAnimationFrame(raf); applyNologo(false);
       window.removeEventListener('resize', onResize);
       renderer.dispose(); if (renderer.forceContextLoss) renderer.forceContextLoss();
       layer.remove(); hit.remove();
