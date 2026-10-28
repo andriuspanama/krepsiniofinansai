@@ -612,19 +612,37 @@
     function size() { S = Math.max(120, Math.min(210, H * 0.26)) / 1.9; }
     size();
 
-    var r0 = srcEl ? srcEl.getBoundingClientRect() : null;
+    // Figūra „išlenda“ iš portreto: jos galva (~1.74 aukščio vieneto virš pėdų) sutampa su nuotraukos centru
+    var av = srcEl && (srcEl.querySelector('.pp-ph') || srcEl);
+    var ar = av ? av.getBoundingClientRect() : null;
+    var sx0 = ar ? ar.left + ar.width / 2 : W * 0.5, sy0 = ar ? ar.top + ar.height / 2 : H * 0.3;
     var s = {
-      mode: 'fall', x: r0 ? r0.left + r0.width * 0.3 : W * 0.5, y: r0 ? H - (r0.top + 20) : H * 0.7, vy: 0,
+      mode: 'fall', x: sx0, y: H - sy0 - 1.74 * S, vy: 0,
       dir: 1, timer: 0, move: null, mt: 0, yaw: 0, face: 0, t: 0, nextAct: 8 + Math.random() * 6, gone: 0, dead: false
     };
-    s.x = Math.max(S * 0.6, Math.min(W - S * 0.6, s.x));
+    // sklandus pasirodymas: drobė išryškėja, o portreto vietoje sublyksi šviesa
+    renderer.domElement.style.opacity = '0';
+    renderer.domElement.style.transition = 'opacity .35s ease-out';
+    requestAnimationFrame(function () { renderer.domElement.style.opacity = '1'; });
+    if (ar && document.body.animate !== undefined) {
+      var fl = document.createElement('div');
+      fl.style.cssText = 'position:fixed;left:' + sx0 + 'px;top:' + sy0 + 'px;width:90px;height:90px;margin:-45px 0 0 -45px;border-radius:50%;z-index:100003;pointer-events:none;' +
+        'background:radial-gradient(circle,rgba(255,255,255,.95),rgba(255,255,255,0) 68%);';
+      document.body.appendChild(fl);
+      fl.animate([{ transform: 'scale(.3)', opacity: 1 }, { transform: 'scale(1.9)', opacity: 0 }], { duration: 520, easing: 'ease-out' }).onfinish = function () { fl.remove(); };
+    }
     s.fl = floor; s.kt = null; s.next = null; s.air = 0; s.lp = null;
 
     function setMove(name) { s.mode = 'act'; s.move = name; s.mt = 0; s.face = 0; }
-    function leave() { if (s.mode !== 'leave' && !s.dead) { s.mode = 'leave'; s.kt = null; s.next = null; s.fl = floor; s.dir = s.x < W / 2 ? -1 : 1; } }
+    function leave() { if (s.mode !== 'leave' && !s.dead) { s.mode = 'leave'; s.kt = null; s.next = null; s.fl = floor; s.dir = s.x < W / 2 ? -1 : 1; [].forEach.call(document.querySelectorAll('[data-b3d].lit'), function (el) { el.classList.remove('lit'); }); } }
 
+    // ilgas paspaudimas (~0,7 s) ant figūros – išeina; trumpas – parodo judesį
+    var lpT = 0, lpFired = false;
+    hit.addEventListener('pointerdown', function () { lpFired = false; clearTimeout(lpT); lpT = setTimeout(function () { lpFired = true; leave(); }, 700); });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(function (ev) { hit.addEventListener(ev, function () { clearTimeout(lpT); }); });
     hit.addEventListener('click', function (e) {
       e.stopPropagation();
+      if (lpFired) { lpFired = false; return; }
       if (s.mode === 'idle' || s.mode === 'walk') setMove(pick(RANDOM_CLICK));
     });
     function onResize() {
@@ -635,8 +653,8 @@
     }
     window.addEventListener('resize', onResize);
 
-    var raf = 0, last = performance.now(), figGone = 0;
-    var G_ = 2600, kickDone = false, logoGone = false, noTgt = 0, pollT = 0.4;
+    var raf = 0, last = performance.now();
+    var G_ = 2600, kickDone = false, logoGone = false, noTgt = 0, pollT = 0.4, stable = 0, lastSig = '';
 
     // ---- spyris į Žalgirio logotipą ----
     function findKick() {
@@ -650,21 +668,32 @@
       return { el: el, r: r };
     }
     function applyNologo(on) { var sh = document.getElementById('sh'); if (sh) sh.classList.toggle('b3-nologo', on); }
-    function targetAlive() {
-      return s.kt && s.kt.el.isConnected && s.kt.el.getBoundingClientRect().width > 8 && document.getElementById('sh');
+    function geom(r, side0) {
+      var R = r.width / 2, cx = r.left + R, margin = S * 0.55, side = side0 || (cx < W / 2 ? 1 : -1);
+      var want = Math.max(floor, H - r.bottom), ledge = Math.max(floor, Math.min(want, H - 1.95 * S));
+      return { side: side, kdir: -side, R: R, cx: cx,
+        xk: Math.max(margin, Math.min(W - margin, cx + side * (0.55 * R + 0.82 * S))),
+        ledge: ledge, hop: Math.max(0, (want - ledge) / S) };
+    }
+    // iš naujo suranda logotipą (jei kortelė perpiešta ar pajudėjo) ir atnaujina taikinį
+    function retarget() {
+      var tg = findKick();
+      if (!tg || !s.kt) return false;
+      var g = geom(tg.r, s.kt.side);
+      s.kt.el = tg.el; s.kt.xk = g.xk; s.kt.hop = g.hop;
+      if (Math.abs(g.ledge - s.kt.ledge) > 1) { s.kt.ledge = g.ledge; if (s.mode === 'approach' || s.mode === 'kick') { s.y = g.ledge; s.fl = g.ledge; } }
+      return true;
     }
     function startKick(tg) {
-      var r = tg.r, R = r.width / 2, cx = r.left + R, margin = S * 0.55, side = cx < W / 2 ? 1 : -1;
-      var want = Math.max(floor, H - r.bottom), ledge = Math.max(floor, Math.min(want, H - 1.95 * S));
-      var xk = Math.max(margin, Math.min(W - margin, cx + side * (0.55 * R + 0.82 * S)));
-      var xl = Math.max(margin, Math.min(W - margin, xk + side * 2.0 * S));
-      s.kt = { el: tg.el, side: side, kdir: -side, xk: xk, ledge: ledge, hop: Math.max(0, (want - ledge) / S), hit: false };
-      var h = ledge - s.y;
+      var g = geom(tg.r), margin = S * 0.55;
+      var xl = Math.max(margin, Math.min(W - margin, g.xk + g.side * 2.0 * S));
+      s.kt = { el: tg.el, side: g.side, kdir: g.kdir, xk: g.xk, ledge: g.ledge, hop: g.hop, hit: false };
+      var h = g.ledge - s.y;
       if (h > 30) {
         var vy0 = Math.sqrt(2 * G_ * h);
         s.lp = { t: 0, T: vy0 / G_, vy0: vy0, x0: s.x, x1: xl, y0: s.y, dir: xl >= s.x ? 1 : -1 };
         s.mode = 'leap'; s.face = s.lp.dir * 1.15;
-      } else { s.fl = ledge; s.y = ledge; s.x = xl; s.mode = 'approach'; }
+      } else { s.fl = g.ledge; s.y = g.ledge; s.x = xl; s.mode = 'approach'; }
     }
     function abortKick() { s.kt = null; s.next = null; s.fl = floor; s.mode = 'idle'; s.timer = 0.8; }
     function finishKick() { s.kt = null; s.fl = floor; s.mode = 'idle'; s.timer = 1.2; }
@@ -712,9 +741,6 @@
       var speed = 1.45 * S, margin = S * 0.55;
       P.reset();
 
-      // ar dar yra „President“ nuotrauka? (uždarius langą – išeina)
-      if (!document.querySelector('[data-b3d]')) { figGone += dt; if (figGone > 1.5) leave(); } else figGone = 0;
-
       // Žalgirio kortelė atidaryta? -> spyris į logotipą
       pollT -= dt;
       if (pollT <= 0) {
@@ -722,9 +748,11 @@
         var tg = findKick();
         if (tg) {
           noTgt = 0;
+          var sig = Math.round(tg.r.left) + ',' + Math.round(tg.r.top) + ',' + Math.round(tg.r.width);
+          stable = (sig === lastSig) ? stable + 1 : 0; lastSig = sig;
           if (logoGone) applyNologo(true);
-          else if (!kickDone && !s.kt && (s.mode === 'idle' || s.mode === 'walk')) { kickDone = true; startKick(tg); }
-        } else if (++noTgt >= 4) { kickDone = false; logoGone = false; applyNologo(false); }
+          else if (!kickDone && !s.kt && stable >= 2 && (s.mode === 'idle' || s.mode === 'walk')) { kickDone = true; startKick(tg); }
+        } else { stable = 0; lastSig = ''; if (++noTgt >= 4) { kickDone = false; logoGone = false; applyNologo(false); } }
       }
 
       // gravitacija (nusileidimas nuo „lentynos“)
@@ -736,7 +764,10 @@
 
       if (s.mode === 'fall') {
         s.vy -= G_ * dt; s.y += s.vy * dt;
+        var fa = Math.min(1, Math.abs(s.vy) / 500);
         P.sy = 1 + Math.min(0.05, Math.abs(s.vy) / 40000); P.fx = 0;
+        P.arm('L', 1.9 * fa, 0.1, 0.1, 0.25 * fa); P.arm('R', 1.9 * fa, 0.1, 0.1, 0.25 * fa);
+        P.leg('L', 0.3 * fa, 0.5 * fa, 0.12 * fa); P.leg('R', -0.2 * fa, 0.7 * fa, 0.12 * fa);
         if (s.y <= s.fl) { s.y = s.fl; s.vy = 0; setMove('land'); s.face = 0; }
       } else if (s.mode === 'leap') {
         var L = s.lp, tt = Math.min(L.t + dt, L.T); L.t += dt;
@@ -745,10 +776,10 @@
         P.fz = -L.dir * e * Math.PI * 2;
         P.arm('L', 1.5 * mid, 0.3 * mid, 0, 0); P.arm('R', 1.5 * mid, 0.3 * mid, 0, 0);
         P.leg('L', 0.9 * mid, 1.3 * mid, 0.05); P.leg('R', 0.9 * mid, 1.3 * mid, 0.05);
-        if (!targetAlive()) abortKick();
-        else if (L.t >= L.T) { s.x = L.x1; s.y = s.kt.ledge; s.fl = s.kt.ledge; s.vy = 0; P.fz = 0; setMove('land'); s.next = 'approach'; }
+        if (!findKick()) abortKick();
+        else if (L.t >= L.T) { retarget(); s.x = L.x1; s.y = s.kt.ledge; s.fl = s.kt.ledge; s.vy = 0; P.fz = 0; setMove('land'); s.next = 'approach'; }
       } else if (s.mode === 'approach') {
-        if (!targetAlive()) abortKick();
+        if (!retarget()) abortKick();
         else {
           var K = s.kt, dx = K.xk - s.x, dr = dx >= 0 ? 1 : -1;
           MOVES.walk.f(P, s.t); s.face = dr * 1.15;
@@ -757,7 +788,7 @@
         }
       } else if (s.mode === 'kick') {
         var K2 = s.kt, kv = MOVES.kick; s.mt += dt; s.face = K2.kdir * 1.35;
-        if (!K2.hit && !targetAlive()) abortKick();
+        if (!K2.hit && !retarget()) abortKick();
         else {
           kv.f(P, s.mt, K2.hop);
           if (!K2.hit && s.mt >= kv.hit) { K2.hit = true; kickLogo(K2); }
@@ -809,12 +840,13 @@
 
     function destroy() {
       s.dead = true; cancelAnimationFrame(raf); applyNologo(false);
+      [].forEach.call(document.querySelectorAll('[data-b3d].lit'), function (el) { el.classList.remove('lit'); });
       window.removeEventListener('resize', onResize);
       renderer.dispose(); if (renderer.forceContextLoss) renderer.forceContextLoss();
       layer.remove(); hit.remove();
       walker = null;
     }
-    return { leave: leave, destroy: destroy };
+    return { leave: leave, destroy: destroy, _state: function () { return s; } };
   }
 
   API.walker = {
@@ -828,4 +860,5 @@
   };
   API.mount = mount;
   API.mountCenter = mountCenter;
+  API._createWalker = createWalker;
 })();
