@@ -309,7 +309,7 @@
       P.leg('R', 0, 0.08 * e, 0.03 * e); P.leg('L', 0, 0.08 * e, 0.03 * e);
     } },
     // 👎 „No like“: purto galvą, numoja ranka, spiria koja, debesėlyje parašo „No like“
-    nolike: { d: 3.7, ev: [[0.35, 'bubble', 'No like'], [2.45, 'dust']], f: function (P, t) {
+    nolike: { d: 3.7, ev: [[0.35, 'bubble', 'No like'], [1.5, 'bubble2'], [2.45, 'dust']], f: function (P, t) {
       var e = env(t, 3.7, 0.3, 0.4), sh = smooth(0.25, 0.5, t) * smooth(2.0, 1.6, t), hd = smooth(0.35, 0.8, t) * smooth(3.5, 3.0, t);
       P.head(0.06 * e, 0.8 * Math.sin(t * 11) * sh + 0.1 * Math.sin(t * 3) * e, 0.05 * e);
       P.arm('R', 0.3 * hd, 1.25 * hd, 1.1 * hd, 0.7 * Math.sin(t * 13) * hd);
@@ -334,6 +334,25 @@
       var e = env(t, 1.6, 0.3, 0.35), near = side > 0 ? 'L' : 'R', ex = kf(t, [[0, 0], [0.55, 1.0], [0.8, 1.55], [1.1, 1.0], [1.6, 0]]);
       P.arm(near, 0.2 * e, ex * 1.0, 0.1, 0); P.head(-0.12 * e, 0, 0); P.fx = 0.06 * e;
       P.leg('R', 0, 0.08 * e, 0.03); P.leg('L', 0, 0.08 * e, 0.03);
+    } },
+    // Abiem rankomis paliečia kortelę / sumą (V.elev – kiek rankas kelti aukštyn)
+    touch: { d: 1.8, f: function (P, t, hop, side, V) {
+      var e = env(t, 1.8, 0.3, 0.35), el = (V && V.elev) || 0, fw = (1.5 + el) * e, pat = 0.07 * Math.sin(t * 15) * e;
+      P.arm('L', 0.1 * e, fw + pat, 0.12 * e, 0); P.arm('R', 0.1 * e, fw - pat, 0.12 * e, 0);
+      P.head(-0.2 * e * Math.max(0, el), 0.1 * side * e, 0);
+      P.leg('R', 0, 0.06 * e, 0.03); P.leg('L', 0, 0.06 * e, 0.03);
+    } },
+    // Spiria į pavardės raides (kontaktas ties 1,12 s), po to du debesėliai
+    kickname: { d: 3.6, hit: 1.12, ev: [[1.12, 'letters'], [1.3, 'bubble', 'No like'], [2.2, 'bubble2'], [2.0, 'dust']], f: function (P, t) {
+      P.leg('R', kf(t, [[0, 0], [0.5, 0], [0.9, -0.8], [1.12, 1.55], [1.95, 1.55], [2.5, 0], [3.6, 0]]),
+        kf(t, [[0, 0.1], [0.5, 0.1], [0.9, 1.35], [1.12, 0.06], [1.95, 0.06], [2.5, 0.1], [3.6, 0.1]]), 0.05);
+      P.leg('L', -0.1 * smooth(0.5, 1, t) * smooth(2.8, 2.3, t), kf(t, [[0, 0.1], [0.9, 0.5], [2.3, 0.5], [3.0, 0.1], [3.6, 0.1]]), 0.04);
+      var sw = smooth(0.3, 0.9, t) * smooth(2.8, 2.3, t);
+      P.arm('L', 0.35 * sw, kf(t, [[0, 0], [0.45, 1.15], [0.9, 1.15], [1.12, -0.2], [1.9, -0.2], [2.4, 0], [3.6, 0]]), 0.5 * sw, 0);
+      P.arm('R', 0.5 * sw, 0.2 * sw, 0.3 * sw, 0);
+      P.head(kf(t, [[0, 0], [0.5, 0.3], [1.0, 0.35], [1.2, -0.12], [2.4, -0.12], [3.0, 0], [3.6, 0]]), 0.5 * Math.sin(t * 10) * smooth(2.0, 2.2, t) * smooth(3.2, 2.8, t), 0);
+      var hp = Math.sin(Math.PI * clamp01((t - 0.85) / 0.55));
+      P.y = 0.05 * hp;
     } },
     breakdance: { d: 3.8, f: function (P, t) {
       var a = clamp01((t - 0.35) / 0.75), b = clamp01((t - 2.9) / 0.7), s = clamp01((t - 1.1) / 1.8);
@@ -666,10 +685,10 @@
       document.body.appendChild(fl);
       fl.animate([{ transform: 'scale(.3)', opacity: 1 }, { transform: 'scale(1.9)', opacity: 0 }], { duration: 520, easing: 'ease-out' }).onfinish = function () { fl.remove(); };
     }
-    s.fl = floor; s.kt = null; s.vt = null; s.chain = null; s.evd = 0; s.next = null; s.air = 0; s.lp = null;
+    s.fl = floor; s.kt = null; s.vt = null; s.chain = []; s.evd = 0; s.next = null; s.air = 0; s.lp = null;
 
     function setMove(name) { s.mode = 'act'; s.move = name; s.mt = 0; s.face = 0; s.evd = 0; }
-    function leave() { if (s.mode !== 'leave' && !s.dead) { s.mode = 'leave'; s.kt = null; s.vt = null; s.chain = null; s.next = null; s.fl = floor; s.dir = s.x < W / 2 ? -1 : 1; [].forEach.call(document.querySelectorAll('[data-b3d].lit'), function (el) { el.classList.remove('lit'); }); } }
+    function leave() { if (s.mode !== 'leave' && !s.dead) { s.mode = 'leave'; s.kt = null; s.vt = null; s.chain = []; s.next = null; s.fl = floor; s.dir = s.x < W / 2 ? -1 : 1; [].forEach.call(document.querySelectorAll('[data-b3d].lit'), function (el) { el.classList.remove('lit'); }); } }
 
     // ilgas paspaudimas (~0,7 s) ant figūros – išeina; trumpas – parodo judesį
     var lpT = 0, lpFired = false;
@@ -787,9 +806,10 @@
         ], { duration: 1300 + Math.random() * 800, delay: i * 90, easing: 'cubic-bezier(.2,.7,.3,1)', fill: 'both' }).onfinish = (function (n) { return function () { n.remove(); }; })(h);
       }
     }
-    function bubble(txt, away) {
+    function bubble(txt, away, idx) {
       var side = away || (s.x < W / 2 ? 1 : -1), mx = s.x, my = H - s.y - 1.45 * S;
       var bx = Math.max(S * 0.9, Math.min(W - S * 0.9, s.x + side * S * 0.85)), by = Math.max(34, H - s.y - 2.05 * S);
+      if (idx) { bx = Math.max(S * 0.9, Math.min(W - S * 0.9, bx + side * S * 0.3)); by = by - 0.75 * S >= 34 ? by - 0.75 * S : by + 0.75 * S; }
       var fs = Math.max(16, Math.round(S * 0.2)), w = document.createElement('div');
       w.style.cssText = 'position:fixed;left:0;top:0;width:0;height:0;z-index:100003;pointer-events:none;';
       function dot(x, y, r) {
@@ -808,53 +828,125 @@
       b.animate([{ transform: 'translate(-50%,-50%) scale(.2)', opacity: 0 }, { transform: 'translate(-50%,-50%) scale(1.12)', opacity: 1, offset: 0.2 }, { transform: 'translate(-50%,-50%) scale(1)', opacity: 1 }], { duration: 380, easing: 'ease-out', fill: 'both' });
       w.animate([{ opacity: 1 }, { opacity: 1, offset: 0.75 }, { opacity: 0 }], { duration: 2400, fill: 'forwards' }).onfinish = function () { w.remove(); };
     }
+    function letters(el, dir) {
+      var tn = null, i;
+      for (i = 0; i < el.childNodes.length; i++) if (el.childNodes[i].nodeType === 3 && el.childNodes[i].nodeValue.trim()) { tn = el.childNodes[i]; break; }
+      if (!tn || !el.animate) return;
+      var cs = getComputedStyle(el), txt = tn.nodeValue, rg = document.createRange(), col = cs.webkitTextFillColor;
+      if (!col || /rgba\(0, 0, 0, 0\)|transparent/.test(col)) col = cs.color;
+      var prevVis = el.style.visibility, made = [];
+      for (i = 0; i < txt.length; i++) {
+        if (/\s/.test(txt.charAt(i))) continue;
+        rg.setStart(tn, i); rg.setEnd(tn, i + 1);
+        var r = rg.getBoundingClientRect(); if (r.width < 1) continue;
+        var d = document.createElement('div');
+        d.textContent = txt.charAt(i);
+        d.style.cssText = 'position:fixed;left:' + r.left + 'px;top:' + r.top + 'px;height:' + r.height + 'px;line-height:' + r.height + 'px;z-index:100002;pointer-events:none;white-space:pre;font:' + cs.font + ';color:' + col + ';';
+        document.body.appendChild(d);
+        var dx = dir * (S * (0.8 + Math.random() * 2.2)), up = -(S * (0.5 + Math.random() * 1.0)), rot = dir * (240 + Math.random() * 700);
+        d.animate([
+          { transform: 'translate(0,0) rotate(0deg)', opacity: 1 },
+          { transform: 'translate(' + dx * 0.55 + 'px,' + up + 'px) rotate(' + rot * 0.5 + 'deg)', opacity: 1, offset: 0.4 },
+          { transform: 'translate(' + dx + 'px,' + (S * 1.2) + 'px) rotate(' + rot + 'deg)', opacity: 0 }
+        ], { duration: 1000 + Math.random() * 500, delay: i * 18, easing: 'cubic-bezier(.2,.6,.4,1)', fill: 'forwards' }).onfinish = (function (n) { return function () { n.remove(); }; })(d);
+        made.push(d);
+      }
+      el.style.visibility = 'hidden';
+      setTimeout(function () {
+        el.style.visibility = prevVis;
+        if (el.animate) el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 400 });
+      }, 1900);
+    }
     function fx(kind, arg) {
       var side = s.vt ? s.vt.dirTo : 0;
       if (kind === 'heart') hearts(arg || 3, s.x, H - s.y - (s.move === 'love' ? 2.1 : 1.7) * S);
-      else if (kind === 'bubble') bubble(arg, side ? -side : 0);
+      else if (kind === 'bubble') bubble(arg, side ? -side : 0, 0);
+      else if (kind === 'bubble2') { if (s.vt && s.vt.t2) bubble(s.vt.t2, side ? -side : 0, 1); }
       else if (kind === 'dust') impact(s.x + (side || 1) * 0.55 * S, H - s.y - 0.08 * S, side || 1, '');
+      else if (kind === 'letters') {
+        var tg = vFind('val');
+        impact(s.x + (side || 1) * 0.75 * S, H - s.y - 0.8 * S, side || 1, '');
+        if (tg) letters(tg.el, side || 1);
+      }
       else if (kind === 'click') { var f = document.querySelector('#sh .ry-fx'); if (f && !f.classList.contains('lit')) f.click(); }
     }
 
-    // ---- Ryto kortelės „sąmoningumas“: logotipas, užpildymas, biudžeto pokytis, Gudaitis ----
+    // ---- kortelių „sąmoningumas“: Ryto logotipas, užpildymas, pokytis; Gudaitis; Valančiūnas ----
     var vSeen = {}, logoAt = -1e9;
     function nrm(t) { return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
-    function ryOpen() {
+    function sheetOpen() {
       var md = document.getElementById('md'), sh = document.getElementById('sh');
-      return sh && sh.querySelector('.cl.ry') && (!md || md.classList.contains('o')) ? sh : null;
+      return sh && sh.firstElementChild && (!md || md.classList.contains('o')) ? sh : null;
     }
+    function ryOpen() { var sh = sheetOpen(); return sh && sh.querySelector('.cl.ry') ? sh : null; }
     function inView(r) { return r.height > 0 && r.top > 44 && r.bottom < H - 6; }
+    function textRect(el) { var rg = document.createRange(); rg.selectNodeContents(el); var r = rg.getBoundingClientRect(); return r.width > 2 ? r : el.getBoundingClientRect(); }
+    function cellBy(tr, re) {
+      var c = tr.querySelectorAll('td[data-lb]');
+      for (var i = 0; i < c.length; i++) if (re.test(nrm(c[i].getAttribute('data-lb')))) return c[i];
+      return null;
+    }
+    function playerH2(sh, re) {
+      var h = sh.querySelector('h2');
+      return h && !sh.querySelector('.cl') && re.test(nrm(h.textContent)) ? h : null;
+    }
     function vFind(kind) {
-      var sh = ryOpen(); if (!sh) return null;
-      var el = null, neg = false, i, list;
-      if (kind === 'logo') { el = sh.querySelector('.ry-fx'); if (!el) return null; }
-      else if (kind === 'gud') {
-        list = sh.querySelectorAll('tr.pc');
-        for (i = 0; i < list.length; i++) if (nrm(list[i].getAttribute('data-p')).indexOf('gudaitis') >= 0) { el = list[i]; break; }
-      } else {
-        var re = kind === 'fill' ? /uzpildymas|filling/ : /pokyt|change/;
-        list = sh.querySelectorAll('.kp > div');
-        for (i = 0; i < list.length; i++) { var sm = list[i].querySelector('small'); if (sm && re.test(nrm(sm.textContent))) { el = list[i]; break; } }
-        if (el && kind === 'chg') neg = !!el.querySelector('.neg') || /^\s*-/.test(((el.querySelector('b') || {}).textContent) || '');
+      var sh = sheetOpen(); if (!sh) return null;
+      var el = null, neg = false, i, list, r, rect;
+      if (kind === 'logo' || kind === 'fill' || kind === 'chg') {
+        if (!ryOpen()) return null;
+        if (kind === 'logo') el = sh.querySelector('.ry-fx');
+        else {
+          var re = kind === 'fill' ? /uzpildymas|filling/ : /pokyt|change/;
+          list = sh.querySelectorAll('.kp > div');
+          for (i = 0; i < list.length; i++) { var sm = list[i].querySelector('small'); if (sm && re.test(nrm(sm.textContent))) { el = list[i]; break; } }
+          if (el && kind === 'chg') neg = !!el.querySelector('.neg') || /^\s*-/.test(((el.querySelector('b') || {}).textContent) || '');
+        }
+        if (!el) return null;
+        rect = el.getBoundingClientRect();
+      } else if (kind === 'gud') {
+        list = sh.querySelectorAll('tr.pc[data-p]');
+        for (i = 0; i < list.length; i++) if (nrm(list[i].getAttribute('data-p')).indexOf('gudaitis') >= 0) { el = cellBy(list[i], /sutarties|contract/) || list[i].children[3]; break; }
+        if (!el && playerH2(sh, /gudaitis/)) {
+          var cs = sh.querySelectorAll('tr.pc td[data-lb]'), cc = [];
+          for (i = 0; i < cs.length; i++) if (/sutarties|contract/.test(nrm(cs[i].getAttribute('data-lb')))) cc.push(cs[i]);
+          el = cc.length ? cc[cc.length - 1] : null;
+          if (!el) { var kk = sh.querySelectorAll('.kp > div'); for (i = 0; i < kk.length; i++) if (/alga|salary/.test(nrm((kk[i].querySelector('small') || {}).textContent))) { el = kk[i].querySelector('b') || kk[i]; break; } }
+        }
+        if (!el) return null;
+        rect = textRect(el);
+      } else if (kind === 'val') {
+        list = sh.querySelectorAll('tr.pc[data-p]');
+        for (i = 0; i < list.length; i++) if (nrm(list[i].getAttribute('data-p')).indexOf('valanciunas') >= 0) { el = list[i].querySelector('td.l b') || list[i].querySelector('b') || list[i].children[0]; break; }
+        if (!el) el = playerH2(sh, /valanciunas/);
+        if (!el) return null;
+        rect = textRect(el);
       }
-      if (!el) return null;
-      var r = el.getBoundingClientRect();
-      if (r.width < 8) return null;
-      return { el: el, r: r, neg: neg, lit: el.classList.contains('lit') };
+      if (!el || rect.width < 8) return null;
+      return { el: el, r: rect, neg: neg, lit: el.classList.contains('lit') };
     }
-    // stovi šalia elemento (toje pusėje, kur daugiau vietos), kojos – ties jo apačia
-    function vGeom(r) {
-      var margin = S * 0.55, roomR = W - r.right, roomL = r.left, side = roomR >= roomL ? 1 : -1, room = side > 0 ? roomR : roomL, xk;
-      if (room >= S * 0.7) xk = side > 0 ? r.right + 0.55 * S : r.left - 0.55 * S;
-      else xk = side > 0 ? W - margin : margin;
+    // geometrija pagal veiksmo tipą: šalia (logotipas, užpildymas), prisilietimas rankomis (pokytis, Gudaitis), spyris (Valančiūnas)
+    function vGeom(kind, r) {
+      var margin = S * 0.55, roomR = W - r.right, roomL = r.left, side = roomR >= roomL ? 1 : -1, room = side > 0 ? roomR : roomL, xk, ledge, elev = 0;
+      var px = r.left + r.width / 2, cy = r.top + r.height / 2, hi = Math.max(floor, H - 1.95 * S);
+      if (kind === 'chg' || kind === 'gud') {
+        xk = px + side * 0.55 * S;
+        ledge = Math.max(floor, Math.min(hi, H - cy - 1.35 * S));
+        elev = Math.max(-0.5, Math.min(1.0, Math.atan2((H - cy) - ledge - 1.45 * S, 0.6 * S)));
+      } else if (kind === 'val') {
+        xk = side > 0 ? r.right + 0.62 * S : r.left - 0.62 * S;
+        ledge = Math.max(floor, Math.min(hi, H - cy - 0.8 * S));
+      } else {
+        xk = room >= S * 0.7 ? (side > 0 ? r.right + 0.55 * S : r.left - 0.55 * S) : (side > 0 ? W - margin : margin);
+        ledge = Math.max(floor, Math.min(Math.max(floor, H - r.bottom), hi));
+      }
       xk = Math.max(margin, Math.min(W - margin, xk));
-      var want = Math.max(floor, H - r.bottom), ledge = Math.max(floor, Math.min(want, H - 1.95 * S));
-      return { xk: xk, ledge: ledge, dirTo: xk < r.left + r.width / 2 ? 1 : -1 };
+      return { xk: xk, ledge: ledge, elev: elev, dirTo: xk < px ? 1 : -1 };
     }
-    function abortVisit() { s.vt = null; s.chain = null; s.next = null; s.fl = floor; s.mode = 'idle'; s.timer = 0.8; }
+    function abortVisit() { s.vt = null; s.chain = []; s.next = null; s.fl = floor; s.mode = 'idle'; s.timer = 0.8; }
     function startVisit(kind) {
       var tg = vFind(kind); if (!tg) return;
-      s.vt = { kind: kind, xk: s.x, ledge: floor, dirTo: 1, wait: 0 }; s.chain = null;
+      s.vt = { kind: kind, xk: s.x, ledge: floor, dirTo: 1, elev: 0, wait: 0, t2: '' }; s.chain = [];
       if (kind === 'logo') logoAt = performance.now();
       if (kind === 'logo' && !inView(tg.r)) {
         var sh = ryOpen(); if (sh && sh.scrollTo) sh.scrollTo({ top: 0, behavior: 'smooth' }); else if (sh) sh.scrollTop = 0;
@@ -862,19 +954,27 @@
       }
       s.mode = 'vapp';
     }
+    function nextChain() {
+      var n = s.chain.shift(), d = s.vt ? s.vt.dirTo : 1;
+      setMove(n);
+      s.face = n === 'love' ? 0 : n === 'touch' ? d * 1.0 : n === 'kickname' ? d * 1.35 : d * 0.7;
+    }
     function vAct() {
       var K = s.vt, tg = vFind(K.kind); if (!tg) { abortVisit(); return; }
-      var name = K.kind === 'logo' ? 'press' : K.kind === 'chg' ? (tg.neg ? 'nolike' : 'like') : 'nolike';
-      if (K.kind === 'logo' && tg.lit) { vSeen.logo = true; abortVisit(); return; }
-      setMove(name); s.face = K.dirTo * 0.7; s.evd = 0;
-      if (K.kind === 'logo') s.chain = 'love';
+      var seq;
+      if (K.kind === 'logo') { if (tg.lit) { vSeen.logo = true; abortVisit(); return; } seq = ['press', 'love']; }
+      else if (K.kind === 'fill') seq = ['nolike'];
+      else if (K.kind === 'chg') seq = tg.neg ? ['touch', 'nolike'] : ['touch', 'love'];
+      else if (K.kind === 'gud') { seq = ['touch', 'nolike']; K.t2 = 'Per brangu'; }
+      else { seq = ['kickname']; K.t2 = 'Senas \u0161lunkius'; }
+      s.chain = seq; nextChain();
     }
-    function rytasPoll() {
-      var sh = ryOpen();
+    function visitPoll() {
+      var sh = sheetOpen();
       if (!sh) { vSeen = {}; logoAt = -1e9; return; }
       var now = performance.now(), lg = vFind('logo');
       if (lg && !lg.lit && now - logoAt > 25000) { startVisit('logo'); return; }
-      var kinds = ['fill', 'chg', 'gud'];
+      var kinds = ['fill', 'chg', 'gud', 'val'];
       for (var i = 0; i < kinds.length; i++) {
         var k = kinds[i], tg = vFind(k);
         if (!tg) { vSeen[k] = false; continue; }
@@ -883,7 +983,6 @@
         if (!vSeen[k] && inView(tg.r) && cy > H * 0.18 && cy < H * 0.88) { startVisit(k); return; }
       }
     }
-
     function frame(now) {
       if (s.dead) return;
       raf = requestAnimationFrame(frame);
@@ -903,7 +1002,7 @@
           if (logoGone) applyNologo(true);
           else if (!kickDone && !s.kt && stable >= 2 && (s.mode === 'idle' || s.mode === 'walk')) { kickDone = true; startKick(tg); }
         } else { stable = 0; lastSig = ''; if (++noTgt >= 4) { kickDone = false; logoGone = false; applyNologo(false); } }
-        if (!s.vt && !s.kt && (s.mode === 'idle' || s.mode === 'walk')) rytasPoll();
+        if (!s.vt && !s.kt && (s.mode === 'idle' || s.mode === 'walk')) visitPoll();
       }
 
       // gravitacija (nusileidimas nuo „lentynos“)
@@ -954,7 +1053,7 @@
         var va = s.vt ? vFind(s.vt.kind) : null;
         if (!va || va.r.bottom < 0 || va.r.top > H) abortVisit();
         else {
-          var gg = vGeom(va.r), K3 = s.vt; K3.xk = gg.xk; K3.ledge = gg.ledge; K3.dirTo = gg.dirTo;
+          var K3 = s.vt, gg = vGeom(K3.kind, va.r); K3.xk = gg.xk; K3.ledge = gg.ledge; K3.dirTo = gg.dirTo; K3.elev = gg.elev;
           if (gg.ledge <= s.y + 30) s.fl = gg.ledge; else s.fl = floor;
           var vdx = gg.xk - s.x, vdr = vdx >= 0 ? 1 : -1;
           if (Math.abs(vdx) > 3) { MOVES.walk.f(P, s.t); s.face = vdr * 1.15; s.x += vdr * Math.min(Math.abs(vdx), speed * 1.3 * dt); }
@@ -976,7 +1075,7 @@
         P.arm('L', 1.5 * vm, 0.3 * vm, 0, 0); P.arm('R', 1.5 * vm, 0.3 * vm, 0, 0);
         P.leg('L', 0.9 * vm, 1.3 * vm, 0.05); P.leg('R', 0.9 * vm, 1.3 * vm, 0.05);
         if (!s.vt || !vFind(s.vt.kind)) abortVisit();
-        else if (VL.t >= VL.T) { var vg2 = vGeom(vFind(s.vt.kind).r); s.vt.ledge = vg2.ledge; s.y = vg2.ledge; s.fl = vg2.ledge; s.vy = 0; P.fz = 0; setMove('land'); s.next = 'vapp'; }
+        else if (VL.t >= VL.T) { var vg2 = vGeom(s.vt.kind, vFind(s.vt.kind).r); s.vt.ledge = vg2.ledge; s.y = vg2.ledge; s.fl = vg2.ledge; s.vy = 0; P.fz = 0; setMove('land'); s.next = 'vapp'; }
       } else if (s.mode === 'idle') {
         MOVES.idle.f(P, s.t); s.face = 0; s.timer -= dt; s.nextAct -= dt;
         if (s.nextAct <= 0) { s.nextAct = 8 + Math.random() * 7; setMove(pick(WALK_OK)); }
@@ -997,12 +1096,12 @@
         while (mv.ev && s.evd < mv.ev.length && s.mt >= mv.ev[s.evd][0]) { var evn = mv.ev[s.evd]; s.evd++; fx(evn[1], evn[2]); }
         if (s.mt >= mv.d) {
           if (s.next) { s.mode = s.next; s.next = null; }
-          else if (s.chain) { var cn = s.chain; s.chain = null; setMove(cn); s.face = 0; }
+          else if (s.chain && s.chain.length) nextChain();
           else {
             if (s.vt) { vSeen[s.vt.kind] = true; s.vt = null; s.fl = floor; }
             s.mode = 'idle'; s.timer = 0.6 + Math.random() * 1.2;
           }
-        } else mv.f(P, s.mt, 0, s.vt ? s.vt.dirTo : (s.face >= 0 ? 1 : -1));
+        } else mv.f(P, s.mt, 0, s.vt ? s.vt.dirTo : (s.face >= 0 ? 1 : -1), s.vt);
       }
 
       s.yaw += (s.face - s.yaw) * Math.min(1, dt * (s.mode === 'kick' ? 10 : 8));
