@@ -149,6 +149,10 @@
       d.dataset.e=1;if(!/Užpildymas|Filling rate/.test(d.querySelector("small")?.textContent||""))return;
       const p=pc(d.querySelector("b")?.textContent);if(p!=null){d.classList.add("hasg");d.insertAdjacentHTML("beforeend",gauge(p))}});
     const she=document.getElementById("sh");if(she)she.classList.toggle("is-ry",!!she.querySelector(".cl.ry"));
+    if(she){const h2=she.querySelector(".cl h2"),isR=!!h2&&/rytas/i.test(h2.textContent);
+      if(!isR){she.classList.remove("bg-photo","bg-show");she.style.removeProperty("--bgph")}
+      else{const on=she.classList.contains("bg-show");she.querySelectorAll("[data-bg]").forEach(x=>x.classList.toggle("on",on));
+        if(!enhance._pre){enhance._pre=1;(new Image()).src=new URL(base+"bcl-2026-bg.jpg",document.baseURI).href}}}
     {const h2=she.querySelector("h2"),PBG=[[/marcus\s+foster/i,"foster-bg.jpg","center 10%"],[/arnas\s+veli[čc]ka/i,"velicka-bg.jpg","center 0%"],[/simas\s+jarumbauskas/i,"jarumbauskas-bg.jpg","center 0%"],[/giedrius\s+[žz]ib[ėe]nas/i,"zibenas-bg.jpg","46% 0%"],[/gytis\s+radzevi[čc]ius/i,"radzevicius-bg.jpg","54% 0%"],[/margiris\s+normantas/i,"normantas-bg.jpg","center 0%"],[/speedy\s+smith/i,"smith-bg.jpg","40% 0%"]],hit=h2&&!she.querySelector(".cl")?PBG.find(p=>p[0].test(h2.textContent)):null;
       she.classList.toggle("is-fos",!!hit);if(hit){she.style.setProperty("--pbg","url("+hit[1]+")");she.style.setProperty("--pbgpos",hit[2])}else{she.style.removeProperty("--pbg");she.style.removeProperty("--pbgpos")}}
     fitLed();
@@ -493,6 +497,17 @@
   // Vadovų „tabletės“: paspaudus paryškėja (aura, apšvietimas, natūralios spalvos); President dar iškviečia 3D personažą
   const ppClear=c=>{["--mx","--my","--tx","--ty"].forEach(v=>c.style.removeProperty(v))};
   const ppPing=c=>{c.classList.remove("ping");void c.offsetWidth;c.classList.add("ping");setTimeout(()=>c.classList.remove("ping"),900)};
+  // Ryto kortelė: paspaudus „BCL čempionai 2026“ fone atsiranda čempionų nuotrauka
+  const bgToggle=e=>{
+    const c=e.target.closest&&e.target.closest("#sh [data-bg]");if(!c)return;
+    const sh=document.getElementById("sh");if(!sh)return;
+    const on=!sh.classList.contains("bg-show");
+    if(on){sh.style.setProperty("--bgph","url("+new URL(c.dataset.bg,document.baseURI).href+")");sh.classList.add("bg-photo");void sh.offsetWidth;sh.classList.add("bg-show")}
+    else{sh.classList.remove("bg-show");setTimeout(()=>{if(!sh.classList.contains("bg-show"))sh.classList.remove("bg-photo")},1050)}
+    sh.querySelectorAll("[data-bg]").forEach(x=>x.classList.toggle("on",on));
+  };
+  document.addEventListener("click",bgToggle);
+  document.addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target.matches&&e.target.matches("#sh [data-bg]")){e.preventDefault();bgToggle(e)}});
   const ppToggle=e=>{
     const c=e.target.closest&&e.target.closest(".ppl .pp");if(!c)return;
     const w=window.Brazys3D&&Brazys3D.walker;
