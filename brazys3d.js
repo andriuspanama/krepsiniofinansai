@@ -966,7 +966,7 @@
       else if (K.kind === 'fill') seq = ['nolike'];
       else if (K.kind === 'chg') seq = tg.neg ? ['touch', 'nolike'] : ['touch', 'love'];
       else if (K.kind === 'gud') { seq = ['touch', 'nolike']; K.t2 = 'Per brangu'; }
-      else { seq = ['kickname']; K.t2 = 'Senas \u0161lunkius'; }
+      else { seq = ['kickname']; K.t2 = 'Senas \slunkius'; }
       s.chain = seq; nextChain();
     }
     function visitPoll() {
