@@ -20,6 +20,8 @@
   /* ------------------------------------------------------------------ */
   function clamp01(x) { return x < 0 ? 0 : x > 1 ? 1 : x; }
   function smooth(a, b, x) { var t = clamp01((x - a) / (b - a)); return t * t * (3 - 2 * t); }
+  // kalbėjimo burnos judesys (0..1) laiko lange [a,b]
+  function talk(t, a, b) { return smooth(a, a + 0.08, t) * smooth(b, b - 0.1, t) * (0.35 + 0.65 * Math.abs(Math.sin(t * 15))); }
   function easeInOut(x) { x = clamp01(x); return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2; }
 
   // Kaulai: 0 kūnas, 1 galva, 2/3 kairė ranka (viršus/apačia), 4/5 dešinė ranka,
@@ -160,9 +162,9 @@
   /*  Poza ir judesiai                                                    */
   /* ------------------------------------------------------------------ */
   function newPose() {
-    var P = { y: 0, sx: 1, sy: 1, fx: 0, fz: 0, yaw: 0, lean: 0, b: new Float32Array(30) };
+    var P = { y: 0, sx: 1, sy: 1, fx: 0, fz: 0, yaw: 0, lean: 0, mo: 0, pt: 0, ps: 'R', b: new Float32Array(30) };
     P.reset = function () {
-      P.y = 0; P.sx = 1; P.sy = 1; P.fx = 0; P.fz = 0; P.yaw = 0; P.lean = 0;
+      P.y = 0; P.sx = 1; P.sy = 1; P.fx = 0; P.fz = 0; P.yaw = 0; P.lean = 0; P.mo = 0; P.pt = 0;
       for (var i = 0; i < 30; i++) P.b[i] = 0;
     };
     P.head = function (rx, ry, rz) { P.b[3] = rx; P.b[4] = ry; P.b[5] = rz; };
@@ -311,6 +313,7 @@
     // 👎 „No like“: purto galvą, numoja ranka, spiria koja, debesėlyje parašo „No like“
     nolike: { d: 3.7, ev: [[0.35, 'bubble', 'No like'], [1.5, 'bubble2'], [2.45, 'dust']], f: function (P, t) {
       var e = env(t, 3.7, 0.3, 0.4), sh = smooth(0.25, 0.5, t) * smooth(2.0, 1.6, t), hd = smooth(0.35, 0.8, t) * smooth(3.5, 3.0, t);
+      P.mo = Math.max(talk(t, 0.35, 1.4), talk(t, 1.5, 2.5));
       P.head(0.06 * e, 0.8 * Math.sin(t * 11) * sh + 0.1 * Math.sin(t * 3) * e, 0.05 * e);
       P.arm('R', 0.3 * hd, 1.25 * hd, 1.1 * hd, 0.7 * Math.sin(t * 13) * hd);
       P.arm('L', 0.08 * e, 0.05 * e, 0.12 * e, 0);
@@ -343,23 +346,26 @@
       P.leg('R', 0, 0.06 * e, 0.03); P.leg('L', 0, 0.06 * e, 0.03);
     } },
     // Spiria į pavardės raides (kontaktas ties 1,12 s), po to du debesėliai
-    kickname: { d: 3.6, hit: 1.12, ev: [[1.12, 'letters'], [1.3, 'bubble', 'No like'], [2.2, 'bubble2'], [2.0, 'dust']], f: function (P, t) {
+    kickname: { d: 3.6, hit: 1.12, ev: [[1.12, 'letters'], [1.3, 'bubble', 'No like'], [2.0, 'dust'], [2.2, 'bubble2']], f: function (P, t, hop, side) {
       P.leg('R', kf(t, [[0, 0], [0.5, 0], [0.9, -0.8], [1.12, 1.55], [1.95, 1.55], [2.5, 0], [3.6, 0]]),
         kf(t, [[0, 0.1], [0.5, 0.1], [0.9, 1.35], [1.12, 0.06], [1.95, 0.06], [2.5, 0.1], [3.6, 0.1]]), 0.05);
       P.leg('L', -0.1 * smooth(0.5, 1, t) * smooth(2.8, 2.3, t), kf(t, [[0, 0.1], [0.9, 0.5], [2.3, 0.5], [3.0, 0.1], [3.6, 0.1]]), 0.04);
-      var sw = smooth(0.3, 0.9, t) * smooth(2.8, 2.3, t);
-      P.arm('L', 0.35 * sw, kf(t, [[0, 0], [0.45, 1.15], [0.9, 1.15], [1.12, -0.2], [1.9, -0.2], [2.4, 0], [3.6, 0]]), 0.5 * sw, 0);
-      P.arm('R', 0.5 * sw, 0.2 * sw, 0.3 * sw, 0);
+      var sw = smooth(0.3, 0.9, t) * smooth(2.8, 2.3, t), wv = smooth(1.85, 2.2, t) * smooth(3.45, 3.1, t), nr = side > 0 ? 'L' : 'R', fr = side > 0 ? 'R' : 'L';
+      P.arm(fr, 0.35 * sw, kf(t, [[0, 0], [0.45, 1.15], [0.9, 1.15], [1.12, -0.2], [1.9, -0.2], [2.4, 0], [3.6, 0]]), 0.5 * sw, 0);
+      // numoja ranka (atmetimo gestas), kol sako „Senas šlunkius“
+      P.arm(nr, 0.5 * sw * (1 - wv) + 0.3 * wv, 0.2 * sw * (1 - wv) + 1.25 * wv, 0.3 * sw * (1 - wv) + 1.1 * wv, 0.7 * Math.sin(t * 13) * wv);
+      P.mo = Math.max(talk(t, 1.3, 2.0), talk(t, 2.2, 3.3));
       P.head(kf(t, [[0, 0], [0.5, 0.3], [1.0, 0.35], [1.2, -0.12], [2.4, -0.12], [3.0, 0], [3.6, 0]]), 0.5 * Math.sin(t * 10) * smooth(2.0, 2.2, t) * smooth(3.2, 2.8, t), 0);
       var hp = Math.sin(Math.PI * clamp01((t - 0.85) / 0.55));
       P.y = 0.05 * hp;
     } },
     // Pasisveikinimas atsiradus: ranka pakelta į priekį virš pečių lygio, rodo kryptį
-    hail: { d: 3.1, ev: [[0.55, 'bubble', 'Pirmyn, Vilniečiai']], f: function (P, t, hop, side) {
+    hail: { d: 3.1, ev: [[0.55, 'bubble', 'Pirmyn,\nVilniečiai!']], f: function (P, t, hop, side) {
       var e = env(t, 3.1, 0.35, 0.5), ex = smooth(0.1, 0.6, t) * smooth(3.1, 2.6, t), near = side > 0 ? 'L' : 'R', far = side > 0 ? 'R' : 'L';
       P.arm(near, 0.05 * ex, (2.0 + 0.05 * Math.sin(t * 7)) * ex, 0, 0);
       P.arm(far, 0.12 * e, 0.05 * e, 0.1 * e, 0);
       P.head(-0.14 * ex, 0.12 * side * ex, 0);
+      P.pt = ex; P.ps = near; P.mo = talk(t, 0.55, 2.3);
       P.leg('R', 0.05 * e, 0.08 * e, 0.03); P.leg('L', -0.05 * e, 0.08 * e, 0.03);
     } },
     breakdance: { d: 3.8, f: function (P, t) {
@@ -472,13 +478,71 @@
       spin.add(mesh);
       return { p: p, geo: geo, mesh: mesh };
     });
-    var M = new Float32Array(NB * 12), dirty = false;
+    var M = new Float32Array(NB * 12), dirty = false, exOn = false;
+    // --- papildomi elementai: rodomasis pirštas ir kalbančios lūpos ---
+    var MO = API.mouth = API.mouth || { y: 0.735, w: 0.034 }, FI = API.finger = API.finger || { r: 0.0105, len: 0.085, off: 0.13 };
+    if (parts.__ex === undefined) {
+      var ex = { zf: 0.09, skin: '#a8714f' }, best = -1, i, v;
+      try {
+        parts.forEach(function (p) {
+          var r = p.rest;
+          for (v = 0; v < r.length; v += 3) if (Math.abs(r[v]) < 0.02 && Math.abs(r[v + 1] - MO.y) < 0.012 && r[v + 2] > best) best = r[v + 2];
+        });
+        if (best > 0.02 && best < 0.3) ex.zf = best;
+        // odos spalva iš tekstūros prie plaštakos
+        var cv = document.createElement('canvas'); cv.width = cv.height = 1;
+        var cx = cv.getContext('2d'), sr = 0, sg = 0, sb = 0, sn = 0;
+        parts.forEach(function (p) {
+          var img = p.mat && p.mat.map && p.mat.map.image, uv = p.geo.attributes.uv, r = p.rest;
+          if (!img || !img.complete || !uv) return;
+          var iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+          for (var k = 0; k < r.length / 3 && sn < 60; k += 7) {
+            var dx = Math.abs(r[k * 3]) - 0.49, dy = r[k * 3 + 1] + 0.15;
+            if (dx * dx + dy * dy < 0.0036) {
+              cx.drawImage(img, Math.min(iw - 1, Math.floor(uv.getX(k) * iw)), Math.min(ih - 1, Math.floor((1 - uv.getY(k)) * ih)), 1, 1, 0, 0, 1, 1);
+              var d = cx.getImageData(0, 0, 1, 1).data; sr += d[0]; sg += d[1]; sb += d[2]; sn++;
+            }
+          }
+        });
+        if (sn > 3) ex.skin = 'rgb(' + Math.round(sr / sn) + ',' + Math.round(sg / sn) + ',' + Math.round(sb / sn) + ')';
+      } catch (er) { }
+      parts.__ex = ex;
+    }
+    var EX = parts.__ex, T4 = THREE.Matrix4, fingers = {};
+    ['L', 'R'].forEach(function (sd) {
+      var sg = sd === 'L' ? -1 : 1, d = new THREE.Vector3(sg * 0.34, -0.94, 0).normalize(),
+        base = new THREE.Vector3(sg * WRIST[0], WRIST[1], 0).addScaledVector(d, FI.off),
+        q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d),
+        A = new T4().compose(base, q, new THREE.Vector3(FI.r, FI.len, FI.r));
+      var geo = new THREE.CylinderGeometry(1, 0.8, 1, 8); geo.translate(0, 0.5, 0);
+      var m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: new THREE.Color(EX.skin), roughness: 0.8, metalness: 0 }));
+      m.matrixAutoUpdate = false; m.frustumCulled = false; m.visible = false; spin.add(m);
+      fingers[sd] = { m: m, A: A, o: sd === 'L' ? 36 : 60 };
+    });
+    var mouth = new THREE.Mesh(new THREE.CircleGeometry(0.5, 20), new THREE.MeshBasicMaterial({ color: 0x2a0b0d, transparent: true, opacity: 0.93, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 }));
+    mouth.matrixAutoUpdate = false; mouth.frustumCulled = false; mouth.visible = false; spin.add(mouth);
+    var _Mb = new T4(), _Ma = new T4();
+    function bone4(o) { return _Mb.set(M[o], M[o + 1], M[o + 2], M[o + 9], M[o + 3], M[o + 4], M[o + 5], M[o + 10], M[o + 6], M[o + 7], M[o + 8], M[o + 11], 0, 0, 0, 1); }
+    function updateExtras(P) {
+      var on = P.pt > 0.01, f, sd;
+      for (sd in fingers) {
+        f = fingers[sd];
+        if (on && sd === P.ps) { f.m.matrix.multiplyMatrices(bone4(f.o), f.A); f.m.matrixWorldNeedsUpdate = true; f.m.visible = true; }
+        else f.m.visible = false;
+      }
+      if (P.mo > 0.01) {
+        _Ma.makeScale(MO.w, 0.004 + 0.024 * P.mo, 1); _Ma.setPosition(0, MO.y, EX.zf + 0.003);
+        mouth.matrix.multiplyMatrices(bone4(12), _Ma); mouth.matrixWorldNeedsUpdate = true; mouth.visible = true;
+      } else mouth.visible = false;
+      exOn = on || P.mo > 0.01;
+    }
     return {
       root: root, flip: flip, spin: spin,
       applyPose: function (P) {
-        var rest = bonesRest(P);
-        if (rest && !dirty) return;
+        var rest = bonesRest(P), exNow = P.mo > 0.01 || P.pt > 0.01;
+        if (rest && !dirty && !exNow && !exOn) return;
         boneMats(P, M);
+        if (rest && !dirty) { updateExtras(P); return; }
         for (var i = 0; i < list.length; i++) {
           var it = list[i], pa = it.geo.attributes.position, na = it.geo.attributes.normal;
           if (rest) {
@@ -489,6 +553,7 @@
           pa.needsUpdate = true; if (na) na.needsUpdate = true;
         }
         dirty = !rest;
+        updateExtras(P);
       }
     };
   }
@@ -814,28 +879,30 @@
         ], { duration: 1300 + Math.random() * 800, delay: i * 90, easing: 'cubic-bezier(.2,.7,.3,1)', fill: 'both' }).onfinish = (function (n) { return function () { n.remove(); }; })(h);
       }
     }
-    function bubble(txt, away, idx) {
-      var side = away || (s.x < W / 2 ? 1 : -1), mx = s.x, my = H - s.y - 1.45 * S;
-      var bx = Math.max(S * 0.9, Math.min(W - S * 0.9, s.x + side * S * 0.85)), by = Math.max(34, H - s.y - 2.05 * S);
-      if (idx) { bx = Math.max(S * 0.9, Math.min(W - S * 0.9, bx + side * S * 0.3)); by = by - 0.75 * S >= 34 ? by - 0.75 * S : by + 0.75 * S; }
-      var fs = Math.max(16, Math.round(S * 0.2)), w = document.createElement('div'), hw = txt.length * fs * 0.46 + 30;
+    function bubble(txt, away, idx, opt) {
+      var side = away || (s.x < W / 2 ? 1 : -1), mx = s.x, my = H - s.y - 1.66 * S;
+      var fs = Math.max(13, Math.round(S * ((opt && opt.k) || 0.19))), lines = String(txt).split('\n'), ml = 0, w = document.createElement('div');
+      lines.forEach(function (l) { if (l.length > ml) ml = l.length; });
+      var hw = ml * fs * 0.5 + 26;
+      var bx = s.x + side * S * 0.85, by = Math.max(34, H - s.y - ((opt && opt.up) || 2.05) * S);
+      if (idx) { bx += side * S * 0.3; by = by - 0.75 * S >= 34 ? by - 0.75 * S : by + 0.75 * S; }
       bx = Math.max(hw + 6, Math.min(W - hw - 6, bx));
       w.style.cssText = 'position:fixed;left:0;top:0;width:0;height:0;z-index:100003;pointer-events:none;';
       function dot(x, y, r) {
         var c = document.createElement('div');
-        c.style.cssText = 'position:absolute;left:' + (x - r) + 'px;top:' + (y - r) + 'px;width:' + 2 * r + 'px;height:' + 2 * r + 'px;border-radius:50%;background:#fff;border:3px solid #111;box-sizing:border-box;';
+        c.style.cssText = 'position:absolute;left:' + (x - r) + 'px;top:' + (y - r) + 'px;width:' + 2 * r + 'px;height:' + 2 * r + 'px;border-radius:50%;background:#0b0b0d;border:2px solid #e0212f;box-sizing:border-box;';
         w.appendChild(c);
       }
-      dot(mx + (bx - mx) * 0.22, my + (by - my) * 0.22, 5);
-      dot(mx + (bx - mx) * 0.45, my + (by - my) * 0.45, 8);
+      dot(mx + (bx - mx) * 0.22, my + (by - my) * 0.22, 4);
+      dot(mx + (bx - mx) * 0.45, my + (by - my) * 0.45, 6);
       var b = document.createElement('div');
       b.textContent = txt;
-      b.style.cssText = 'position:absolute;left:' + bx + 'px;top:' + by + 'px;transform:translate(-50%,-50%);white-space:nowrap;background:#fff;color:#111;border:3px solid #111;border-radius:999px;padding:.45em .9em;font:800 ' + fs + 'px/1 var(--hd,Impact,sans-serif);letter-spacing:.04em;text-transform:uppercase;box-shadow:0 4px 0 rgba(0,0,0,.3);';
+      b.style.cssText = 'position:absolute;left:' + bx + 'px;top:' + by + 'px;transform:translate(-50%,-50%);white-space:pre;text-align:center;background:#0b0b0d;color:#ff2a38;border:2px solid #e0212f;border-radius:' + (lines.length > 1 ? '18px' : '999px') + ';padding:.5em .9em;font:800 ' + fs + 'px/1.15 var(--hd,Impact,sans-serif);letter-spacing:.04em;text-transform:uppercase;box-shadow:0 4px 0 rgba(0,0,0,.45);';
       w.appendChild(b);
       document.body.appendChild(w);
       if (!w.animate) { setTimeout(function () { w.remove(); }, 2200); return; }
       b.animate([{ transform: 'translate(-50%,-50%) scale(.2)', opacity: 0 }, { transform: 'translate(-50%,-50%) scale(1.12)', opacity: 1, offset: 0.2 }, { transform: 'translate(-50%,-50%) scale(1)', opacity: 1 }], { duration: 380, easing: 'ease-out', fill: 'both' });
-      w.animate([{ opacity: 1 }, { opacity: 1, offset: 0.75 }, { opacity: 0 }], { duration: 2400, fill: 'forwards' }).onfinish = function () { w.remove(); };
+      w.animate([{ opacity: 1 }, { opacity: 1, offset: 0.8 }, { opacity: 0 }], { duration: 2600, fill: 'forwards' }).onfinish = function () { w.remove(); };
     }
     function letters(el, dir) {
       var tn = null, i;
@@ -869,7 +936,7 @@
     function fx(kind, arg) {
       var side = s.vt ? s.vt.dirTo : 0;
       if (kind === 'heart') hearts(arg || 3, s.x, H - s.y - (s.move === 'love' ? 2.1 : 1.7) * S);
-      else if (kind === 'bubble') bubble(arg, side ? -side : 0, 0);
+      else if (kind === 'bubble') { if (s.move === 'hail') bubble(arg, s.face >= 0 ? -1 : 1, 0, { k: 0.15, up: 2.55 }); else bubble(arg, side ? -side : 0, 0); }
       else if (kind === 'bubble2') { if (s.vt && s.vt.t2) bubble(s.vt.t2, side ? -side : 0, 1); }
       else if (kind === 'dust') impact(s.x + (side || 1) * 0.55 * S, H - s.y - 0.08 * S, side || 1, '');
       else if (kind === 'letters') {
