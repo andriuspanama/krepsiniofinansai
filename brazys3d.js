@@ -354,6 +354,14 @@
       var hp = Math.sin(Math.PI * clamp01((t - 0.85) / 0.55));
       P.y = 0.05 * hp;
     } },
+    // Pasisveikinimas atsiradus: ranka pakelta į priekį virš pečių lygio, rodo kryptį
+    hail: { d: 3.1, ev: [[0.55, 'bubble', 'Pirmyn, Vilniečiai']], f: function (P, t, hop, side) {
+      var e = env(t, 3.1, 0.35, 0.5), ex = smooth(0.1, 0.6, t) * smooth(3.1, 2.6, t), near = side > 0 ? 'L' : 'R', far = side > 0 ? 'R' : 'L';
+      P.arm(near, 0.05 * ex, (2.0 + 0.05 * Math.sin(t * 7)) * ex, 0, 0);
+      P.arm(far, 0.12 * e, 0.05 * e, 0.1 * e, 0);
+      P.head(-0.14 * ex, 0.12 * side * ex, 0);
+      P.leg('R', 0.05 * e, 0.08 * e, 0.03); P.leg('L', -0.05 * e, 0.08 * e, 0.03);
+    } },
     breakdance: { d: 3.8, f: function (P, t) {
       var a = clamp01((t - 0.35) / 0.75), b = clamp01((t - 2.9) / 0.7), s = clamp01((t - 1.1) / 1.8);
       var y = 0, fx = 0;
@@ -725,7 +733,7 @@
     function applyNologo(on) { var sh = document.getElementById('sh'); if (sh) sh.classList.toggle('b3-nologo', on); }
     function geom(r, side0) {
       var R = r.width / 2, cx = r.left + R, margin = S * 0.55, side = side0 || (cx < W / 2 ? 1 : -1);
-      var want = Math.max(floor, H - r.bottom), ledge = Math.max(floor, Math.min(want, H - 1.95 * S));
+      var want = Math.max(floor, H - r.bottom), ledge = Math.max(floor, Math.min(want - 0.3 * S, H - 1.95 * S));
       return { side: side, kdir: -side, R: R, cx: cx,
         xk: Math.max(margin, Math.min(W - margin, cx + side * (0.55 * R + 0.82 * S))),
         ledge: ledge, hop: Math.max(0, (want - ledge) / S) };
@@ -810,7 +818,8 @@
       var side = away || (s.x < W / 2 ? 1 : -1), mx = s.x, my = H - s.y - 1.45 * S;
       var bx = Math.max(S * 0.9, Math.min(W - S * 0.9, s.x + side * S * 0.85)), by = Math.max(34, H - s.y - 2.05 * S);
       if (idx) { bx = Math.max(S * 0.9, Math.min(W - S * 0.9, bx + side * S * 0.3)); by = by - 0.75 * S >= 34 ? by - 0.75 * S : by + 0.75 * S; }
-      var fs = Math.max(16, Math.round(S * 0.2)), w = document.createElement('div');
+      var fs = Math.max(16, Math.round(S * 0.2)), w = document.createElement('div'), hw = txt.length * fs * 0.46 + 30;
+      bx = Math.max(hw + 6, Math.min(W - hw - 6, bx));
       w.style.cssText = 'position:fixed;left:0;top:0;width:0;height:0;z-index:100003;pointer-events:none;';
       function dot(x, y, r) {
         var c = document.createElement('div');
@@ -938,7 +947,7 @@
         ledge = Math.max(floor, Math.min(hi, H - cy - 0.8 * S));
       } else {
         xk = room >= S * 0.7 ? (side > 0 ? r.right + 0.55 * S : r.left - 0.55 * S) : (side > 0 ? W - margin : margin);
-        ledge = Math.max(floor, Math.min(Math.max(floor, H - r.bottom), hi));
+        ledge = kind === 'logo' ? Math.max(floor, Math.min(Math.max(floor, H - r.bottom) - 0.45 * S, H - 2.6 * S)) : Math.max(floor, Math.min(Math.max(floor, H - r.bottom), hi));
       }
       xk = Math.max(margin, Math.min(W - margin, xk));
       return { xk: xk, ledge: ledge, elev: elev, dirTo: xk < px ? 1 : -1 };
@@ -957,7 +966,7 @@
     function nextChain() {
       var n = s.chain.shift(), d = s.vt ? s.vt.dirTo : 1;
       setMove(n);
-      s.face = n === 'love' ? 0 : n === 'touch' ? d * 1.0 : n === 'kickname' ? d * 1.35 : d * 0.7;
+      s.face = n === 'hail' ? (s.dir || 1) * 1.25 : n === 'love' ? 0 : n === 'touch' ? d * 1.0 : n === 'kickname' ? d * 1.35 : d * 0.7;
     }
     function vAct() {
       var K = s.vt, tg = vFind(K.kind); if (!tg) { abortVisit(); return; }
@@ -966,7 +975,7 @@
       else if (K.kind === 'fill') seq = ['nolike'];
       else if (K.kind === 'chg') seq = tg.neg ? ['touch', 'nolike'] : ['touch', 'love'];
       else if (K.kind === 'gud') { seq = ['touch', 'nolike']; K.t2 = 'Per brangu'; }
-      else { seq = ['kickname']; K.t2 = 'Senas \slunkius'; }
+      else { seq = ['kickname']; K.t2 = 'Senas \u0161lunkius'; }
       s.chain = seq; nextChain();
     }
     function visitPoll() {
@@ -1018,7 +1027,7 @@
         P.sy = 1 + Math.min(0.05, Math.abs(s.vy) / 40000); P.fx = 0;
         P.arm('L', 1.9 * fa, 0.1, 0.1, 0.25 * fa); P.arm('R', 1.9 * fa, 0.1, 0.1, 0.25 * fa);
         P.leg('L', 0.3 * fa, 0.5 * fa, 0.12 * fa); P.leg('R', -0.2 * fa, 0.7 * fa, 0.12 * fa);
-        if (s.y <= s.fl) { s.y = s.fl; s.vy = 0; setMove('land'); s.face = 0; }
+        if (s.y <= s.fl) { s.y = s.fl; s.vy = 0; setMove('land'); s.face = 0; s.chain = ['hail']; }
       } else if (s.mode === 'leap') {
         var L = s.lp, tt = Math.min(L.t + dt, L.T); L.t += dt;
         var u = Math.min(1, L.t / L.T), e = easeInOut(u), mid = smooth(0.15, 0.4, u) * smooth(0.95, 0.7, u);
