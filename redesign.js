@@ -448,17 +448,26 @@
         x.fillStyle=i===n-1?AM:(RY?"rgba(228,38,47,.38)":"rgba(255,176,32,.38)");rr(bx,base-bh,bw,bh,10);x.fill();
         x.textAlign="center";x.fillStyle=i===n-1?INK:MU;x.font="600 26px "+MO;x.fillText(h.t,bx+bw/2,base-bh-14);
         x.fillStyle=MU;x.font="400 26px "+SS;x.fillText(h.l,bx+bw/2,base+40);x.textAlign="left"})}
-    x.fillStyle=MU;x.font="400 28px "+SS;x.fillText((location.host+location.pathname).replace(/\/$/,""),72,H-50);
-    if(bz)bzDraw(x,bz,bs,W,H);
+    x.fillStyle=MU;x.font="400 28px "+SS;x.textAlign=(bz&&!BZ_RIGHT)?"right":"left";x.fillText((location.host+location.pathname).replace(/\/$/,""),(bz&&!BZ_RIGHT)?1008:72,H-50);x.textAlign="left";
+    if(bz)bzPlace(x,bz,bs,W,H,AM,H-bs.h-20);
     c.toBlob(b=>b?res(b):rej(new Error("blob")),"image/png");
   })}
   // ---- Brazys: nejudanti nuotrauka kortelės apačioje (failas repo šaknyje; jei failo nėra – pasiūlymas nerodomas) ----
-  const BZ_SRC="brazys-share.png",BZ_H=230,BZ_LH=170,BZ_MAXW=520,BZ_FLIP=false;let bzP=null;
+  const BZ_SRC="brazys-share.png",BZ_H=280,BZ_LH=320,BZ_MAXW=520,BZ_FLIP=false,BZ_RIGHT=false;let bzP=null;
   const bzLoad=()=>bzP||(bzP=new Promise(res=>{const i=new Image();i.onload=()=>res(i.naturalWidth?i:null);i.onerror=()=>res(null);setTimeout(()=>res(null),6000);i.src=new URL(BZ_SRC,document.baseURI).href}));
   const bzSize=(i,h)=>{if(!i)return{w:0,h:0};const k=Math.min(h/i.naturalHeight,BZ_MAXW/i.naturalWidth);return{w:Math.round(i.naturalWidth*k),h:Math.round(i.naturalHeight*k)}};
-  const bzAt=(x,i,l,t,w,h)=>{x.save();x.shadowColor="rgba(0,0,0,.45)";x.shadowBlur=14;
-    if(BZ_FLIP){x.translate(l+w,t);x.scale(-1,1);x.drawImage(i,0,0,w,h)}else x.drawImage(i,l,t,w,h);x.restore()};
-  const bzDraw=(x,i,s,W,H)=>bzAt(x,i,W-56-s.w,H-s.h,s.w,s.h);
+  // Brazys kortelės apačioje: akcento spalvos prožektorius, grindų šešėlis ir šviesus kontūras, kad derėtų prie dizaino
+  const bzPlace=(x,i,s,W,H,col,clipY)=>{
+    const l=BZ_RIGHT?W-56-s.w:56,t=H-s.h,cx=l+s.w/2,fy=H;let g;
+    x.save();x.beginPath();x.rect(0,clipY,W,H-clipY);x.clip();
+    g=x.createRadialGradient(cx,t+s.h*.55,0,cx,t+s.h*.55,s.h*.95);g.addColorStop(0,col+"4D");g.addColorStop(.55,col+"1A");g.addColorStop(1,col+"00");
+    x.fillStyle=g;x.fillRect(cx-s.h,t-s.h*.4,s.h*2,s.h*1.9);
+    x.save();x.translate(cx,fy-6);x.scale(1,.17);g=x.createRadialGradient(0,0,0,0,0,s.w*.95);g.addColorStop(0,"rgba(0,0,0,.7)");g.addColorStop(1,"rgba(0,0,0,0)");
+    x.fillStyle=g;x.beginPath();x.arc(0,0,s.w*.95,0,Math.PI*2);x.fill();x.restore();
+    x.restore();
+    x.save();x.shadowColor=col+"73";x.shadowBlur=20;
+    if(BZ_FLIP){x.translate(l+s.w,t);x.scale(-1,1);x.drawImage(i,0,0,s.w,s.h)}else x.drawImage(i,l,t,s.w,s.h);
+    x.restore()};
   {const st=document.createElement("style");st.id="rd-bzo";st.textContent=
    '.shov .bzo{display:flex;align-items:center;gap:12px;margin:10px auto 0;padding:8px 12px;width:min(92vw,420px);box-sizing:border-box;background:var(--card);border:1px solid var(--line);border-radius:14px;color:var(--ink);font-size:14px}'+
    '.shov .bzo img{height:44px!important;width:auto!important;max-width:56px!important;max-height:44px!important;object-fit:contain;flex:none;border-radius:8px}'+
@@ -548,7 +557,7 @@
     showShare(blob,pkTitle(k),b=>drawList(k,rows,m,imgs,b));
   }
   function drawList(k,rows,m,imgs,bz){return new Promise((res,rej)=>{
-    const W=1080,n=rows.length,top=372,rh=88,H2=Math.max(1350,top+n*rh+170),c=document.createElement("canvas");c.width=W;c.height=H2;const x=c.getContext("2d");
+    const bs=bzSize(bz,BZ_LH),W=1080,n=rows.length,top=372,rh=88,H2=Math.max(1350,top+n*rh+170,bz?top+n*rh-2+bs.h:0),c=document.createElement("canvas");c.width=W;c.height=H2;const x=c.getContext("2d");
     const RY=k!=="sal"&&rows.every(p=>/rytas/i.test(p.row.club||""))||(k==="sal"&&rows.every(p=>/rytas/i.test(p.row.team||""))),BG="#07090F",CARD="#0F1420",LINE="#1E2638",INK="#E8ECF4",MU="#7A869E",AM=RY?"#E4262F":"#FFB020",HD="'Barlow Condensed','Arial Narrow',sans-serif",MO="'JetBrains Mono',ui-monospace,monospace",SS="system-ui,-apple-system,'Segoe UI',sans-serif";
     const fit=(txt,w,fam,wt,start,min)=>{let s=start;do{x.font=wt+" "+s+"px "+fam;s-=2}while(x.measureText(txt).width>w&&s>min);return s};
     const rr=(a,b,w,h,r)=>{x.beginPath();x.moveTo(a+r,b);x.arcTo(a+w,b,a+w,b+h,r);x.arcTo(a+w,b+h,a,b+h,r);x.arcTo(a,b+h,a,b,r);x.arcTo(a,b,a+w,b,r);x.closePath()};
@@ -575,12 +584,8 @@
       fit(nm,room,HD,"700",42,22);x.fillStyle=INK;x.fillText(nm,nx,y+39);nEnd=Math.max(nEnd,nx+x.measureText(nm).width);vS=Math.min(vS,986-vw);
       fit(sub,room,SS,"400",21,14);x.fillStyle=MU;x.fillText(sub,nx,y+62);nEnd=Math.max(nEnd,nx+x.measureText(sub).width);
     });
-    x.fillStyle=MU;x.font="400 28px "+SS;x.fillText((location.host+location.pathname).replace(/\/$/,""),72,H2-60);
-    // Brazys: mažas, stovi tarpe tarp pavadinimų ir sumų (neuždengia teksto); kuo daugiau eilučių – tuo arčiau lentelės vidurio
-    if(bz){const tH=n*rh-12,gl=nEnd+16,gr=vS-16;let bh=BZ_LH,bw=bh*bz.naturalWidth/bz.naturalHeight;
-      if(bw>gr-gl){bw=Math.max(56,gr-gl);bh=bw*bz.naturalHeight/bz.naturalWidth}
-      const cx=Math.min(Math.max(565,gl+bw/2),gr-bw/2),y0=top+Math.max(0,(tH-bh)*.45);
-      bzAt(x,bz,Math.round(cx-bw/2),Math.round(y0),Math.round(bw),Math.round(bh))}
+    x.fillStyle=MU;x.font="400 28px "+SS;x.textAlign=(bz&&!BZ_RIGHT)?"right":"left";x.fillText((location.host+location.pathname).replace(/\/$/,""),(bz&&!BZ_RIGHT)?1008:72,H2-60);x.textAlign="left";
+    if(bz)bzPlace(x,bz,bs,W,H2,AM,top+n*rh-8);
     c.toBlob(b=>b?res(b):rej(new Error("blob")),"image/png");
   })}
   document.addEventListener("click",e=>{
