@@ -175,7 +175,7 @@
     if(typeof LOGOS!=="undefined")document.querySelectorAll("#sh .cl h2:not([data-lg])").forEach(h=>{
       h.dataset.lg=1;
       if(/rytas/i.test(h.textContent)){const cl=h.closest(".cl");if(cl){cl.classList.add("ry");{const lu=new URL(base+"rytas-logo.png",document.baseURI).href;
-        cl.insertAdjacentHTML("beforeend",`<span class="ry-fx${RY_LIT?" lit":""}" role="button" tabindex="0" aria-label="Rytas" style="--lg:url('${lu}')"><i class="ry-amb"></i><i class="ry-glow"></i><img class="ry-logo" src="${lu}" alt="" onerror="this.closest('.cl').classList.remove('ry');this.closest('.ry-fx').remove()"><i class="ry-shine"></i>${Array.from({length:9},(_,i)=>`<i class="ry-em" style="--x:${8+i*10+(i%2)*4}%;--d:${(2.4+((i*37)%17)/10).toFixed(1)}s;--dl:${(((i*53)%23)/10).toFixed(1)}s;--dx:${(i%2?1:-1)*(6+(i*7)%18)}px"></i>`).join("")}</span>`)}}return}
+        cl.insertAdjacentHTML("beforeend",ryHTML(lu,RY_LIT));window.RYFX&&RYFX.kick()}}return}
       if(h.previousElementSibling&&h.previousElementSibling.classList.contains("rl"))return;h.insertAdjacentHTML("beforebegin",lgo(h.textContent))});
     document.querySelectorAll(".kp div b:not([data-l])").forEach(b=>{b.dataset.l=1;if(b.textContent.trim().length>13)b.classList.add("long")});
   }
@@ -193,6 +193,9 @@
   // MB-START ---- Moneyball skirtukas: biudžeto vieta lygoje prieš galutinę vietą ----
   let MB=false,MBS=null,MBN="",MBQ="";
   let MAP=false,RY_LIT=false;
+  // Ryto logotipo gylio sluoksniai: aura, HUD plokštė (SVG), aidas, logotipas, skanavimas, blizgesys, kibirkštys
+  const ryHTML=(lu,lit)=>`<span class="ry-fx${lit?" lit":""}" role="button" tabindex="0" aria-label="Rytas" aria-pressed="${!!lit}" style="--lg:url('${lu}')"><i class="ry-amb"></i><i class="ry-glow"></i><svg class="ry-plate" viewBox="0 0 200 200" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor"><circle cx="100" cy="100" r="95" stroke-width="1" opacity=".55"/><g class="pl-a"><circle cx="100" cy="100" r="88" stroke-width="5" stroke-dasharray="1.1 4.4" opacity=".6"/></g><g class="pl-b"><path d="M100 14A86 86 0 0 1 186 100" stroke-width="2.6" stroke-linecap="round"/><path d="M100 186A86 86 0 0 1 14 100" stroke-width="2.6" stroke-linecap="round"/></g><g class="pl-c"><circle cx="100" cy="100" r="76" stroke-width="1.2" stroke-dasharray="22 7 2 7" opacity=".7"/></g></g><g class="pl-d" fill="currentColor"><circle cx="100" cy="5" r="2.8"/><circle cx="195" cy="100" r="1.8" opacity=".7"/><circle cx="5" cy="100" r="1.8" opacity=".7"/></g></svg><img class="ry-echo" src="${lu}" alt="" aria-hidden="true"><img class="ry-logo" src="${lu}" alt="" onerror="this.closest('.cl').classList.remove('ry');this.closest('.ry-fx').remove()"><i class="ry-scan"></i><i class="ry-shine"></i>${Array.from({length:9},(_,i)=>`<i class="ry-em" style="--x:${8+i*10+(i%2)*4}%;--d:${(2.4+((i*37)%17)/10).toFixed(1)}s;--dl:${(((i*53)%23)/10).toFixed(1)}s;--dx:${(i%2?1:-1)*(6+(i*7)%18)}px"></i>`).join("")}</span>`;
+
   const T=(lt,en)=>(typeof LANG!=="undefined"&&LANG==="en")?en:lt;
   function mbData(se){
     const g={};budgetRows(se).filter(r=>r.total!=null&&r.place!=null).forEach(r=>{const k=r.nation+"|"+(r.div==null?"":r.div);(g[k]=g[k]||[]).push(r)});
@@ -535,16 +538,44 @@
   // Ryto logotipas: paspaudus „įsijungia“ (blykstelėjimas, aura, apšvietimas, detalumas)
   const ryToggle=e=>{
     const f=e.target.closest&&e.target.closest(".ry-fx");if(!f)return;
-    RY_LIT=!f.classList.contains("lit");f.classList.toggle("lit",RY_LIT);
-    if(RY_LIT){f.classList.remove("ping");void f.offsetWidth;f.classList.add("ping");setTimeout(()=>f.classList.remove("ping"),1100)}
-    else["--px","--py","--tx","--ty"].forEach(v=>f.style.removeProperty(v));
+    RY_LIT=!f.classList.contains("lit");f.classList.toggle("lit",RY_LIT);f.setAttribute("aria-pressed",String(RY_LIT));
+    if(RY_LIT){f.classList.remove("ping","burst");void f.offsetWidth;f.classList.add("ping","burst");clearTimeout(f._rt);f._rt=setTimeout(()=>f.classList.remove("ping","burst"),1300)}
+    window.RYFX&&RYFX.kick();
   };
   document.addEventListener("click",ryToggle);
   document.addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target.matches&&e.target.matches(".ry-fx")){e.preventDefault();ryToggle(e)}});
-  document.addEventListener("pointermove",e=>{const f=e.target.closest&&e.target.closest(".ry-fx.lit");if(!f)return;const q=f.getBoundingClientRect(),x=e.clientX-q.left,y=e.clientY-q.top;
-    f.style.setProperty("--px",(x/q.width*100).toFixed(1)+"%");f.style.setProperty("--py",(y/q.height*100).toFixed(1)+"%");
-    f.style.setProperty("--tx",(x/q.width*2-1).toFixed(2));f.style.setProperty("--ty",(y/q.height*2-1).toFixed(2))});
-  document.addEventListener("pointerout",e=>{const f=e.target.closest&&e.target.closest(".ry-fx.lit");if(f&&!f.contains(e.relatedTarget)){f.style.removeProperty("--tx");f.style.removeProperty("--ty")}});
+  // Ryto logotipo 3D pasvirimas: pelė ARBA pirštas; tarp prisilietimų – lėtas „kvėpavimas“; viskas glotninama rAF
+  window.RYFX=(()=>{
+    const rm=window.matchMedia?matchMedia("(prefers-reduced-motion: reduce)"):{matches:false};
+    let raf=0,tx=0,ty=0,aX=0,aY=0,hover=false,t0=0;
+    const cur=()=>document.querySelector("#sh .ry-fx"),cl=v=>Math.max(-1,Math.min(1,v));
+    function loop(now){
+      raf=0;const f=cur();if(!f)return;if(!t0)t0=now;
+      const lit=f.classList.contains("lit");let X=0,Y=0;
+      if(hover){X=aX;Y=aY}else if(lit&&!rm.matches){const t=(now-t0)/1000;X=Math.sin(t*.8)*.3;Y=Math.cos(t*.62)*.22}
+      const k=hover?.2:.07;tx+=(X-tx)*k;ty+=(Y-ty)*k;
+      if(Math.abs(X-tx)<5e-4)tx=X;if(Math.abs(Y-ty)<5e-4)ty=Y;
+      f.style.setProperty("--tx",tx.toFixed(3));f.style.setProperty("--ty",ty.toFixed(3));
+      if(hover||lit||tx!==X||ty!==Y)raf=requestAnimationFrame(loop);
+    }
+    const kick=()=>{if(!raf&&!document.hidden)raf=requestAnimationFrame(loop)};
+    const aim=e=>{
+      const f=e.target.closest&&e.target.closest(".ry-fx");if(!f)return;
+      const q=f.getBoundingClientRect(),x=(e.clientX-q.left)/q.width,y=(e.clientY-q.top)/q.height;
+      aX=cl(x*2-1);aY=cl(y*2-1);
+      f.style.setProperty("--px",(x*100).toFixed(1)+"%");f.style.setProperty("--py",(y*100).toFixed(1)+"%");
+      hover=true;kick();
+    };
+    const rest=()=>{hover=false;kick()};
+    document.addEventListener("pointerdown",aim,{passive:true});
+    document.addEventListener("pointermove",aim,{passive:true});
+    document.addEventListener("pointerout",e=>{const f=e.target.closest&&e.target.closest(".ry-fx");if(f&&!f.contains(e.relatedTarget))rest()});
+    document.addEventListener("pointerup",e=>{if(e.pointerType&&e.pointerType!=="mouse")rest()});
+    document.addEventListener("pointercancel",rest);
+    document.addEventListener("visibilitychange",kick);
+    return{kick};
+  })();
+  RYFX.kick();
   document.addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target.matches&&e.target.matches(".ppl div.pp")){e.preventDefault();ppToggle(e)}});
   document.addEventListener("pointermove",e=>{const c=e.target.closest&&e.target.closest(".ppl .pp.lit");if(!c)return;const r=c.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;c.style.setProperty("--mx",x+"px");c.style.setProperty("--my",y+"px");c.style.setProperty("--tx",(x/r.width*2-1).toFixed(2));c.style.setProperty("--ty",(y/r.height*2-1).toFixed(2))});
   document.addEventListener("pointerout",e=>{const c=e.target.closest&&e.target.closest(".ppl .pp.lit");if(c&&!c.contains(e.relatedTarget)){c.style.removeProperty("--tx");c.style.removeProperty("--ty")}});
