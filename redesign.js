@@ -144,8 +144,8 @@
   function enhance(){
     if(!ok())return;
     if(D.att&&!D.att.__le){D.att.__le=1;leagueFix()}
-    tape();perFan();
-    document.querySelectorAll("#sh .top:not([data-sb])").forEach(tp=>{tp.dataset.sb=1;if(!document.querySelector("#sh .cl h2"))return;
+    tape();perFan();try{pickEnhance()}catch(e){}
+    document.querySelectorAll("#sh .top:not([data-sb])").forEach(tp=>{tp.dataset.sb=1;if(!document.querySelector("#sh .cl h2,#sh > h2,#sh [data-pkl]"))return;
       const c=tp.querySelector("#cl");if(c)c.insertAdjacentHTML("beforebegin",`<button class="shb">${T("Dalintis","Share")}</button>`)});
     document.querySelectorAll("td[data-lb] .sh:not([data-e])").forEach(s=>{
       s.dataset.e=1;if(!/Užpildymas|Filling rate|Atlyginimų dalis|Salary share/.test(s.closest("td").dataset.lb||""))return;
@@ -175,7 +175,7 @@
     if(typeof LOGOS!=="undefined")document.querySelectorAll("#sh .cl h2:not([data-lg])").forEach(h=>{
       h.dataset.lg=1;
       if(/rytas/i.test(h.textContent)){const cl=h.closest(".cl");if(cl){cl.classList.add("ry");{const lu=new URL(base+"rytas-logo.png",document.baseURI).href;
-        cl.insertAdjacentHTML("beforeend",`<span class="ry-fx${RY_LIT?" lit":""}" role="button" tabindex="0" aria-label="Rytas" style="--lg:url('${lu}')"><i class="ry-amb"></i><i class="ry-glow"></i><img class="ry-logo" src="${lu}" alt="" onerror="this.closest('.cl').classList.remove('ry');this.closest('.ry-fx').remove()"><i class="ry-shine"></i>${Array.from({length:9},(_,i)=>`<i class="ry-em" style="--x:${8+i*10+(i%2)*4}%;--d:${(2.4+((i*37)%17)/10).toFixed(1)}s;--dl:${(((i*53)%23)/10).toFixed(1)}s;--dx:${(i%2?1:-1)*(6+(i*7)%18)}px"></i>`).join("")}</span>`)}}return}
+        cl.insertAdjacentHTML("beforeend",ryHTML(lu,RY_LIT));window.RYFX&&RYFX.kick()}}return}
       if(h.previousElementSibling&&h.previousElementSibling.classList.contains("rl"))return;h.insertAdjacentHTML("beforebegin",lgo(h.textContent))});
     document.querySelectorAll(".kp div b:not([data-l])").forEach(b=>{b.dataset.l=1;if(b.textContent.trim().length>13)b.classList.add("long")});
   }
@@ -193,6 +193,9 @@
   // MB-START ---- Moneyball skirtukas: biudžeto vieta lygoje prieš galutinę vietą ----
   let MB=false,MBS=null,MBN="",MBQ="";
   let MAP=false,RY_LIT=false;
+  // Ryto logotipo gylio sluoksniai: aura, HUD plokštė (SVG), aidas, logotipas, skanavimas, blizgesys, kibirkštys
+  const ryHTML=(lu,lit)=>`<span class="ry-fx${lit?" lit":""}" role="button" tabindex="0" aria-label="Rytas" aria-pressed="${!!lit}" style="--lg:url('${lu}')"><i class="ry-amb"></i><i class="ry-glow"></i><svg class="ry-plate" viewBox="0 0 200 200" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor"><circle cx="100" cy="100" r="95" stroke-width="1" opacity=".55"/><g class="pl-a"><circle cx="100" cy="100" r="88" stroke-width="5" stroke-dasharray="1.1 4.4" opacity=".6"/></g><g class="pl-b"><path d="M100 14A86 86 0 0 1 186 100" stroke-width="2.6" stroke-linecap="round"/><path d="M100 186A86 86 0 0 1 14 100" stroke-width="2.6" stroke-linecap="round"/></g><g class="pl-c"><circle cx="100" cy="100" r="76" stroke-width="1.2" stroke-dasharray="22 7 2 7" opacity=".7"/></g></g><g class="pl-d" fill="currentColor"><circle cx="100" cy="5" r="2.8"/><circle cx="195" cy="100" r="1.8" opacity=".7"/><circle cx="5" cy="100" r="1.8" opacity=".7"/></g></svg><img class="ry-echo" src="${lu}" alt="" aria-hidden="true"><img class="ry-logo" src="${lu}" alt="" onerror="this.closest('.cl').classList.remove('ry');this.closest('.ry-fx').remove()"><i class="ry-scan"></i><i class="ry-shine"></i>${Array.from({length:9},(_,i)=>`<i class="ry-em" style="--x:${8+i*10+(i%2)*4}%;--d:${(2.4+((i*37)%17)/10).toFixed(1)}s;--dl:${(((i*53)%23)/10).toFixed(1)}s;--dx:${(i%2?1:-1)*(6+(i*7)%18)}px"></i>`).join("")}</span>`;
+
   const T=(lt,en)=>(typeof LANG!=="undefined"&&LANG==="en")?en:lt;
   function mbData(se){
     const g={};budgetRows(se).filter(r=>r.total!=null&&r.place!=null).forEach(r=>{const k=r.nation+"|"+(r.div==null?"":r.div);(g[k]=g[k]||[]).push(r)});
@@ -396,22 +399,32 @@
 
   // ---- Dalijimosi kortelė (klubo lange) ----
   async function shareCard(){
-    const sh=document.getElementById("sh"),h2=sh&&sh.querySelector(".cl h2");if(!h2)return;
-    const name=h2.textContent.trim(),sub=((sh.querySelector(".sum")||{}).textContent||"").trim(),
+    const sh=document.getElementById("sh");if(!sh)return;
+    const lk=sh.querySelector("[data-pkl]");if(lk)return shareList(PKK[lk.dataset.pkl]);
+    const h2=sh.querySelector(".cl h2")||sh.querySelector("h2");if(!h2)return;
+    const isP=!sh.querySelector(".cl"),name=h2.textContent.trim();
+    let sub=((sh.querySelector(".sum")||{}).textContent||"").trim(),
       kp=[...sh.querySelectorAll(".kp div")].slice(0,4).map(d=>[((d.querySelector("small")||{}).textContent||"").trim(),((d.querySelector("b")||{}).textContent||"").trim()]).filter(x=>x[0]&&x[1]);
-    const seen=new Set(),uniq=r=>!seen.has(r.season)&&seen.add(r.season);let hist=[];
-    if(sh.querySelector(".lc"))hist=D.att.filter(r=>r.avg!=null&&same(r.club,name)).sort((a,b)=>a.season.localeCompare(b.season)).filter(uniq).map(r=>({l:r.season,v:r.avg,t:nf.format(Math.round(r.avg))}));
-    else if(sh.querySelector(".tw.ch"))hist=D.bud.filter(r=>r.total!=null&&same(r.club,name)).sort((a,b)=>a.season.localeCompare(b.season)).filter(uniq).map(r=>({l:r.season,v:r.total,t:(r.total/1e6).toFixed(1)+"M"}));
-    hist=hist.slice(-6);
-    const u=typeof LOGOS!=="undefined"&&LOGOS[norm(name)];let img=null;
+    const seen=new Set(),uniq=r=>!seen.has(r.season)&&seen.add(r.season);let hist=[],opts={},logoName=name;
+    if(isP){
+      const rows=D.sal.filter(p=>norm(p.name)===norm(name)).sort((a,b)=>(a.season||"").localeCompare(b.season||"")),last=rows[rows.length-1]||{};
+      sub=[last.team,last.role,last.season].filter(Boolean).join(" · ");logoName=last.team||"";
+      hist=rows.filter(p=>p.month!=null).reverse().filter(uniq).reverse().slice(-6).map(p=>({l:p.season,v:p.month,t:p.month>=1e6?(p.month/1e6).toFixed(2)+"M":Math.round(p.month/1000)+"k"}));
+      opts={hi:2,ry:/rytas/i.test(last.team||""),cap:T("Mėnesio algos pokytis (€)","Monthly salary change (€)")};
+    }else{
+      if(sh.querySelector(".lc"))hist=D.att.filter(r=>r.avg!=null&&same(r.club,name)).sort((a,b)=>a.season.localeCompare(b.season)).filter(uniq).map(r=>({l:r.season,v:r.avg,t:nf.format(Math.round(r.avg))}));
+      else if(sh.querySelector(".tw.ch"))hist=D.bud.filter(r=>r.total!=null&&same(r.club,name)).sort((a,b)=>a.season.localeCompare(b.season)).filter(uniq).map(r=>({l:r.season,v:r.total,t:(r.total/1e6).toFixed(1)+"M"}));
+      hist=hist.slice(-6);
+    }
+    const u=typeof LOGOS!=="undefined"&&LOGOS[norm(logoName)];let img=null;
     if(u)img=await new Promise(res=>{const i=new Image();i.crossOrigin="anonymous";i.onload=()=>res(i);i.onerror=()=>res(null);setTimeout(()=>res(null),4000);i.src=u});
     try{await document.fonts.load("700 100px 'Barlow Condensed'");await document.fonts.load("600 40px 'JetBrains Mono'")}catch(e){}
-    let blob;try{blob=await drawCard(name,sub,kp,hist,img)}catch(e){blob=await drawCard(name,sub,kp,hist,null)}
+    let blob;try{blob=await drawCard(name,sub,kp,hist,img,opts)}catch(e){blob=await drawCard(name,sub,kp,hist,null,opts)}
     showShare(blob,name);
   }
-  function drawCard(name,sub,kp,hist,img){return new Promise((res,rej)=>{
+  function drawCard(name,sub,kp,hist,img,opts){opts=opts||{};return new Promise((res,rej)=>{
     const W=1080,H=1350,c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d");
-    const RY=/rytas/i.test(name),BG="#07090F",CARD="#0F1420",LINE="#1E2638",INK="#E8ECF4",MU="#7A869E",AM=RY?"#E4262F":"#FFB020",HD="'Barlow Condensed','Arial Narrow',sans-serif",MO="'JetBrains Mono',ui-monospace,monospace",SS="system-ui,-apple-system,'Segoe UI',sans-serif";
+    const RY=opts.ry!=null?opts.ry:/rytas/i.test(name),BG="#07090F",CARD="#0F1420",LINE="#1E2638",INK="#E8ECF4",MU="#7A869E",AM=RY?"#E4262F":"#FFB020",HD="'Barlow Condensed','Arial Narrow',sans-serif",MO="'JetBrains Mono',ui-monospace,monospace",SS="system-ui,-apple-system,'Segoe UI',sans-serif";
     const fit=(txt,w,fam,wt,start,min)=>{let s=start;do{x.font=wt+" "+s+"px "+fam;s-=2}while(x.measureText(txt).width>w&&s>min);return s};
     const rr=(a,b,w,h,r)=>{x.beginPath();x.moveTo(a+r,b);x.arcTo(a+w,b,a+w,b+h,r);x.arcTo(a+w,b+h,a,b+h,r);x.arcTo(a,b+h,a,b,r);x.arcTo(a,b,a+w,b,r);x.closePath()};
     x.fillStyle=BG;x.fillRect(0,0,W,H);
@@ -428,7 +441,8 @@
     kp.slice(0,4).forEach((p,i)=>{const cx=72+(i%2)*(cw+gap),cy=y0+Math.floor(i/2)*(ch+gap);
       rr(cx,cy,cw,ch,24);x.fillStyle=CARD;x.fill();x.strokeStyle=LINE;x.lineWidth=2;x.stroke();
       fit(p[0],cw-56,SS,"400",28,18);x.fillStyle=MU;x.fillText(p[0],cx+28,cy+56);
-      fit(p[1],cw-56,MO,"600",60,26);x.fillStyle=i===0?AM:INK;x.fillText(p[1],cx+28,cy+142)});
+      fit(p[1],cw-56,MO,"600",60,26);x.fillStyle=i===(opts.hi||0)?AM:INK;x.fillText(p[1],cx+28,cy+142)});
+    if(opts.cap&&kp.length){x.fillStyle=MU;x.font="500 30px "+HD;x.fillText(opts.cap,72,y0+Math.ceil(kp.length/2)*(ch+gap)+56)}
     if(hist.length>1){const n=hist.length,slot=936/n,bw=Math.min(110,slot*.62),base=1190,mh=200,mx=Math.max(...hist.map(h=>h.v));
       hist.forEach((h,i)=>{const bx=72+slot*i+(slot-bw)/2,bh=Math.max(6,h.v/mx*mh);
         x.fillStyle=i===n-1?AM:(RY?"rgba(228,38,47,.38)":"rgba(255,176,32,.38)");rr(bx,base-bh,bw,bh,10);x.fill();
@@ -446,6 +460,130 @@
       else a.textContent=T("Naudokite „Atsisiųsti“","Use “Download”")});
     document.body.appendChild(o);
   }
+
+
+  // ---- Pasirinkimas (iki 15): biudžetai / lankomumas / žaidėjų algos → sąrašas + dalijimosi kortelė ----
+  const PKMAX=15,PK={bud:[],att:[],sal:[]},PKK={b:"bud",a:"att",s:"sal"},PKM={};let PKU=0,PKCUR="bud";
+  const pkM={
+    bud:[{k:"total",l:["Bendras biudžetas","Total budget"],v:r=>r.total,f:eur},{k:"sal",l:["Atlyginimų biudžetas","Salary budget"],v:r=>r.sal,f:eur},{k:"share",l:["Atlyginimų dalis","Salary share"],v:r=>r.share,f:pct},{k:"chg",l:["Biudžeto pokytis","Budget change"],v:r=>r.chg,f:sg}],
+    att:[{k:"avg",l:["Vid. lankomumas","Avg. attendance"],v:r=>r.avg,f:n0},{k:"fill",l:["Užpildymas","Filling rate"],v:r=>r.fill,f:pct},{k:"max",l:["Didžiausias","Highest"],v:r=>r.max,f:n0}],
+    sal:[{k:"month",l:["Mėnesio alga","Monthly salary"],v:r=>r.month,f:eur},{k:"value",l:["Sutarties vertė","Contract value"],v:r=>r.value,f:eur}]};
+  const pkTitle=k=>k==="bud"?T("Klubų biudžetai","Club budgets"):k==="att"?T("Klubų lankomumas","Club attendance"):T("Žaidėjų algos","Player salaries");
+  const pkName=(k,r)=>k==="sal"?r.name:r.club;
+  const pkSub=(k,p)=>k==="sal"?[p.row.team,p.season,p.row.role].filter(Boolean).join(" · "):[p.row.country||p.row.nation,p.season].filter(Boolean).join(" · ");
+  const pkId=(k,r)=>k==="sal"?norm(r.name)+"|"+r.season+"|"+norm(r.team||""):norm(r.club)+"|"+(r.season||S.season)+"|"+norm(r.country||r.nation||"");
+  const pkLogoUrl=(k,r)=>typeof LOGOS!=="undefined"&&LOGOS[norm(k==="sal"?(r.team||""):r.club)];
+  const pkMetric=k=>{const M=pkM[k];if(PKM[k]&&M.some(m=>m.k===PKM[k]))return PKM[k];const sk=S.sort&&S.sort[k]&&S.sort[k][0];return(M.find(m=>m.k===sk)||M[0]).k};
+  const pkSorted=k=>{const m=pkM[k].find(x=>x.k===pkMetric(k));return[...PK[k]].sort((a,b)=>{const x=m.v(a.row),y=m.v(b.row),nx=x==null,ny=y==null;if(nx||ny)return nx-ny;return y-x})};
+  function pkToast(t){let e=document.getElementById("pktoast");if(!e){e=document.createElement("div");e.id="pktoast";e.setAttribute("role","status");document.body.appendChild(e)}e.textContent=t;e.classList.add("on");clearTimeout(pkToast.t);pkToast.t=setTimeout(()=>e.classList.remove("on"),1900)}
+  function pkBar(){
+    let b=document.getElementById("pkbar");const k=S.tab,L=PK[k];
+    if(!L||!L.length||document.body.classList.contains("lk")){if(b&&!b.hidden)b.hidden=true;return}
+    const h=`<span class="pk-n"><b>${L.length}</b>/${PKMAX}</span><button type="button" class="pk-go" data-pka="open">${T("Rodyti sąrašą","Show list")}</button><button type="button" class="pk-cl" data-pka="clear" aria-label="${T("Išvalyti","Clear")}">✕</button>`;
+    if(!b){b=document.createElement("div");b.id="pkbar";document.body.appendChild(b)}
+    if(b.dataset.s!==h){b.dataset.s=h;b.innerHTML=h}
+    if(b.hidden)b.hidden=false;
+  }
+  function pickEnhance(){
+    const k=S.tab;
+    if(PK[k])document.querySelectorAll("#out tr.c:not([data-pk])").forEach(tr=>{
+      tr.dataset.pk=1;const td=tr.querySelector("td"),r=V[+tr.dataset.i];if(!td||!r)return;
+      if(getComputedStyle(td).position==="static")td.style.position="relative";
+      const on=PK[k].some(p=>p.id===pkId(k,r));
+      td.insertAdjacentHTML("beforeend",`<button type="button" class="pk" data-pk="${tr.dataset.i}" aria-pressed="${on}" aria-label="${T("Pasirinkti palyginimui","Select")}"></button>`);
+    });
+    pkBar();
+  }
+  function pkToggle(btn){
+    const k=S.tab,r=V[+btn.dataset.pk];if(!r||!PK[k])return;
+    const id=pkId(k,r),L=PK[k],i=L.findIndex(p=>p.id===id);
+    if(i>=0)L.splice(i,1);
+    else{if(L.length>=PKMAX){pkToast(T("Daugiausia "+PKMAX+" pasirinkimų","Maximum "+PKMAX+" selections"));return}L.push({u:++PKU,id,row:r,season:r.season||S.season})}
+    btn.setAttribute("aria-pressed",String(i<0));pkBar();
+  }
+  function pkListHTML(k){
+    const M=pkM[k],mk=pkMetric(k),m=M.find(x=>x.k===mk),rows=pkSorted(k),mx=Math.max(1e-9,...rows.map(p=>Math.abs(m.v(p.row)||0)));
+    return `<h2>${esc(pkTitle(k))}</h2><p class="sum">${rows.length}/${PKMAX} · ${esc(T(m.l[0],m.l[1]))}</p><div class="bar n">${M.map(x=>`<button type="button" class="chip" data-pkm="${x.k}" aria-pressed="${x.k===mk}">${esc(T(x.l[0],x.l[1]))}</button>`).join("")}</div>`
+      +`<ol class="pkl" data-pkl="${k[0]}">${rows.map((p,i)=>{const v=m.v(p.row),w=v==null?0:Math.max(3,Math.abs(v)/mx*100);
+        return `<li><i class="pkb" style="--w:${w.toFixed(1)}%"></i><span class="pkr">${i+1}</span><span class="pkn"><b>${esc(pkName(k,p.row))}</b><small>${esc(pkSub(k,p))}</small></span><span class="pkv">${m.f(v)}</span><button type="button" class="pkx" data-pkx="${p.u}" aria-label="${T("Pašalinti","Remove")}">×</button></li>`}).join("")}</ol>`
+      +`<p class="sum">${T("Grįžkite atgal ir pasirinkite dar (iki "+PKMAX+"). Paspaudę „Dalintis“ gausite kortelę su visu sąrašu.","Go back to add more (up to "+PKMAX+"). Press “Share” to get a card with the whole list.")}</p>`;
+  }
+  function pkOpen(){const k=S.tab;if(!PK[k]||!PK[k].length)return;PKCUR=k;show(pkListHTML(k))}
+  function pkRefresh(){
+    const sh=document.getElementById("sh"),st=sh?sh.scrollTop:0,k=PKCUR;
+    if(!PK[k].length){closeAll();return}
+    H[H.length-1]=pkListHTML(k);draw();requestAnimationFrame(()=>{if(sh)sh.scrollTop=st});
+  }
+  async function shareList(k){
+    const m=pkM[k].find(x=>x.k===pkMetric(k)),rows=pkSorted(k);if(!rows.length)return;
+    const imgs=await Promise.all(rows.map(p=>{const u=pkLogoUrl(k,p.row);return u?new Promise(res=>{const i=new Image();i.crossOrigin="anonymous";i.onload=()=>res(i);i.onerror=()=>res(null);setTimeout(()=>res(null),4000);i.src=u}):null}));
+    try{await document.fonts.load("700 100px 'Barlow Condensed'");await document.fonts.load("600 40px 'JetBrains Mono'")}catch(e){}
+    let blob;try{blob=await drawList(k,rows,m,imgs)}catch(e){blob=await drawList(k,rows,m,rows.map(()=>null))}
+    showShare(blob,pkTitle(k));
+  }
+  function drawList(k,rows,m,imgs){return new Promise((res,rej)=>{
+    const W=1080,n=rows.length,top=372,rh=88,H2=Math.max(1350,top+n*rh+170),c=document.createElement("canvas");c.width=W;c.height=H2;const x=c.getContext("2d");
+    const RY=k!=="sal"&&rows.every(p=>/rytas/i.test(p.row.club||""))||(k==="sal"&&rows.every(p=>/rytas/i.test(p.row.team||""))),BG="#07090F",CARD="#0F1420",LINE="#1E2638",INK="#E8ECF4",MU="#7A869E",AM=RY?"#E4262F":"#FFB020",HD="'Barlow Condensed','Arial Narrow',sans-serif",MO="'JetBrains Mono',ui-monospace,monospace",SS="system-ui,-apple-system,'Segoe UI',sans-serif";
+    const fit=(txt,w,fam,wt,start,min)=>{let s=start;do{x.font=wt+" "+s+"px "+fam;s-=2}while(x.measureText(txt).width>w&&s>min);return s};
+    const rr=(a,b,w,h,r)=>{x.beginPath();x.moveTo(a+r,b);x.arcTo(a+w,b,a+w,b+h,r);x.arcTo(a+w,b+h,a,b+h,r);x.arcTo(a,b+h,a,b,r);x.arcTo(a,b,a+w,b,r);x.closePath()};
+    x.fillStyle=BG;x.fillRect(0,0,W,H2);
+    const g=x.createRadialGradient(W/2,-80,0,W/2,-80,760);g.addColorStop(0,"rgba(255,176,32,.20)");g.addColorStop(1,"rgba(255,176,32,0)");x.fillStyle=g;x.fillRect(0,0,W,H2);
+    x.strokeStyle="rgba(122,134,158,.22)";x.lineWidth=3;[520,300].forEach(r=>{x.beginPath();x.arc(W,H2,r,0,Math.PI*2);x.stroke()});
+    x.textBaseline="alphabetic";x.textAlign="left";
+    x.fillStyle=AM;x.fillRect(72,72,96,6);
+    x.fillStyle=MU;x.font="500 34px "+HD;x.fillText(T("Krepšinio klubų finansai","Basketball Club Finances"),72,128);
+    fit(pkTitle(k),W-144,HD,"700",112,60);x.fillStyle=INK;x.fillText(pkTitle(k),72,250);
+    x.fillStyle=MU;x.font="400 36px "+SS;x.fillText(T(m.l[0],m.l[1])+" · "+n+" "+T(n===1?"įrašas":"įrašai","entries"),72,312);
+    const vals=rows.map(p=>m.v(p.row)),mx=Math.max(1e-9,...vals.map(v=>Math.abs(v||0)));
+    rows.forEach((p,i)=>{
+      const y=top+i*rh,w=936,v=vals[i];
+      rr(72,y,w,rh-12,18);x.fillStyle=CARD;x.fill();
+      if(v!=null){x.save();rr(72,y,w,rh-12,18);x.clip();x.fillStyle=i===0?(RY?"rgba(228,38,47,.30)":"rgba(255,176,32,.26)"):(RY?"rgba(228,38,47,.14)":"rgba(255,176,32,.12)");x.fillRect(72,y,Math.max(8,w*Math.abs(v)/mx),rh-12);x.restore()}
+      rr(72,y,w,rh-12,18);x.strokeStyle=LINE;x.lineWidth=2;x.stroke();
+      x.textAlign="center";x.fillStyle=i===0?AM:MU;x.font="600 30px "+MO;x.fillText(String(i+1),112,y+49);x.textAlign="left";
+      let nx=158;const im=imgs[i];
+      if(im){x.save();x.beginPath();x.arc(178,y+(rh-12)/2,26,0,Math.PI*2);x.closePath();x.fillStyle="#fff";x.fill();x.clip();const q=Math.min(40/im.width,40/im.height);x.drawImage(im,178-im.width*q/2,y+(rh-12)/2-im.height*q/2,im.width*q,im.height*q);x.restore();nx=222}
+      const vt=m.f(v),vs=fit(vt,300,MO,"600",34,20),vw=x.measureText(vt).width;
+      x.textAlign="right";x.fillStyle=i===0?AM:INK;x.font="600 "+vs+"px "+MO;x.fillText(vt,1008-22,y+50);x.textAlign="left";
+      const nm=pkName(k,p.row),sub=pkSub(k,p),room=1008-22-vw-24-nx;
+      fit(nm,room,HD,"700",42,22);x.fillStyle=INK;x.fillText(nm,nx,y+39);
+      fit(sub,room,SS,"400",21,14);x.fillStyle=MU;x.fillText(sub,nx,y+62);
+    });
+    x.fillStyle=MU;x.font="400 28px "+SS;x.fillText((location.host+location.pathname).replace(/\/$/,""),72,H2-60);
+    c.toBlob(b=>b?res(b):rej(new Error("blob")),"image/png");
+  })}
+  document.addEventListener("click",e=>{
+    const el=e.target.closest&&e.target.closest(".pk,[data-pka],[data-pkm],[data-pkx]");if(!el)return;
+    e.stopPropagation();e.preventDefault();
+    if(el.classList.contains("pk"))return pkToggle(el);
+    const d=el.dataset;
+    if(d.pka==="open")pkOpen();
+    else if(d.pka==="clear"){PK[S.tab]=[];document.querySelectorAll("#out .pk[aria-pressed=true]").forEach(b=>b.setAttribute("aria-pressed","false"));pkBar()}
+    else if(d.pkm){const l=document.querySelector("#sh [data-pkl]");if(l){PKCUR=PKK[l.dataset.pkl];PKM[PKCUR]=d.pkm;pkRefresh()}}
+    else if(d.pkx){const l=document.querySelector("#sh [data-pkl]");if(l){PKCUR=PKK[l.dataset.pkl];const L=PK[PKCUR],i=L.findIndex(p=>String(p.u)===d.pkx);if(i>=0)L.splice(i,1);pkRefresh()}}
+  },true);
+  {const st=document.createElement("style");st.id="rd-pk";st.textContent=
+   '#out tr.c>td:first-child{padding-right:56px}'+
+   '#out .pk{position:absolute;right:10px;top:50%;translate:0 -50%;width:36px;height:36px;border-radius:50%;border:1.5px solid var(--line);background:color-mix(in srgb,var(--card) 82%,transparent);color:var(--mute);cursor:pointer;display:grid;place-items:center;padding:0;font:700 20px/1 var(--tx,system-ui);-webkit-tap-highlight-color:transparent;transition:background .2s,color .2s,transform .15s}'+
+   '#out .pk::before{content:"+"}#out .pk:hover{color:var(--ink,#fff);border-color:var(--mute)}#out .pk:active{transform:scale(.92)}'+
+   '#out .pk[aria-pressed=true]{background:var(--a,#ffb020);border-color:transparent;color:#111}#out .pk[aria-pressed=true]::before{content:"✓"}'+
+   '@media(max-width:720px),(pointer:coarse){#out .pk{top:10px;translate:none}}'+
+   '#pkbar{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));translate:-50% 0;z-index:90;display:flex;align-items:center;gap:6px;padding:6px 6px 6px 16px;border-radius:999px;background:color-mix(in srgb,var(--card,#0f1420) 92%,#000);border:1px solid var(--line,#1e2638);box-shadow:0 10px 34px rgba(0,0,0,.5);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}'+
+   '#pkbar[hidden]{display:none}body.lk #pkbar{display:none}'+
+   '#pkbar .pk-n{font:600 15px var(--mo,ui-monospace,monospace);color:var(--mute)}#pkbar .pk-n b{color:var(--a,#ffb020);font-size:18px}'+
+   '#pkbar button{border:0;cursor:pointer;border-radius:999px;font:700 15px var(--tx,system-ui);padding:10px 16px}'+
+   '#pkbar .pk-go{background:var(--a,#ffb020);color:#111}#pkbar .pk-cl{background:transparent;color:var(--mute);padding:10px 12px}'+
+   '#pktoast{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom,0px));translate:-50% 12px;z-index:95;background:#111;color:#fff;border:1px solid #333;padding:10px 16px;border-radius:12px;font:600 14px var(--tx,system-ui);opacity:0;pointer-events:none;transition:opacity .2s,translate .2s}#pktoast.on{opacity:1;translate:-50% 0}'+
+   '#sh .pkl{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:8px}'+
+   '#sh .pkl li{position:relative;display:grid;grid-template-columns:34px 1fr auto 34px;align-items:center;gap:10px;min-height:62px;padding:8px 8px 8px 12px;border-radius:14px;background:var(--card);border:1px solid var(--line);overflow:hidden}'+
+   '#sh .pkl .pkb{position:absolute;left:0;top:0;bottom:0;width:var(--w);background:color-mix(in srgb,var(--a,#ffb020) 16%,transparent);pointer-events:none;border-radius:0 12px 12px 0}'+
+   '#sh .pkl li:first-child .pkb{background:color-mix(in srgb,var(--a,#ffb020) 30%,transparent)}'+
+   '#sh .pkl li>*{position:relative}#sh .pkl .pkb{position:absolute}'+
+   '#sh .pkl .pkr{font:600 16px var(--mo,ui-monospace,monospace);color:var(--mute);text-align:center}#sh .pkl li:first-child .pkr{color:var(--a,#ffb020)}'+
+   '#sh .pkl .pkn{min-width:0;display:flex;flex-direction:column}#sh .pkl .pkn b{font:700 18px/1.15 var(--hd,system-ui);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#sh .pkl .pkn small{color:var(--mute);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'+
+   '#sh .pkl .pkv{font:600 17px var(--mo,ui-monospace,monospace);white-space:nowrap}#sh .pkl li:first-child .pkv{color:var(--a,#ffb020)}'+
+   '#sh .pkl .pkx{width:34px;height:34px;border-radius:50%;border:0;background:transparent;color:var(--mute);font-size:22px;cursor:pointer;display:grid;place-items:center;padding:0}#sh .pkl .pkx:hover{background:color-mix(in srgb,var(--mute) 20%,transparent)}';
+   document.head.appendChild(st)}
 
   document.addEventListener("click",e=>{
     if(MB&&MBQ&&e.target.closest&&e.target.closest("#out .mb-chart")&&!e.target.closest(".mbd")){mbClear();return}
@@ -535,16 +673,44 @@
   // Ryto logotipas: paspaudus „įsijungia“ (blykstelėjimas, aura, apšvietimas, detalumas)
   const ryToggle=e=>{
     const f=e.target.closest&&e.target.closest(".ry-fx");if(!f)return;
-    RY_LIT=!f.classList.contains("lit");f.classList.toggle("lit",RY_LIT);
-    if(RY_LIT){f.classList.remove("ping");void f.offsetWidth;f.classList.add("ping");setTimeout(()=>f.classList.remove("ping"),1100)}
-    else["--px","--py","--tx","--ty"].forEach(v=>f.style.removeProperty(v));
+    RY_LIT=!f.classList.contains("lit");f.classList.toggle("lit",RY_LIT);f.setAttribute("aria-pressed",String(RY_LIT));
+    if(RY_LIT){f.classList.remove("ping","burst");void f.offsetWidth;f.classList.add("ping","burst");clearTimeout(f._rt);f._rt=setTimeout(()=>f.classList.remove("ping","burst"),1300)}
+    window.RYFX&&RYFX.kick();
   };
   document.addEventListener("click",ryToggle);
   document.addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target.matches&&e.target.matches(".ry-fx")){e.preventDefault();ryToggle(e)}});
-  document.addEventListener("pointermove",e=>{const f=e.target.closest&&e.target.closest(".ry-fx.lit");if(!f)return;const q=f.getBoundingClientRect(),x=e.clientX-q.left,y=e.clientY-q.top;
-    f.style.setProperty("--px",(x/q.width*100).toFixed(1)+"%");f.style.setProperty("--py",(y/q.height*100).toFixed(1)+"%");
-    f.style.setProperty("--tx",(x/q.width*2-1).toFixed(2));f.style.setProperty("--ty",(y/q.height*2-1).toFixed(2))});
-  document.addEventListener("pointerout",e=>{const f=e.target.closest&&e.target.closest(".ry-fx.lit");if(f&&!f.contains(e.relatedTarget)){f.style.removeProperty("--tx");f.style.removeProperty("--ty")}});
+  // Ryto logotipo 3D pasvirimas: pelė ARBA pirštas; tarp prisilietimų – lėtas „kvėpavimas“; viskas glotninama rAF
+  window.RYFX=(()=>{
+    const rm=window.matchMedia?matchMedia("(prefers-reduced-motion: reduce)"):{matches:false};
+    let raf=0,tx=0,ty=0,aX=0,aY=0,hover=false,t0=0;
+    const cur=()=>document.querySelector("#sh .ry-fx"),cl=v=>Math.max(-1,Math.min(1,v));
+    function loop(now){
+      raf=0;const f=cur();if(!f)return;if(!t0)t0=now;
+      const lit=f.classList.contains("lit");let X=0,Y=0;
+      if(hover){X=aX;Y=aY}else if(lit&&!rm.matches){const t=(now-t0)/1000;X=Math.sin(t*.8)*.3;Y=Math.cos(t*.62)*.22}
+      const k=hover?.2:.07;tx+=(X-tx)*k;ty+=(Y-ty)*k;
+      if(Math.abs(X-tx)<5e-4)tx=X;if(Math.abs(Y-ty)<5e-4)ty=Y;
+      f.style.setProperty("--tx",tx.toFixed(3));f.style.setProperty("--ty",ty.toFixed(3));
+      if(hover||lit||tx!==X||ty!==Y)raf=requestAnimationFrame(loop);
+    }
+    const kick=()=>{if(!raf&&!document.hidden)raf=requestAnimationFrame(loop)};
+    const aim=e=>{
+      const f=e.target.closest&&e.target.closest(".ry-fx");if(!f)return;
+      const q=f.getBoundingClientRect(),x=(e.clientX-q.left)/q.width,y=(e.clientY-q.top)/q.height;
+      aX=cl(x*2-1);aY=cl(y*2-1);
+      f.style.setProperty("--px",(x*100).toFixed(1)+"%");f.style.setProperty("--py",(y*100).toFixed(1)+"%");
+      hover=true;kick();
+    };
+    const rest=()=>{hover=false;kick()};
+    document.addEventListener("pointerdown",aim,{passive:true});
+    document.addEventListener("pointermove",aim,{passive:true});
+    document.addEventListener("pointerout",e=>{const f=e.target.closest&&e.target.closest(".ry-fx");if(f&&!f.contains(e.relatedTarget))rest()});
+    document.addEventListener("pointerup",e=>{if(e.pointerType&&e.pointerType!=="mouse")rest()});
+    document.addEventListener("pointercancel",rest);
+    document.addEventListener("visibilitychange",kick);
+    return{kick};
+  })();
+  RYFX.kick();
   document.addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target.matches&&e.target.matches(".ppl div.pp")){e.preventDefault();ppToggle(e)}});
   document.addEventListener("pointermove",e=>{const c=e.target.closest&&e.target.closest(".ppl .pp.lit");if(!c)return;const r=c.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;c.style.setProperty("--mx",x+"px");c.style.setProperty("--my",y+"px");c.style.setProperty("--tx",(x/r.width*2-1).toFixed(2));c.style.setProperty("--ty",(y/r.height*2-1).toFixed(2))});
   document.addEventListener("pointerout",e=>{const c=e.target.closest&&e.target.closest(".ppl .pp.lit");if(c&&!c.contains(e.relatedTarget)){c.style.removeProperty("--tx");c.style.removeProperty("--ty")}});
