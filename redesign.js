@@ -8,13 +8,15 @@
   // Ryto kortelės foninė foto: išblukinta (beveik be raudonos), tamsi, neutrali
   {const st=document.createElement("style");st.id="rd-bgfix";st.textContent=
    'html #sh.sheet.bg-photo{background:'+
-   'radial-gradient(640px 280px at 50% 0%,rgba(200,16,46,.05),transparent 72%),'+
-   'linear-gradient(180deg,rgba(6,6,8,calc(.64*(1 - var(--bg-a)))) 0%,rgba(6,6,8,calc(.74*(1 - var(--bg-a)))) 50%,rgba(6,6,8,calc(.95*(1 - var(--bg-a)))) 100%),'+
+   'radial-gradient(640px 280px at 50% 0%,rgba(200,16,46,.08),transparent 72%),'+
+   'linear-gradient(180deg,rgba(6,6,8,calc(.16*(1 - var(--bg-a)))) 0%,rgba(6,6,8,calc(.30*(1 - var(--bg-a)))) 50%,rgba(6,6,8,calc(.86*(1 - var(--bg-a)))) 100%),'+
+   'radial-gradient(ellipse 95% 70% at 50% 28%,transparent 45%,rgba(6,6,8,calc(.35*(1 - var(--bg-a)))) 100%),'+
    'linear-gradient(color-mix(in srgb,var(--card) calc(var(--bg-a)*100%),transparent),color-mix(in srgb,var(--card) calc(var(--bg-a)*100%),transparent)),'+
-   'linear-gradient(rgba(118,118,118,.9),rgba(118,118,118,.9)),'+
+   'linear-gradient(rgba(118,118,118,.28),rgba(118,118,118,.28)),'+
+   'var(--bgph) center 30%/cover no-repeat,'+
    'var(--bgph) center 30%/cover no-repeat var(--card) !important;'+
-   'background-blend-mode:normal,normal,normal,saturation,normal !important}'+
-   'html #sh.bg-photo.bg-show .kp div:first-child{background-color:rgba(8,8,10,.74)}';
+   'background-blend-mode:normal,normal,normal,normal,saturation,soft-light,normal !important}'+
+   'html #sh.bg-photo.bg-show .kp div:first-child{background-color:rgba(8,8,10,.62)}';
    document.head.appendChild(st)}
 
 
