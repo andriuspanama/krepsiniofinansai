@@ -1,6 +1,10 @@
 /*
  * arenamap.js – arenų žemėlapis, nupieštas pačios svetainės dizainu (D3, be plytelių ir API raktų).
- *   ArenaMap.mount(elementas, { D, T, esc, norm, same, logo, club, season })
+ *   ArenaMap.mount(elementas, { D, T, esc, norm, same, logo, club, season, sheetId })
+ * Klubai, arenos, miestai ir koordinatės imami tiesiai iš Google Sheets lapo „Arenas“:
+ *   kiekvienas klubas – jo pagrindinėje arenoje („Main arena override“, jei įrašyta, kitaip „Main arena for“).
+ *   Naujas klubas lape → naujas klubas žemėlapyje (nieko keisti nereikia).
+ * Žemiau esantis RAW sąrašas – tik atsarginis variantas, jei lapo nepavyktų atsisiųsti.
  * Žemėlapio kontūrai kraunami iš jsDelivr (world-atlas), arenų nuotraukos – iš Wikipedia.
  */
 (function () {
@@ -206,7 +210,7 @@
   function layoutPins(items, t, w, h, selected) {
     var placed = [], order = selected ? [selected].concat(items.filter(function (x) { return x !== selected; })) : items;
     order.forEach(function (it) {
-      var x = t.k * it.p[0] + t.x + (it.gi - (it.gn - 1) / 2) * it.s * 0.98, y = t.k * it.p[1] + t.y;
+      var x = t.k * it.p[0] + t.x + (it.off || 0), y = t.k * it.p[1] + t.y;
       var vis = x > -30 && x < w + 30 && y > -30 && y < h + 30, ok = vis, r = it.s / 2 + 3, i;
       if (ok && it !== selected) {
         for (i = 0; i < placed.length; i++) {
@@ -225,10 +229,39 @@
   /*  Naršyklės dalis                                                     */
   /* ------------------------------------------------------------------ */
   var GEN = { arena: 1, center: 1, centre: 1, sports: 1, sport: 1, hall: 1, palace: 1, palais: 1, palacio: 1, pabellon: 1, pavello: 1, forum: 1, dome: 1, stadium: 1, sala: 1, salle: 1, dvorana: 1, hala: 1, spor: 1, salonu: 1, indoor: 1, olympic: 1, sporthalle: 1, stadthalle: 1 };
-  var NAMEFIX = { 'Czech Republic': 'Czechia', 'Bosnia and Herzegovina': 'Bosnia and Herz.', 'North Macedonia': 'N. Macedonia', UK: 'United Kingdom', England: 'United Kingdom' };
+  var NAMEFIX = { 'Czech Republic': 'Czechia', 'Bosnia and Herzegovina': 'Bosnia and Herz.', 'North Macedonia': 'Macedonia', UK: 'United Kingdom', England: 'United Kingdom' };
+  var SHEET_FALLBACK = '1Qt4ijFGDmvoLLHb-gCbcAF9KGts6ZC-RHwWzQw68cZI';
+
+  // „A; B (occasional); C (2024-25)“ -> ['A', 'B', 'C'] (pastabos skliaustuose nuimamos, kiti skliaustai – pavadinimo dalis)
+  function sheetNames(cell) {
+    return String(cell == null ? '' : cell).split(';').map(function (x) {
+      return x.replace(/\s*\(((?:[^)]*occasional[^)]*)|(?:[^)]*\d{4}[^)]*)|(?:pre-season[^)]*)|(?:listed[^)]*))\)/gi, '').trim();
+    }).filter(Boolean);
+  }
+  // Lapas „Arenas“ per gviz JSON: reikšmės be formatavimo (CSV koordinates suapvalintų iki 3 skaičių po kablelio)
+  function loadSheet(id) {
+    var u = 'https://docs.google.com/spreadsheets/d/' + id + '/gviz/tq?tqx=out:json&headers=1&sheet=Arenas&t=' + Math.floor(Date.now() / 60000);
+    return fetch(u).then(function (r) { return r.text(); }).then(function (t) {
+      var j = JSON.parse(t.slice(t.indexOf('(') + 1, t.lastIndexOf(')')));
+      var cols = j.table.cols.map(function (c) { return baseNorm(c.label); });
+      var ci = function (n) { return cols.indexOf(baseNorm(n)); };
+      var I = { league: ci('League'), arena: ci('Arena'), main: ci('Main arena for'), over: ci('Main arena override'), city: ci('City'),
+        lat: ci('Latitude'), lon: ci('Longitude'), cap: ci('Capacity'), prec: ci('Coordinates precision') };
+      if (I.arena < 0 || I.main < 0 || I.lat < 0 || I.lon < 0) throw new Error('Arenas: nerasti stulpeliai');
+      var num = function (v) { if (v == null || v === '') return NaN; return typeof v === 'number' ? v : parseFloat(String(v).replace(/\s/g, '').replace(',', '.')); };
+      return j.table.rows.map(function (r) {
+        var c = (r.c || []).map(function (x) { return x == null ? null : x.v; }), g = function (k) { return I[k] >= 0 ? c[I[k]] : null; };
+        var lat = num(g('lat')), lon = num(g('lon'));
+        return { league: String(g('league') || ''), arena: String(g('arena') || '').trim(), city: String(g('city') || '').trim(),
+          lat: lat, lon: lon, ok: isFinite(lat) && isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180,
+          cap: isFinite(num(g('cap'))) ? Math.round(num(g('cap'))) : null,
+          main: sheetNames(g('main')), over: sheetNames(g('over')) };
+      }).filter(function (r) { return r.arena; });
+    });
+  }
   var scripts = {}, topoP = null, cur = null, wcache = {};
 
-  var API = { findArena: findArena, ARENAS: ARENAS, layoutPins: layoutPins, km: km };
+  var API = { findArena: findArena, ARENAS: ARENAS, layoutPins: layoutPins, km: km, sheetNames: sheetNames };
   (typeof window !== 'undefined' ? window : globalThis).ArenaMap = API;
   if (typeof document === 'undefined') return;
 
@@ -300,6 +333,7 @@
       '@keyframes am-pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--a) 70%,transparent)}100%{box-shadow:0 0 0 18px transparent}}',
       '.am-pin .lb{position:absolute;left:50%;top:100%;transform:translate(-50%,4px);white-space:nowrap;font:600 11px var(--hd,sans-serif);color:var(--ink);text-shadow:0 1px 3px var(--bg),0 0 6px var(--bg);opacity:0;transition:opacity .25s;pointer-events:none}',
       '.am-lab .am-pin:not(.off) .lb,.am-pin:not(.off):hover .lb{opacity:1}',
+      '.am-pin.up .lb{top:auto;bottom:100%;transform:translate(-50%,-4px)}',
       '.am-ui{position:absolute;left:12px;top:12px;display:flex;flex-direction:column;gap:8px;z-index:5;align-items:flex-start}',
       '.am-search{width:min(230px,56vw);padding:9px 14px;border-radius:99px;border:1px solid var(--line);background:color-mix(in srgb,var(--card) 90%,transparent);color:var(--ink);font:inherit;font-size:14px;-webkit-user-select:text;user-select:text}',
       '.am-zoom{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card)}',
@@ -309,6 +343,9 @@
       '.am-hint.hide{opacity:0}',
       '.am-card{position:absolute;z-index:6;right:12px;top:12px;bottom:12px;width:min(360px,calc(100% - 24px));display:flex;flex-direction:column;border-radius:16px;background:var(--card);border:1px solid var(--line);box-shadow:0 18px 50px rgba(0,0,0,.5);overflow:hidden;transform:translateX(24px);opacity:0;transition:transform .45s cubic-bezier(.2,.8,.2,1),opacity .35s;cursor:default;-webkit-user-select:text;user-select:text}',
       '.am-card.on{transform:none;opacity:1}',
+      '.am-card[hidden]{display:none}.am-card:not(.on){pointer-events:none}',
+      '.am-head p.cap{margin-top:2px}',
+      '.am-ui{pointer-events:none}.am-ui>*{pointer-events:auto}',
       '.am-x{position:absolute;right:8px;top:8px;z-index:3;width:32px;height:32px;border-radius:50%;border:0;background:rgba(0,0,0,.55);color:#fff;font-size:20px;line-height:1;cursor:pointer}',
       '.am-media{position:relative;flex:none;height:200px;overflow:hidden;perspective:760px;background:linear-gradient(110deg,var(--card) 30%,var(--line) 50%,var(--card) 70%);background-size:200% 100%;animation:am-sh 1.4s linear infinite}',
       '.am-media.done{animation:none;background:var(--bg)}',
@@ -364,28 +401,81 @@
     var D = deps.D, T = deps.T || function (a) { return a; }, esc = deps.esc || String, N = deps.norm || baseNorm;
     var same = deps.same || function (a, b) { return N(a) === N(b); }, season = deps.season || '26/27';
     el.innerHTML = '<div class="am-load">' + esc(T('Kraunamas žemėlapis…', 'Loading map…')) + '</div>';
-    ensureLibs().then(function (topo) { if (el.isConnected) build(topo); }).catch(function () {
+    var sid = deps.sheetId || (typeof SHEET_ID !== 'undefined' ? SHEET_ID : SHEET_FALLBACK);
+    var sheetP = loadSheet(sid).catch(function (e) { console.warn('Arenas lapas neatsisiuntė – naudojamas atsarginis sąrašas:', e && e.message); return null; });
+    Promise.all([ensureLibs(), sheetP]).then(function (r) { if (el.isConnected) build(r[0], r[1]); }).catch(function () {
       el.innerHTML = '<div class="am-load">' + esc(T('Nepavyko įkelti žemėlapio. Patikrinkite ryšį.', 'Could not load the map. Check your connection.')) + '</div>';
     });
 
-    function build(topo) {
+    function build(topo, sheet) {
       var d3 = window.d3, topojson = window.topojson;
+      var LT2EN_ = typeof LT2EN !== 'undefined' ? LT2EN : {}, NAT_ = typeof NAT !== 'undefined' ? NAT : {};
+      var enName = function (n) { var e = LT2EN_[n] || n; return NAMEFIX[e] || e; };
       // --- klubai ---
-      var seen = {}, items = [], missing = [];
-      D.bud.filter(function (r) { return r.season === season && r.club; }).forEach(function (r) {
-        var k = N(r.club); if (seen[k]) return; seen[k] = 1;
-        var e = findArena(r.club, N);
-        if (!e) { missing.push(r.club); return; }
-        items.push({ name: r.club, nation: r.nation, e: e, total: +r.total || 0, logo: deps.logo ? deps.logo(r.club) : null });
-      });
+      var bud26 = D.bud.filter(function (r) { return r.season === season && r.club; });
+      var findBud = function (n) { var k = N(n); return bud26.filter(function (r) { return N(r.club) === k; })[0] || bud26.filter(function (r) { return same(r.club, n); })[0]; };
+      var findAtt = function (n) {
+        return (D.att || []).filter(function (r) { return r.season === season && r.avg != null && same(r.club, n); })[0];
+      };
+      var seen = {}, items = [], missing = [], noCoord = [];
+      var add = function (name, e) {
+        var k = N(name); if (!k || seen[k]) return; seen[k] = 1;
+        var b = findBud(name), a = findAtt(name), oldA = b ? null : (D.att || []).filter(function (r) { return same(r.club, name); })[0];
+        var nation = b ? b.nation : a ? (a.country || a.nation) : oldA ? (oldA.country || oldA.nation) : '';
+        items.push({ name: b ? b.club : name, nation: nation, e: e, total: b && b.total != null ? +b.total : 0, bud: b || null, att: a || null, hasCard: !!(b || a || oldA),
+          logo: deps.logo ? (deps.logo(b ? b.club : name) || deps.logo(name)) : null });
+      };
+      if (sheet && sheet.length) {
+        // 1) „Main arena override“ (laimi), 2) „Main arena for“
+        var pickRow = {};
+        sheet.forEach(function (r) { r.main.forEach(function (c) { if (!pickRow[N(c)]) pickRow[N(c)] = { name: c, row: r }; }); });
+        sheet.forEach(function (r) { r.over.forEach(function (c) { pickRow[N(c)] = { name: c, row: r }; }); });
+        Object.keys(pickRow).forEach(function (k) {
+          var p = pickRow[k], r = p.row;
+          if (!r.ok) { noCoord.push(p.name + ' – ' + r.arena); return; }
+          add(p.name, { arena: r.arena, city: r.city, lat: r.lat, lon: r.lon, ok: true, cap: r.cap });
+        });
+        bud26.forEach(function (r) {
+          if (r.nation === 'Japonija' || r.nation === 'Japan') return;
+          if (!items.some(function (i) { return same(i.name, r.club); })) missing.push(r.club);
+        });
+      } else {
+        bud26.forEach(function (r) {
+          var e = findArena(r.club, N);
+          if (!e) { missing.push(r.club); return; }
+          add(r.club, e);
+        });
+      }
       items.sort(function (a, b) { return b.total - a.total; });
       var maxT = Math.max.apply(null, items.map(function (i) { return i.total; }).concat([1]));
-      var groups = {};
-      items.forEach(function (it) {
-        it.s = Math.round(28 + 18 * Math.sqrt(it.total / maxT));
-        it.g = it.e.lat + ',' + it.e.lon; (groups[it.g] = groups[it.g] || []).push(it);
-      });
-      items.forEach(function (it) { it.gi = groups[it.g].indexOf(it); it.gn = groups[it.g].length; });
+      items.forEach(function (it) { it.s = Math.round(28 + 18 * Math.sqrt(it.total / maxT)); });
+      var GAP = 10, ZMAX = 64;
+      // Ta pati arena ARBA arenos taip arti, kad burbulai persidengtų net maksimaliai priartinus (pvz. Aris ir Iraklis
+      // Salonikuose ~600 m): tokie klubai sujungiami į vieną grupę ir rodomi greta (iš vakarų į rytus) su tarpeliu,
+      // kas antro klubo pavadinimas – virš burbulo. Kitaip mažesnio biudžeto klubas niekada nepasirodytų.
+      function regroup() {
+        var n = items.length, par = items.map(function (_, i) { return i; });
+        var root = function (i) { while (par[i] !== i) { par[i] = par[par[i]]; i = par[i]; } return i; };
+        for (var i = 0; i < n; i++) for (var j = i + 1; j < n; j++) {
+          var a = items[i], b = items[j], dx = (a.p0[0] - b.p0[0]) * ZMAX, dy = (a.p0[1] - b.p0[1]) * ZMAX;
+          if (dx * dx + dy * dy < Math.pow((a.s + b.s) / 2 + GAP, 2)) { var ra = root(i), rb = root(j); if (ra !== rb) par[rb] = ra; }
+        }
+        var groups = {};
+        items.forEach(function (it, i) { var r = root(i); (groups[r] = groups[r] || []).push(it); it.g = 'g' + r; });
+        Object.keys(groups).forEach(function (k) {
+          var gr = groups[k].sort(function (a, b) { return a.p0[0] - b.p0[0] || b.total - a.total; });
+          var cx = gr.reduce(function (t, i) { return t + i.p0[0]; }, 0) / gr.length, cy = gr.reduce(function (t, i) { return t + i.p0[1]; }, 0) / gr.length;
+          var tot = gr.reduce(function (t, i) { return t + i.s; }, 0) + GAP * (gr.length - 1), x = -tot / 2;
+          gr.forEach(function (it, i) {
+            it.p = gr.length > 1 ? [cx, cy] : it.p0; it.gi = i; it.gn = gr.length;
+            it.off = gr.length > 1 ? x + it.s / 2 : 0; x += it.s + GAP; it.up = gr.length > 1 && i % 2 === 1;
+          });
+        });
+      }
+      // žemėlapio ribos: Europa + visi klubai (pvz. Australija)
+      var bx = [-30, 18, 70, 72];
+      items.forEach(function (it) { bx[0] = Math.min(bx[0], it.e.lon - 8); bx[1] = Math.min(bx[1], it.e.lat - 8); bx[2] = Math.max(bx[2], it.e.lon + 8); bx[3] = Math.max(bx[3], it.e.lat + 8); });
+      bx[0] = Math.max(bx[0], -180); bx[2] = Math.min(bx[2], 180); bx[1] = Math.max(bx[1], -60); bx[3] = Math.min(bx[3], 78);
 
       // --- DOM ---
       var wrap = document.createElement('div'); wrap.className = 'am-wrap';
@@ -398,8 +488,13 @@
       el.innerHTML = ''; el.appendChild(wrap);
       if (missing.length) {
         var det = document.createElement('details'); det.className = 'am-miss';
-        det.innerHTML = '<summary>' + esc(T('Klubai be arenos koordinačių', 'Clubs without arena coordinates')) + ' (' + missing.length + ')</summary><p>' + missing.map(esc).join(', ') + '</p>';
+        det.innerHTML = '<summary>' + esc(T('26/27 klubai be pagrindinės arenos lape „Arenas“', '26/27 clubs without a main arena in the Arenas sheet')) + ' (' + missing.length + ')</summary><p>' + missing.map(esc).join(', ') + '</p>';
         el.appendChild(det);
+      }
+      if (noCoord.length) {
+        var dc = document.createElement('details'); dc.className = 'am-miss';
+        dc.innerHTML = '<summary>' + esc(T('Arenos be koordinačių lape „Arenas“', 'Arenas without coordinates in the Arenas sheet')) + ' (' + noCoord.length + ')</summary><p>' + noCoord.map(esc).join(', ') + '</p>';
+        el.appendChild(dc);
       }
       var note = document.createElement('p'); note.className = 'sum';
       note.style.cssText = 'font-size:13px;margin-top:8px';
@@ -410,31 +505,35 @@
       var svg = d3.select(wrap.querySelector('.am-svg')), g = svg.select('.am-g');
       var features = topojson.feature(topo, topo.objects.countries).features.filter(function (f) {
         if (f.properties.name === 'Russia') return true;
-        var b = d3.geoBounds(f); return b[1][0] > -35 && b[0][0] < 75 && b[1][1] > 10 && b[0][1] < 75;
+        var b = d3.geoBounds(f); return b[1][0] > bx[0] - 5 && b[0][0] < bx[2] + 5 && b[1][1] > bx[1] - 8 && b[0][1] < bx[3] + 3;
       });
-      var nations = {}; items.forEach(function (i) { nations[NAMEFIX[i.nation] || i.nation] = 1; });
-      var proj, path, ext, cT = d3.zoomIdentity, sel = null, raf = 0, mtoken = 0, openedAt = 0;
+      var nations = {}; items.forEach(function (i) { if (i.nation) nations[enName(i.nation)] = 1; });
+      var unfix = { Czechia: 'Czech Republic', 'Bosnia and Herz.': 'Bosnia and Herzegovina', Macedonia: 'North Macedonia' };
+      var labName = function (n) { var e = unfix[n] || n; return T(NAT_[e] || e, e); };
+      var proj, path, ext, kMin = 1, cT = d3.zoomIdentity, sel = null, raf = 0, mtoken = 0, openedAt = 0;
       var labels = features.filter(function (f) { return nations[f.properties.name]; }).map(function (f) { var m = mainCentroid(d3, f); return { f: f, c: m.c, poly: m.poly, n: f.properties.name }; });
 
       var lands = g.select('.am-lands').selectAll('path').data(features).join('path').attr('class', function (f) { return 'am-land' + (nations[f.properties.name] ? ' has' : ''); });
-      var labSel = g.select('.am-labs').selectAll('text').data(labels).join('text').attr('class', 'am-cl').text(function (d) { return d.n; });
+      var labSel = g.select('.am-labs').selectAll('text').data(labels).join('text').attr('class', 'am-cl').text(function (d) { return labName(d.n); });
 
       function project() {
         var w = W(), h = H();
         proj = d3.geoMercator().fitExtent([[12, 12], [w - 12, h - 12]], { type: 'MultiPoint', coordinates: [[-11, 31], [40, 31], [40, 62], [-11, 62]] });
         path = d3.geoPath(proj);
-        var a = proj([-30, 72]), b = proj([70, 18]); ext = [[a[0], a[1]], [b[0], b[1]]];
+        var a = proj([bx[0], bx[3]]), b = proj([bx[2], bx[1]]); ext = [[Math.min(a[0], 0), Math.min(a[1], 0)], [Math.max(b[0], w), Math.max(b[1], h)]];
+        kMin = Math.min(1, w / (ext[1][0] - ext[0][0]), h / (ext[1][1] - ext[0][1]));
         g.select('.am-grat').datum(d3.geoGraticule10()).attr('d', path);
         lands.attr('d', path);
-        labels.forEach(function (l) { var p = proj(l.c), bb = path.bounds(l.poly); l.x = p[0]; l.y = p[1]; l.w = bb[1][0] - bb[0][0]; });
-        items.forEach(function (it) { it.p = proj([it.e.lon, it.e.lat]); });
+        labels.forEach(function (l) { var p = proj(l.c), bb = path.bounds(l.poly); l.x = p[0]; l.y = p[1]; l.w = bb[1][0] - bb[0][0]; l.len = labName(l.n).length; });
+        items.forEach(function (it) { it.p0 = proj([it.e.lon, it.e.lat]); });
+        regroup();
       }
       project();
 
       // --- piniai ---
       var pinsEl = wrap.querySelector('.am-pins');
       items.forEach(function (it) {
-        var b = document.createElement('button'); b.type = 'button'; b.className = 'am-pin'; b.title = it.name; b.setAttribute('aria-label', it.name);
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'am-pin' + (it.up ? ' up' : ''); b.title = it.name; b.setAttribute('aria-label', it.name);
         b.style.setProperty('--s', it.s + 'px');
         var ini = String(it.name).split(/\s+/).slice(0, 2).map(function (w) { return w[0]; }).join('').toUpperCase();
         b.innerHTML = '<span class="in">' + (it.logo ? '<img src="' + esc(it.logo) + '" alt="" draggable="false" loading="lazy">' : '<b>' + esc(ini) + '</b>') + '</span><span class="lb">' + esc(it.name) + '</span>';
@@ -446,13 +545,13 @@
         raf = 0;
         layoutPins(items, cT, W(), H(), sel);
         items.forEach(function (it) {
-          it.el.classList.toggle('off', !it.on);
+          it.el.classList.toggle('off', !it.on); it.el.classList.toggle('up', !!it.up);
           if (it.vis) it.el.style.transform = 'translate(' + it.sx.toFixed(1) + 'px,' + it.sy.toFixed(1) + 'px)';
         });
         wrap.classList.toggle('am-lab', cT.k >= 6);
         labSel.attr('transform', function (d) { return 'translate(' + d.x + ',' + d.y + ')'; })
           .style('font-size', (11 / cT.k) + 'px').style('stroke-width', (3 / cT.k) + 'px')
-          .style('display', function (d) { return d.w * cT.k > d.n.length * 8.5 ? null : 'none'; });
+          .style('display', function (d) { return d.w * cT.k > d.len * 8.5 ? null : 'none'; });
       }
       function apply(t) {
         cT = t; g.attr('transform', t.toString());
@@ -461,14 +560,14 @@
       }
 
       var reduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-      var zoom = d3.zoom().scaleExtent([1, 32])
+      var zoom = d3.zoom().scaleExtent([kMin, ZMAX])
         .extent(function () { return [[0, 0], [W(), H()]]; })
         .translateExtent(ext)
         .filter(function (ev) { return !(ev.target.closest && ev.target.closest('.am-card,.am-ui')) && (!ev.ctrlKey || ev.type === 'wheel') && !ev.button; })
         .on('zoom', function (ev) { apply(ev.transform); });
       var wsel = d3.select(wrap);
       wsel.call(zoom);
-      function setExt() { zoom.translateExtent(ext); }
+      function setExt() { zoom.translateExtent(ext).scaleExtent([kMin, ZMAX]); }
       wsel.call(zoom.transform, d3.zoomIdentity);
       layout();
 
@@ -483,9 +582,9 @@
       var card = wrap.querySelector('.am-card');
       function fmtM(v) { return (v / 1e6).toFixed(1).replace('.', ',') + ' M €'; }
       function openCard(it) {
-        var e = it.e, bud = D.bud.filter(function (r) { return r.season === season && same(r.club, it.name); })[0];
-        var att = (D.att || []).filter(function (r) { return same(r.club, it.name) && r.avg != null; }).sort(function (a, b) { return String(b.season).localeCompare(String(a.season)); })[0];
-        var attTxt = att ? Math.round(att.avg).toLocaleString('lt-LT') + (att.fill ? ' · ' + Math.round(att.fill * 100) + '%' : '') : '—';
+        var e = it.e, bud = it.bud, att = it.att;
+        var attTxt = att ? Math.round(att.avg).toLocaleString('lt-LT') + (att.fill != null ? ' · ' + Math.round(att.fill * 100) + '%' : '') : '—';
+        var capTxt = e.cap ? '<p class="cap">' + esc(T('Talpa', 'Capacity')) + ': ' + Math.round(e.cap).toLocaleString('lt-LT') + '</p>' : '';
         card.hidden = false;
         card.innerHTML =
           '<button type="button" class="am-x" aria-label="' + esc(T('Uždaryti', 'Close')) + '">×</button>' +
@@ -494,12 +593,11 @@
           '<div class="am-sw" hidden><button type="button" data-v="sat">🛰 ' + esc(T('Iš viršaus', 'Top')) + '</button><button type="button" data-v="photo">📷 ' + esc(T('Iš šono', 'Side')) + '</button></div>' +
           '<small class="am-cr"></small></div>' +
           '<div class="am-body"><div class="am-head">' + (it.logo ? '<img src="' + esc(it.logo) + '" alt="">' : '') +
-          '<div><h3>' + esc(it.name) + '</h3><p>' + esc(e.arena) + ' · ' + esc(e.city) + '</p></div></div>' +
+          '<div><h3>' + esc(it.name) + '</h3><p>' + esc(e.arena) + ' · ' + esc(e.city) + '</p>' + capTxt + '</div></div>' +
           '<div class="am-kpis"><div><small>' + esc(T('Biudžetas', 'Budget')) + ' ' + season + '</small><b>' + (bud && bud.total != null ? fmtM(bud.total) : '—') + '</b></div>' +
-          '<div><small>' + esc(T('Vid. lankomumas', 'Avg. attendance')) + '</small><b>' + attTxt + '</b></div></div>' +
+          '<div><small>' + esc(T('Vid. lankomumas', 'Avg. attendance')) + ' ' + season + '</small><b>' + attTxt + '</b></div></div>' +
           '<div class="am-act">' +
-          '<button type="button" class="am-pri" data-a="' + (att ? 'att' : 'bud') + '">' + esc(att ? T('Žiūrėti lankomumą', 'View attendance') : T('Žiūrėti biudžetą', 'View budget')) + '</button>' +
-          (att ? '<button type="button" class="am-sec" data-a="bud">' + esc(T('Biudžetas', 'Budget')) + '</button>' : '') +
+          (it.hasCard ? '<button type="button" class="am-pri" data-a="card">' + esc(T('Atidaryti klubo kortelę', 'Open club card')) + '</button>' : '') +
           '<a class="am-sv" target="_blank" rel="noopener" href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=' + e.lat + ',' + e.lon + '">' + esc(T('Gatvės vaizdas ↗', 'Street View ↗')) + '</a>' +
           '</div></div>';
         requestAnimationFrame(function () { card.classList.add('on'); });
@@ -510,7 +608,7 @@
         var my = ++mtoken, box = card.querySelector('.am-media'), sat = box.querySelector('.sat'), ph = box.querySelector('.photo'), e = it.e;
         wiki(e).then(function (info) {
           if (my !== mtoken) return;
-          var c = info && info.coords ? info.coords : (e.ok ? [e.lat, e.lon] : null);
+          var c = e.ok ? [e.lat, e.lon] : (info && info.coords ? info.coords : null);
           var sUrl = c ? roofImg(c) : null, pUrl = info && info.photo;
           var hasS = false, hasP = false;
           var ps = sUrl ? preload(sUrl).then(function (ok) { if (ok && my === mtoken) { sat.style.backgroundImage = 'url("' + sUrl + '")'; box.classList.add('has-sat'); hasS = true; } }) : Promise.resolve();
@@ -546,7 +644,9 @@
       card.addEventListener('click', function (ev) {
         if (ev.target.closest('.am-x')) return closeCard();
         var b = ev.target.closest('[data-a]');
-        if (b && sel && typeof deps.club === 'function') deps.club(sel.name, sel.nation, season, 0, b.dataset.a === 'att' ? 'att' : undefined);
+        // kortelė atidaroma visada: su 26/27 biudžetu – Biudžetai; be jo, bet su 26/27 lankomumu – Lankomumas;
+        // be abiejų – naujausias sezonas, kuriam kortelėje yra duomenų
+        if (b && sel && typeof deps.club === 'function') deps.club(sel.name, sel.nation, season, 0, !sel.bud && sel.att ? 'att' : undefined);
       });
       wrap.querySelector('.am-zoom').addEventListener('click', function (ev) {
         var b = ev.target.closest('button'); if (!b) return;

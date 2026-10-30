@@ -6,6 +6,8 @@
   const cs=document.currentScript,base=cs?cs.src.replace(/[^/]*$/,""):"";
   const l=document.createElement("link");l.rel="stylesheet";l.href=base+"redesign.css";document.head.appendChild(l);
   // Ryto kortelės foninė foto: išblukinta (beveik be raudonos), tamsi, neutrali
+  // Klubo kortelė (PC): didesnis logotipas per dvi eilutes, „vėliava šalis · sezonas“ – lygiai su klubo pavadinimu
+  {const st=document.createElement("style");st.id="rd-clhead";st.textContent="@media(min-width:721px){#sh .cl:has(>.lw){position:relative;padding-left:78px;min-height:40px}#sh .cl:has(>.lw)>.lw{position:absolute;left:0;top:-4px;margin:0}#sh .cl:has(>.lw) .lg{width:64px;height:64px}#sh .cl:has(>.lw)+.sum{padding-left:78px;min-height:26px}}";document.head.appendChild(st)}
   {const st=document.createElement("style");st.id="rd-bgfix";st.textContent=
    'html #sh.sheet.bg-photo{background:'+
    'radial-gradient(640px 280px at 50% 0%,rgba(200,16,46,.08),transparent 72%),'+
@@ -194,7 +196,7 @@
   let MB=false,MBS=null,MBN="",MBQ="";
   let MAP=false,RY_LIT=false;
   // Ryto logotipo gylio sluoksniai: aura, HUD plokštė (SVG), aidas, logotipas, skanavimas, blizgesys, kibirkštys
-  const ryHTML=(lu,lit)=>`<span class="ry-fx${lit?" lit":""}" role="button" tabindex="0" aria-label="Rytas" aria-pressed="${!!lit}" style="--lg:url('${lu}')"><i class="ry-amb"></i><i class="ry-glow"></i><svg class="ry-plate" viewBox="0 0 200 200" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor"><circle cx="100" cy="100" r="95" stroke-width="1" opacity=".55"/><g class="pl-a"><circle cx="100" cy="100" r="88" stroke-width="5" stroke-dasharray="1.1 4.4" opacity=".6"/></g><g class="pl-b"><path d="M100 14A86 86 0 0 1 186 100" stroke-width="2.6" stroke-linecap="round"/><path d="M100 186A86 86 0 0 1 14 100" stroke-width="2.6" stroke-linecap="round"/></g><g class="pl-c"><circle cx="100" cy="100" r="76" stroke-width="1.2" stroke-dasharray="22 7 2 7" opacity=".7"/></g></g><g class="pl-d" fill="currentColor"><circle cx="100" cy="5" r="2.8"/><circle cx="195" cy="100" r="1.8" opacity=".7"/><circle cx="5" cy="100" r="1.8" opacity=".7"/></g></svg><img class="ry-echo" src="${lu}" alt="" aria-hidden="true"><img class="ry-logo" src="${lu}" alt="" onerror="this.closest('.cl').classList.remove('ry');this.closest('.ry-fx').remove()"><i class="ry-scan"></i><i class="ry-shine"></i>${Array.from({length:9},(_,i)=>`<i class="ry-em" style="--x:${8+i*10+(i%2)*4}%;--d:${(2.4+((i*37)%17)/10).toFixed(1)}s;--dl:${(((i*53)%23)/10).toFixed(1)}s;--dx:${(i%2?1:-1)*(6+(i*7)%18)}px"></i>`).join("")}</span>`;
+  const ryHTML=(lu,lit)=>`<span class="ry-fx${lit?" lit":""}" role="button" tabindex="0" aria-label="Rytas" aria-pressed="${!!lit}" style="--lg:url('${lu}')"><i class="ry-amb"></i><i class="ry-glow"></i><img class="ry-logo" src="${lu}" alt="" onerror="this.closest('.cl').classList.remove('ry');this.closest('.ry-fx').remove()"><i class="ry-shine"></i>${Array.from({length:9},(_,i)=>`<i class="ry-em" style="--x:${8+i*10+(i%2)*4}%;--d:${(2.4+((i*37)%17)/10).toFixed(1)}s;--dl:${(((i*53)%23)/10).toFixed(1)}s;--dx:${(i%2?1:-1)*(6+(i*7)%18)}px"></i>`).join("")}</span>`;
 
   const T=(lt,en)=>(typeof LANG!=="undefined"&&LANG==="en")?en:lt;
   function mbData(se){
@@ -225,7 +227,7 @@
       +`<text x="${(L+W-R)/2}" y="${H-10}" text-anchor="middle" font-size="9.5" fill="var(--mute)">${T("Biudžetas savo lygoje →","Budget within own league →")}</text><text transform="translate(10 ${(Tp+H-B)/2}) rotate(-90)" text-anchor="middle" font-size="9.5" fill="var(--mute)">${T("← geresnė vieta","← better finish")}</text>`+dots+`</svg>`;
     const row=(p,i)=>`<button class="mb-row" data-mc="${esc(p.r.club)}" data-mn="${esc(p.r.nation)}"><span class="mb-rk">${i+1}</span><span><b>${flag(p.r.nation)}${esc(p.r.club)}</b><small>${T("biudžetas","budget")} #${p.sr}/${p.n} → ${T("vieta","place")} #${p.pr}</small></span><span class="mb-d ${p.d>0?"pos":"neg"}">${p.d>0?"+":""}${p.d}</span></button>`;
     const over=pts.filter(p=>p.d>0).sort((a,b)=>b.d-a.d||b.d/b.n-a.d/a.n).slice(0,5),under=pts.filter(p=>p.d<0).sort((a,b)=>a.d-b.d||a.d/a.n-b.d/b.n).slice(0,5);
-    return`<div class="mb-root"><div class="bar n">${seasons.map(s=>`<button class="chip" data-mbs="${s}" aria-pressed="${s===MBS}">${T("Sezonas","Season")} ${s}</button>`).join("")}</div>
+    return`<div class="mb-root">${sx(T("Sezonas","Season")+" "+MBS,seasons,s=>`<button class="chip" data-mbs="${s}" aria-pressed="${s===MBS}">${T("Sezonas","Season")} ${s}</button>`)}
 <div class="bar n"><button class="chip" data-mbn="" aria-pressed="${!MBN}">${T("Visos","All")}</button>${nations.map(n=>`<button class="chip" data-mbn="${esc(n)}" aria-pressed="${MBN===n}">${flag(n)}${esc(n)}</button>`).join("")}</div>
 <p class="sum">${T("Kiekvienas taškas – klubas. Palyginta su savo lygos varžovais: kiek išleidžia ir kurią vietą užėmė. Virš punktyrinės linijos – klubai, pasiekę daugiau nei leidžia jų biudžetas.","Each dot is a club, compared with rivals in its own league: how much it spends versus where it finished. Above the dashed line are clubs that achieved more than their budget suggests.")}</p>
 <div class="mb-find"><input id="mbq" class="mb-q" type="search" list="mbl" autocomplete="off" placeholder="${T("Rasti klubą grafike…","Find a club on the chart…")}" value="${esc(MBQ)}"><datalist id="mbl">${pts.map(p=>`<option value="${esc(p.r.club)}">`).join("")}</datalist><button class="mb-x" type="button" data-mbx aria-label="${T("Išvalyti","Clear")}" ${MBQ?"":"hidden"}>✕</button><span class="mb-hit"></span></div>
@@ -646,7 +648,7 @@
   const pr=(rows,val,key,minN)=>{const a=rows.map(x=>x[key]).filter(v=>v>0);if(a.length<minN)return null;const md=med(a);return{rank:a.filter(v=>v>val).length+1,n:a.length,md,x:val/md,below:a.filter(v=>v<val).length/(a.length-1)}};
   const pcard=(lab,big,sub,pill,c)=>`<div class="ps-c"><small>${lab}</small><b>${big}</b><span class="ps-s">${sub}</span><i class="ps-p ${c}">${pill}</i></div>`;
   const place=n=>n+" "+T("vieta","place");
-  function posSec(title,right,cards){return cards.length?`<div class="ps"><div class="ps-h"><h3>${title}</h3><span class="ps-r">${right}</span></div><div class="ps-g">${cards.join("")}</div></div>`:""}
+  function posSec(title,right,cards){return cards.length?`<div class="ps"><div class="ps-h"><h3>${title}</h3>${right?`<span class="ps-r">${right}</span>`:""}</div><div class="ps-g">${cards.join("")}</div></div>`:""}
   function injectPos(html){
     const sm=html.match(/sezonas\s+(\d\d\/\d\d)/);let sec="",at;
     const of=T("iš","of");
@@ -658,7 +660,7 @@
       if(a)cs.push(pcard(T("Savo lygoje","In the league"),place(a.rank),`${of} ${a.n} · ${a.x.toFixed(1)}× ${T("lygos mediana","league median")} (${mF(a.md)})`,"vs "+esc(me.nation),"g"));
       if(b)cs.push(pcard(T("Tarp panašių","Among peers"),place(b.rank),`${of} ${b.n} · ${b.x.toFixed(2)}× ${T("mediana","median")} (${mF(b.md)})`,"vs "+esc(comp),"v"));
       if(c)cs.push(pcard(T("Tarp visų klubų","Among all clubs"),Math.round(c.below*100)+"%",`${T("klubų išleidžia mažiau nei","of clubs spend less than")} ${esc(me.club)}`,`vs ${c.n} ${T("klubų","clubs")}`,"b"));
-      sec=posSec(`${T("Biudžeto pozicija","Budget position")} ${se}`,`${mF(me.total)} · ${(me.est&&me.est.total)||(me.cf&&me.cf.total)?T("apytikslė","estimated"):T("pranešta","reported")}`,cs);
+      sec=posSec(`${T("Biudžeto pozicija","Budget position")} ${se}`,"",cs);
       at=["<h3>Biudžeto pokytis","<h3>Žaidėjai ir algos"];
     }else{
       const h=D.sal.filter(x=>norm(x.name)===norm(CTX.name)&&x.month>0).sort((x,y)=>(x.season||"").localeCompare(y.season||""));if(!h.length)return html;
@@ -667,7 +669,7 @@
       if(a)cs.push(pcard(T("Savo komandoje","In the team"),place(a.rank),`${of} ${a.n} · ${a.x.toFixed(1)}× ${T("komandos mediana","team median")} (${mF(a.md)})`,"vs "+esc(me.team),"g"));
       if(b)cs.push(pcard(T("Savo šalies lygoje","In the league"),place(b.rank),`${of} ${b.n} · ${b.x.toFixed(1)}× ${T("mediana","median")} (${mF(b.md)})`,"vs "+esc(me.country),"v"));
       if(c)cs.push(pcard(T("Tarp visų","Among all"),Math.round(c.below*100)+"%",`${T("uždirba mažiau nei","earn less than")} ${esc(me.name)}`,`vs ${c.n}`,"b"));
-      sec=posSec(`${T("Algos pozicija","Salary position")} ${se}`,`${mF(me.month)} / ${T("mėn.","mo.")} · ${me.est&&me.est.month?T("apytikslė","estimated"):T("pranešta","reported")}`,cs);
+      sec=posSec(`${T("Algos pozicija","Salary position")} ${se}`,"",cs);
       at=["<h3>Mėnesio algos pokytis","<h3>Algų istorija"];
     }
     if(!sec)return html;
@@ -754,8 +756,8 @@
   function renderMap(){
     const o=document.getElementById("out");
     if(!o||typeof D==="undefined")return;
-    o.innerHTML='<div class="map-root"><p class="sum">'+T("Interaktyvus arenų žemėlapis. Paspauskite ant klubo – žemėlapis priartės, o kortelėje pamatysite areną iš viršaus ir iš šono. Artinant atsiranda daugiau klubų.","Interactive arena map. Click a club to zoom in and see the arena from above and from the side. More clubs appear as you zoom.")+'</p><div class="map-host"></div></div>';
-    if(window.ArenaMap)ArenaMap.mount(o.querySelector(".map-host"),{D,T,esc,norm,same,club,season:"26/27",logo:n=>LOGOS[norm(n)]});
+    o.innerHTML='<div class="map-root"><p class="sum">'+T("Interaktyvus arenų žemėlapis – klubai ir jų pagrindinės arenos iš lentelės lapo „Arenas“. Paspauskite ant klubo – žemėlapis priartės, kortelėje matysite 26/27 biudžetą, lankomumą ir areną iš viršaus bei iš šono. Artinant atsiranda daugiau klubų.","Interactive arena map – clubs and their main arenas from the Arenas sheet. Click a club to zoom in and see its 26/27 budget, attendance and the arena from above and from the side. More clubs appear as you zoom.")+'</p><div class="map-host"></div></div>';
+    if(window.ArenaMap)ArenaMap.mount(o.querySelector(".map-host"),{D,T,esc,norm,same,club,season:"26/27",logo:n=>LOGOS[norm(n)],sheetId:SHEET_ID});
     else setTimeout(()=>{if(MAP&&document.querySelector("#out .map-host:empty"))renderMap()},300);
   }
   // MAP-END
