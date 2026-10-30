@@ -159,60 +159,36 @@ body.lk{position:fixed;left:0;right:0;width:100%;overflow:hidden}#md,.sheet{over
 .ppl .pp.lit .pp-3d{background:var(--a);color:#1a1200;border-color:var(--a)}
 @media(prefers-reduced-motion:reduce){.ppl .pp.lit::after,.ppl .pp.lit .pp-aura,.ppl .pp.lit .pp-av::before,.ppl .pp.ping .pp-av::after{animation:none}.pp-ph img,.pp-av{transition:none}}
 
-/* ===== Ryto logotipas: 3D paralaksas + holografinis neonas ===== */
-#sh .ry-fx{--px:50%;--py:40%;--tx:0;--ty:0;--amp:.55;--bt:translate(-50%,-50%);--a2:color-mix(in srgb,var(--a) 34%,#fff);position:absolute;left:50%;top:calc(50% + 36px);z-index:2;display:block;line-height:0;border-radius:50%;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:pan-y;-webkit-user-select:none;user-select:none;outline:0;transform-style:preserve-3d;will-change:transform;transform:var(--bt) perspective(640px) rotateX(calc(var(--ty)*var(--amp)*-18deg)) rotateY(calc(var(--tx)*var(--amp)*18deg))}
-#sh .ry-fx.lit{--amp:1}
-#sh .ry-fx:focus-visible{outline:2px solid var(--a);outline-offset:8px}
-#sh .ry-fx>*{pointer-events:none}
-/* gylio sluoksniai (translateZ + atvirkštinis/tiesioginis poslinkis nuo žymeklio) */
-#sh .ry-fx .ry-logo{position:relative;display:block;height:132px;width:auto;opacity:.55;filter:grayscale(.65) brightness(.8) contrast(.9);transition:opacity 1.1s,filter 1.2s}
-#sh .ry-fx:hover .ry-logo{opacity:.72}
-#sh .ry-amb,#sh .ry-glow{position:absolute;left:50%;top:50%;border-radius:50%;opacity:0;transition:opacity 1.4s}
-#sh .ry-amb{width:560px;height:320px;translate:-50% -50%;transform:translate3d(calc(var(--tx)*-14px),calc(var(--ty)*-9px),-150px);background:radial-gradient(closest-side,color-mix(in srgb,var(--a) 26%,transparent),color-mix(in srgb,var(--a) 8%,transparent) 60%,transparent)}
-#sh .ry-glow{width:170%;height:170%;translate:-50% -50%;transform:translate3d(calc(var(--tx)*-10px),calc(var(--ty)*-7px),-95px);background:radial-gradient(closest-side,color-mix(in srgb,var(--a) 55%,transparent),color-mix(in srgb,var(--a) 16%,transparent) 55%,transparent 75%)}
-#sh .ry-fx.lit .ry-amb{opacity:1}
-#sh .ry-fx.lit .ry-glow{opacity:1;animation:ry-breath 3.6s ease-in-out infinite}
-@keyframes ry-breath{0%,100%{scale:.94}50%{scale:1.1}}
-/* gilioji HUD plokštė (SVG) */
-#sh .ry-plate{position:absolute;left:-12%;top:-12%;width:124%;height:124%;overflow:visible;color:var(--a);opacity:.2;transform:translate3d(calc(var(--tx)*-13px),calc(var(--ty)*-10px),-52px);transition:opacity 1.2s}
-#sh .ry-fx.lit .ry-plate{opacity:.95;animation:ry-plate-neon 2.8s ease-in-out infinite}
-#sh .ry-plate g[class^=pl-]{transform-origin:100px 100px;transform-box:view-box;animation:ry-spin 46s linear infinite;animation-play-state:paused}
-#sh .ry-plate .pl-b{animation-duration:19s;animation-direction:reverse}
-#sh .ry-plate .pl-c{animation-duration:31s}
-#sh .ry-plate .pl-d{animation-duration:11s}
-#sh .ry-fx.lit .ry-plate g[class^=pl-]{animation-play-state:running}
-@keyframes ry-spin{to{transform:rotate(360deg)}}
-@keyframes ry-plate-neon{0%,100%{filter:drop-shadow(0 0 3px color-mix(in srgb,var(--a) 70%,transparent))}50%{filter:drop-shadow(0 0 9px var(--a)) drop-shadow(0 0 20px color-mix(in srgb,var(--a) 60%,transparent))}}
-/* hologramos aidas (suliejta kopija už logotipo) */
-#sh .ry-echo{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:0;filter:blur(9px) saturate(2.4) brightness(1.5);transform:translate3d(calc(var(--tx)*-11px),calc(var(--ty)*-8px),-28px) scale(1.05);transition:opacity 1.2s}
-#sh .ry-fx.lit .ry-echo{opacity:.55;animation:ry-echo 3.2s ease-in-out infinite}
-@keyframes ry-echo{0%,100%{opacity:.34}50%{opacity:.7}}
-/* pagrindinis logotipas: įsijungimo mirgėjimas + pulsuojantys neoniniai kraštai */
-#sh .ry-fx.lit .ry-logo{opacity:1;filter:saturate(1.25) contrast(1.1) brightness(1.07) drop-shadow(0 0 6px color-mix(in srgb,var(--a) 65%,transparent)) drop-shadow(0 0 18px color-mix(in srgb,var(--a) 45%,transparent)) drop-shadow(0 12px 34px color-mix(in srgb,var(--a) 35%,transparent));animation:ry-on 1s linear 1,ry-neon 2.8s ease-in-out 1s infinite}
+/* ===== Ryto logotipas: „įsijungimas“ ===== */
+.ry-fx{--px:50%;--py:40%;--tx:0;--ty:0;--bt:translate(-50%,-50%);position:absolute;left:50%;top:calc(50% + 36px);z-index:2;transform:var(--bt);display:block;line-height:0;border-radius:50%;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .3s ease-out}
+.ry-fx .ry-logo{position:static;display:block;height:132px;width:auto;transform:none;pointer-events:none;opacity:.55;filter:grayscale(.65) brightness(.8) contrast(.9);transition:opacity 1.1s,filter 1.2s}
+.ry-fx:hover .ry-logo{opacity:.7}
+.ry-fx.lit{transform:var(--bt) perspective(420px) rotateY(calc(var(--tx)*16deg)) rotateX(calc(var(--ty)*-16deg))}
+.ry-fx.lit .ry-logo{opacity:1;filter:saturate(1.25) contrast(1.1) brightness(1.07) drop-shadow(0 0 12px color-mix(in srgb,var(--a) 75%,transparent)) drop-shadow(0 12px 34px color-mix(in srgb,var(--a) 55%,transparent));animation:ry-on 1s linear 1}
 @keyframes ry-on{0%{opacity:.55}7%{opacity:1}13%{opacity:.3}21%{opacity:.95}29%{opacity:.45}41%{opacity:1}52%{opacity:.8}62%,100%{opacity:1}}
-@keyframes ry-neon{0%,100%{filter:saturate(1.2) contrast(1.08) brightness(1.04) drop-shadow(0 0 5px color-mix(in srgb,var(--a) 60%,transparent)) drop-shadow(0 0 14px color-mix(in srgb,var(--a) 40%,transparent)) drop-shadow(0 12px 30px color-mix(in srgb,var(--a) 30%,transparent))}50%{filter:saturate(1.35) contrast(1.12) brightness(1.12) drop-shadow(0 0 9px var(--a)) drop-shadow(0 0 26px color-mix(in srgb,var(--a) 75%,transparent)) drop-shadow(0 14px 44px color-mix(in srgb,var(--a) 55%,transparent))}}
-/* skanavimo spindulys + skenavimo linijos, apkirptos pagal logotipo siluetą */
-#sh .ry-scan,#sh .ry-shine{position:absolute;inset:0;opacity:0;overflow:hidden;-webkit-mask:var(--lg) center/contain no-repeat;mask:var(--lg) center/contain no-repeat;transition:opacity .7s;transform:translate3d(calc(var(--tx)*3px),calc(var(--ty)*3px),16px)}
-#sh .ry-scan::before{content:"";position:absolute;left:0;right:0;top:0;height:34%;background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--a) 45%,transparent) 38%,rgba(255,255,255,.96) 50%,color-mix(in srgb,var(--a) 45%,transparent) 62%,transparent);transform:translateY(-120%)}
-#sh .ry-scan::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(180deg,rgba(255,255,255,0) 0 2px,rgba(255,255,255,.14) 2px 3px);background-size:100% 6px;animation:ry-lines 5s linear infinite;animation-play-state:paused}
-#sh .ry-fx.lit .ry-scan{opacity:1}
-#sh .ry-fx.lit .ry-scan::before{animation:ry-sweep 3.8s cubic-bezier(.45,0,.25,1) .7s infinite}
-#sh .ry-fx.lit .ry-scan::after{animation-play-state:running}
-#sh .ry-fx.burst .ry-scan::before{animation:ry-sweep 1s ease-out 0s 1}
-@keyframes ry-sweep{0%{transform:translateY(-120%)}55%,100%{transform:translateY(320%)}}
-@keyframes ry-lines{to{background-position:0 6px}}
-#sh .ry-shine{background:radial-gradient(circle at var(--px) var(--py),rgba(255,255,255,.7),rgba(255,255,255,0) 46%);transform:translate3d(calc(var(--tx)*5px),calc(var(--ty)*5px),26px)}
-#sh .ry-fx.lit .ry-shine{opacity:1}
+/* aplinkinis apšvietimas */
+.ry-amb,.ry-glow{position:absolute;left:50%;top:50%;border-radius:50%;pointer-events:none;opacity:0;transition:opacity 1.4s}
+.ry-amb{z-index:-2;width:560px;height:320px;translate:-50% -50%;background:radial-gradient(closest-side,color-mix(in srgb,var(--a) 26%,transparent),color-mix(in srgb,var(--a) 8%,transparent) 60%,transparent)}
+.ry-glow{z-index:-1;width:170%;height:170%;translate:-50% -50%;background:radial-gradient(closest-side,color-mix(in srgb,var(--a) 55%,transparent),color-mix(in srgb,var(--a) 16%,transparent) 55%,transparent 75%)}
+.ry-fx.lit .ry-amb{opacity:1}
+.ry-fx.lit .ry-glow{opacity:1;animation:ry-breath 3.6s ease-in-out infinite}
+@keyframes ry-breath{0%,100%{scale:.94}50%{scale:1.1}}
+/* blizgesys, apkirptas pagal logotipo siluetą, + šviesa, kuri seka žymeklį */
+.ry-shine{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .7s;-webkit-mask:var(--lg) center/contain no-repeat;mask:var(--lg) center/contain no-repeat;background:radial-gradient(circle at var(--px) var(--py),rgba(255,255,255,.85),rgba(255,255,255,0) 46%);mix-blend-mode:overlay}
+.ry-shine::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.95) 50%,transparent 60%);background-size:280% 100%;background-position:140% 0;opacity:0}
+.ry-fx.lit .ry-shine{opacity:1}
+.ry-fx.lit .ry-shine::after{animation:ry-glint 1.5s ease-out .3s 1 both}
+@keyframes ry-glint{0%{opacity:1;background-position:140% 0}100%{opacity:0;background-position:-40% 0}}
 /* kibirkštys */
-#sh .ry-em{position:absolute;left:var(--x);bottom:18%;width:4px;height:4px;border-radius:50%;background:var(--a);box-shadow:0 0 8px var(--a);opacity:0;transform:translate3d(calc(var(--tx)*9px),calc(var(--ty)*7px),44px)}
-#sh .ry-fx.lit .ry-em{animation:ry-rise var(--d) ease-out var(--dl) infinite}
+.ry-em{position:absolute;left:var(--x);bottom:18%;width:4px;height:4px;border-radius:50%;background:var(--a);box-shadow:0 0 8px var(--a);opacity:0;pointer-events:none}
+.ry-fx.lit .ry-em{animation:ry-rise var(--d) ease-out var(--dl) infinite}
 @keyframes ry-rise{0%{opacity:0;translate:0 0}15%{opacity:.95}100%{opacity:0;translate:var(--dx) -86px}}
 /* paspaudimo banga */
-#sh .ry-fx::after{content:"";position:absolute;inset:6%;border-radius:50%;border:3px solid var(--a);opacity:0;pointer-events:none}
-#sh .ry-fx.ping::after{animation:ry-ping 1.1s ease-out}
+.ry-fx::after{content:"";position:absolute;inset:6%;border-radius:50%;border:3px solid var(--a);opacity:0;pointer-events:none}
+.ry-fx.ping::after{animation:ry-ping 1.1s ease-out}
 @keyframes ry-ping{0%{opacity:.9;scale:.9}100%{opacity:0;scale:2.2}}
-@media(max-width:720px){#sh .ry-fx{left:auto;right:4px;top:calc(50% + 28px);--bt:translateY(-50%)}#sh .ry-fx .ry-logo{height:92px}#sh .ry-amb{width:360px;height:240px}#sh .ry-plate{left:-8%;top:-8%;width:116%;height:116%}}
-@media(prefers-reduced-motion:reduce){#sh .ry-fx.lit .ry-logo,#sh .ry-fx.lit .ry-glow,#sh .ry-fx.lit .ry-echo,#sh .ry-fx.lit .ry-plate,#sh .ry-plate g[class^=pl-],#sh .ry-fx.lit .ry-em,#sh .ry-fx.lit .ry-scan::before,#sh .ry-fx.lit .ry-scan::after,#sh .ry-fx.ping::after{animation:none}#sh .ry-fx{transform:var(--bt)}}
+@media(max-width:720px){.ry-fx{left:auto;right:4px;top:calc(50% + 28px);--bt:translateY(-50%)}.ry-fx .ry-logo{height:92px}.ry-amb{width:360px;height:240px}}
+@media(prefers-reduced-motion:reduce){.ry-fx.lit .ry-logo,.ry-fx.lit .ry-glow,.ry-fx.lit .ry-em,.ry-fx.lit .ry-shine::after,.ry-fx.ping::after{animation:none}}
 
 /* ===== Ryto kortelė: čempionų nuotrauka fone (paspaudus „BCL čempionai 2026“) ===== */
 @property --bg-a{syntax:"<number>";inherits:false;initial-value:1}
