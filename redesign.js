@@ -420,10 +420,10 @@
     if(u)img=await new Promise(res=>{const i=new Image();i.crossOrigin="anonymous";i.onload=()=>res(i);i.onerror=()=>res(null);setTimeout(()=>res(null),4000);i.src=u});
     try{await document.fonts.load("700 100px 'Barlow Condensed'");await document.fonts.load("600 40px 'JetBrains Mono'")}catch(e){}
     let blob;try{blob=await drawCard(name,sub,kp,hist,img,opts)}catch(e){blob=await drawCard(name,sub,kp,hist,null,opts)}
-    showShare(blob,name);
+    showShare(blob,name,b=>drawCard(name,sub,kp,hist,img,opts,b));
   }
-  function drawCard(name,sub,kp,hist,img,opts){opts=opts||{};return new Promise((res,rej)=>{
-    const W=1080,H=1350,c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d");
+  function drawCard(name,sub,kp,hist,img,opts,bz){opts=opts||{};return new Promise((res,rej)=>{
+    const bs=bzSize(bz,BZ_H),W=1080,H=1350+(bz?bs.h-30:0),c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d");
     const RY=opts.ry!=null?opts.ry:/rytas/i.test(name),BG="#07090F",CARD="#0F1420",LINE="#1E2638",INK="#E8ECF4",MU="#7A869E",AM=RY?"#E4262F":"#FFB020",HD="'Barlow Condensed','Arial Narrow',sans-serif",MO="'JetBrains Mono',ui-monospace,monospace",SS="system-ui,-apple-system,'Segoe UI',sans-serif";
     const fit=(txt,w,fam,wt,start,min)=>{let s=start;do{x.font=wt+" "+s+"px "+fam;s-=2}while(x.measureText(txt).width>w&&s>min);return s};
     const rr=(a,b,w,h,r)=>{x.beginPath();x.moveTo(a+r,b);x.arcTo(a+w,b,a+w,b+h,r);x.arcTo(a+w,b+h,a,b+h,r);x.arcTo(a,b+h,a,b,r);x.arcTo(a,b,a+w,b,r);x.closePath()};
@@ -448,17 +448,43 @@
         x.fillStyle=i===n-1?AM:(RY?"rgba(228,38,47,.38)":"rgba(255,176,32,.38)");rr(bx,base-bh,bw,bh,10);x.fill();
         x.textAlign="center";x.fillStyle=i===n-1?INK:MU;x.font="600 26px "+MO;x.fillText(h.t,bx+bw/2,base-bh-14);
         x.fillStyle=MU;x.font="400 26px "+SS;x.fillText(h.l,bx+bw/2,base+40);x.textAlign="left"})}
-    x.fillStyle=MU;x.font="400 28px "+SS;x.fillText((location.host+location.pathname).replace(/\/$/,""),72,1300);
+    x.fillStyle=MU;x.font="400 28px "+SS;x.fillText((location.host+location.pathname).replace(/\/$/,""),72,H-50);
+    if(bz)bzDraw(x,bz,bs,W,H);
     c.toBlob(b=>b?res(b):rej(new Error("blob")),"image/png");
   })}
-  function showShare(blob,name){
-    const url=URL.createObjectURL(blob),fn=norm(name)+".png",file=new File([blob],fn,{type:"image/png"}),o=document.createElement("div");o.className="shov";
-    o.innerHTML=`<img src="${url}" alt=""><div class="row"><button class="chip" data-a="s">${T("Dalintis","Share")}</button><a class="chip" href="${url}" download="${fn}">${T("Atsisiųsti","Download")}</a><button class="chip" data-a="x">${T("Uždaryti","Close")}</button></div>`;
+  // ---- Brazys: nejudanti nuotrauka kortelės apačioje (failas repo šaknyje; jei failo nėra – pasiūlymas nerodomas) ----
+  const BZ_SRC="brazys-share.png",BZ_H=230,BZ_LH=170,BZ_MAXW=520,BZ_FLIP=false;let bzP=null;
+  const bzLoad=()=>bzP||(bzP=new Promise(res=>{const i=new Image();i.onload=()=>res(i.naturalWidth?i:null);i.onerror=()=>res(null);setTimeout(()=>res(null),6000);i.src=new URL(BZ_SRC,document.baseURI).href}));
+  const bzSize=(i,h)=>{if(!i)return{w:0,h:0};const k=Math.min(h/i.naturalHeight,BZ_MAXW/i.naturalWidth);return{w:Math.round(i.naturalWidth*k),h:Math.round(i.naturalHeight*k)}};
+  const bzAt=(x,i,l,t,w,h)=>{x.save();x.shadowColor="rgba(0,0,0,.45)";x.shadowBlur=14;
+    if(BZ_FLIP){x.translate(l+w,t);x.scale(-1,1);x.drawImage(i,0,0,w,h)}else x.drawImage(i,l,t,w,h);x.restore()};
+  const bzDraw=(x,i,s,W,H)=>bzAt(x,i,W-56-s.w,H-s.h,s.w,s.h);
+  {const st=document.createElement("style");st.id="rd-bzo";st.textContent=
+   '.shov .bzo{display:flex;align-items:center;gap:12px;margin:10px auto 0;padding:8px 12px;width:min(92vw,420px);box-sizing:border-box;background:var(--card);border:1px solid var(--line);border-radius:14px;color:var(--ink);font-size:14px}'+
+   '.shov .bzo img{height:44px!important;width:auto!important;max-width:56px!important;max-height:44px!important;object-fit:contain;flex:none;border-radius:8px}'+
+   '.shov .bzo span{flex:1;line-height:1.25}.shov .bzo button{flex:none}';
+   document.head.appendChild(st)}
+  function showShare(blob,name,re){
+    const fn=norm(name)+".png",o=document.createElement("div");o.className="shov";let url,file,on=false,busy=false;
+    const set=b=>{if(url)URL.revokeObjectURL(url);url=URL.createObjectURL(b);file=new File([b],fn,{type:"image/png"});const im=o.querySelector(":scope>img"),dl=o.querySelector("a.chip");if(im)im.src=url;if(dl)dl.href=url};
+    o.innerHTML=`<img alt=""><div class="row"><button class="chip" data-a="s">${T("Dalintis","Share")}</button><a class="chip" download="${fn}">${T("Atsisiųsti","Download")}</a><button class="chip" data-a="x">${T("Uždaryti","Close")}</button></div>`;
+    set(blob);
     o.addEventListener("click",async e=>{const a=e.target.closest("[data-a]");if(!a)return;
       if(a.dataset.a==="x"){URL.revokeObjectURL(url);o.remove()}
       else if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:name})}catch(x){}}
       else a.textContent=T("Naudokite „Atsisiųsti“","Use “Download”")});
     document.body.appendChild(o);
+    // Pasiūlymas pridėti Brazį (rodomas tik jei nuotrauka įsikėlė)
+    if(re)bzLoad().then(bi=>{if(!bi||!o.isConnected)return;
+      const b=document.createElement("div");b.className="bzo";
+      b.innerHTML=`<img src="${bi.src}" alt=""><span>${T("Pridėti Brazį prie kortelės?","Add Brazys to the card?")}</span><button type="button" class="chip">${T("Pridėti","Add")}</button>`;
+      o.insertBefore(b,o.querySelector(".row"));
+      const btn=b.querySelector("button"),sp=b.querySelector("span");
+      btn.addEventListener("click",async()=>{if(busy)return;busy=true;btn.disabled=true;
+        try{const nb=await re(on?null:bi);on=!on;set(nb);
+          btn.textContent=on?T("Pašalinti","Remove"):T("Pridėti","Add");
+          sp.textContent=on?T("Brazys pridėtas","Brazys added"):T("Pridėti Brazį prie kortelės?","Add Brazys to the card?")}catch(x){}
+        busy=false;btn.disabled=false})});
   }
 
 
@@ -519,9 +545,9 @@
     const imgs=await Promise.all(rows.map(p=>{const u=pkLogoUrl(k,p.row);return u?new Promise(res=>{const i=new Image();i.crossOrigin="anonymous";i.onload=()=>res(i);i.onerror=()=>res(null);setTimeout(()=>res(null),4000);i.src=u}):null}));
     try{await document.fonts.load("700 100px 'Barlow Condensed'");await document.fonts.load("600 40px 'JetBrains Mono'")}catch(e){}
     let blob;try{blob=await drawList(k,rows,m,imgs)}catch(e){blob=await drawList(k,rows,m,rows.map(()=>null))}
-    showShare(blob,pkTitle(k));
+    showShare(blob,pkTitle(k),b=>drawList(k,rows,m,imgs,b));
   }
-  function drawList(k,rows,m,imgs){return new Promise((res,rej)=>{
+  function drawList(k,rows,m,imgs,bz){return new Promise((res,rej)=>{
     const W=1080,n=rows.length,top=372,rh=88,H2=Math.max(1350,top+n*rh+170),c=document.createElement("canvas");c.width=W;c.height=H2;const x=c.getContext("2d");
     const RY=k!=="sal"&&rows.every(p=>/rytas/i.test(p.row.club||""))||(k==="sal"&&rows.every(p=>/rytas/i.test(p.row.team||""))),BG="#07090F",CARD="#0F1420",LINE="#1E2638",INK="#E8ECF4",MU="#7A869E",AM=RY?"#E4262F":"#FFB020",HD="'Barlow Condensed','Arial Narrow',sans-serif",MO="'JetBrains Mono',ui-monospace,monospace",SS="system-ui,-apple-system,'Segoe UI',sans-serif";
     const fit=(txt,w,fam,wt,start,min)=>{let s=start;do{x.font=wt+" "+s+"px "+fam;s-=2}while(x.measureText(txt).width>w&&s>min);return s};
@@ -534,7 +560,7 @@
     x.fillStyle=MU;x.font="500 34px "+HD;x.fillText(T("Krepšinio klubų finansai","Basketball Club Finances"),72,128);
     fit(pkTitle(k),W-144,HD,"700",112,60);x.fillStyle=INK;x.fillText(pkTitle(k),72,250);
     x.fillStyle=MU;x.font="400 36px "+SS;x.fillText(T(m.l[0],m.l[1])+" · "+n+" "+T(n===1?"įrašas":"įrašai","entries"),72,312);
-    const vals=rows.map(p=>m.v(p.row)),mx=Math.max(1e-9,...vals.map(v=>Math.abs(v||0)));
+    let nEnd=0,vS=1008;const vals=rows.map(p=>m.v(p.row)),mx=Math.max(1e-9,...vals.map(v=>Math.abs(v||0)));
     rows.forEach((p,i)=>{
       const y=top+i*rh,w=936,v=vals[i];
       rr(72,y,w,rh-12,18);x.fillStyle=CARD;x.fill();
@@ -546,10 +572,15 @@
       const vt=m.f(v),vs=fit(vt,300,MO,"600",34,20),vw=x.measureText(vt).width;
       x.textAlign="right";x.fillStyle=i===0?AM:INK;x.font="600 "+vs+"px "+MO;x.fillText(vt,1008-22,y+50);x.textAlign="left";
       const nm=pkName(k,p.row),sub=pkSub(k,p),room=1008-22-vw-24-nx;
-      fit(nm,room,HD,"700",42,22);x.fillStyle=INK;x.fillText(nm,nx,y+39);
-      fit(sub,room,SS,"400",21,14);x.fillStyle=MU;x.fillText(sub,nx,y+62);
+      fit(nm,room,HD,"700",42,22);x.fillStyle=INK;x.fillText(nm,nx,y+39);nEnd=Math.max(nEnd,nx+x.measureText(nm).width);vS=Math.min(vS,986-vw);
+      fit(sub,room,SS,"400",21,14);x.fillStyle=MU;x.fillText(sub,nx,y+62);nEnd=Math.max(nEnd,nx+x.measureText(sub).width);
     });
     x.fillStyle=MU;x.font="400 28px "+SS;x.fillText((location.host+location.pathname).replace(/\/$/,""),72,H2-60);
+    // Brazys: mažas, stovi tarpe tarp pavadinimų ir sumų (neuždengia teksto); kuo daugiau eilučių – tuo arčiau lentelės vidurio
+    if(bz){const tH=n*rh-12,gl=nEnd+16,gr=vS-16;let bh=BZ_LH,bw=bh*bz.naturalWidth/bz.naturalHeight;
+      if(bw>gr-gl){bw=Math.max(56,gr-gl);bh=bw*bz.naturalHeight/bz.naturalWidth}
+      const cx=Math.min(Math.max(565,gl+bw/2),gr-bw/2),y0=top+Math.max(0,(tH-bh)*.45);
+      bzAt(x,bz,Math.round(cx-bw/2),Math.round(y0),Math.round(bw),Math.round(bh))}
     c.toBlob(b=>b?res(b):rej(new Error("blob")),"image/png");
   })}
   document.addEventListener("click",e=>{
