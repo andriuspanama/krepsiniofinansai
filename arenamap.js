@@ -16,6 +16,34 @@
 
   var baseNorm = function (s) { return String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[^a-z0-9]/g, ''); };
 
+  /* Miestų pavadinimai: lape „Arenas“ – vietine kalba; čia – [anglų, lietuvių] (kas nesiskiria, nerašoma – rodoma kaip lape).
+     Raktas – pavadinimas be diakritikų, žodžiai sujungti „_“. Naujas miestas be vertimo rodomas taip, kaip įrašytas lape. */
+  var cityTok = function (v) { return String(v || '').toLowerCase().replace(/ł/g, 'l').replace(/đ/g, 'd').replace(/ø/g, 'o').replace(/ı/g, 'i').replace(/ß/g, 'ss').normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/[^a-z0-9]+/).filter(Boolean); };
+  var CITY_I18N = {
+    istanbul: ['Istanbul', 'Stambulas'], istanbul_buyukcekmece: ['Istanbul (Büyükçekmece)', 'Stambulas (Büyükçekmece)'], izmir: ['Izmir', 'Izmiras'],
+    trabzon: ['Trabzon', 'Trabzonas'], beograd: ['Belgrade', 'Belgradas'], riga: ['Riga', 'Ryga'], liepaja: ['Liepāja', 'Liepoja'], ventspils: ['Ventspils', 'Ventspilis'],
+    tallinn: ['Tallinn', 'Talinas'], tel_aviv: ['Tel Aviv', 'Tel Avivas'], jerusalem: ['Jerusalem', 'Jeruzalė'], be_er_sheva: ['Beersheba', 'Beer Ševa'],
+    madrid: ['Madrid', 'Madridas'], barcelona: ['Barcelona', 'Barselona'], valencia: ['Valencia', 'Valensija'], zaragoza: ['Zaragoza', 'Saragosa'], murcia: ['Murcia', 'Mursija'],
+    thessaloniki: ['Thessaloniki', 'Salonikai'], piraeus: ['Piraeus', 'Pirėjas'], rhodes: ['Rhodes', 'Rodas'], patra: ['Patras', 'Patrai'],
+    roma: ['Rome', 'Roma'], napoli: ['Naples', 'Neapolis'], venezia: ['Venice', 'Venecija'], bologna: ['Bologna', 'Bolonija'], trieste: ['Trieste', 'Triestas'],
+    lisboa: ['Lisbon', 'Lisabona'], porto: ['Porto', 'Portas'], paris: ['Paris', 'Paryžius'], strasbourg: ['Strasbourg', 'Strasbūras'], london: ['London', 'Londonas'],
+    berlin: ['Berlin', 'Berlynas'], munchen: ['Munich', 'Miunchenas'], hamburg: ['Hamburg', 'Hamburgas'], frankfurt_am_main: ['Frankfurt', 'Frankfurtas prie Maino'], bonn: ['Bonn', 'Bona'],
+    wien: ['Vienna', 'Viena'], praha: ['Prague', 'Praha'], warszawa: ['Warsaw', 'Varšuva'], wroclaw: ['Wrocław', 'Vroclavas'], szczecin: ['Szczecin', 'Ščecinas'],
+    lublin: ['Lublin', 'Liublinas'], bydgoszcz: ['Bydgoszcz', 'Bydgoščius'], torun: ['Toruń', 'Torunė'], lodz: ['Łódź', 'Lodzė'], gdynia: ['Gdynia', 'Gdynė'],
+    ljubljana: ['Ljubljana', 'Liubliana'], zagreb: ['Zagreb', 'Zagrebas'], split: ['Split', 'Splitas'], zadar: ['Zadar', 'Zadaras'], sarajevo: ['Sarajevo', 'Sarajevas'],
+    skopje: ['Skopje', 'Skopjė'], budapest: ['Budapest', 'Budapeštas'], debrecen: ['Debrecen', 'Debrecenas'], szeged: ['Szeged', 'Segedas'], pecs: ['Pécs', 'Pečas'],
+    bucharest: ['Bucharest', 'Bukareštas'], antwerpen: ['Antwerp', 'Antverpenas'], oostende: ['Ostend', 'Ostendė'], aarhus: ['Aarhus', 'Orhusas'],
+    helsinki: ['Helsinki', 'Helsinkis'], tampere: ['Tampere', 'Tamperė'], dubai: ['Dubai', 'Dubajus'],
+    melbourne: ['Melbourne', 'Melburnas'], sydney: ['Sydney', 'Sidnėjus'], adelaide: ['Adelaide', 'Adelaidė'], brisbane: ['Brisbane', 'Brisbenas'], perth: ['Perth', 'Pertas'],
+    hobart: ['Hobart', 'Hobartas'], auckland: ['Auckland', 'Oklandas']
+  };
+  // priemiesčiai – randami ir pagal didmiestį (tik paieškai)
+  var CITY_NEAR = {
+    marousi: 'athens atenai', ano_liosia: 'athens atenai', peristeri: 'athens atenai', piraeus: 'athens atenai', pylaia: 'thessaloniki salonikai',
+    assago: 'milan milano milanas', desio: 'milan milano milanas', villorba: 'treviso', villeurbanne: 'lyon lionas', badalona: 'barcelona barselona',
+    nanterre: 'paris paryzius', sopot: 'gdansk', kfar_blum: 'upper galilee galil elyon', gan_ner: 'jezreel haemek', istanbul_buyukcekmece: 'istanbul stambulas'
+  };
+
   /* ------------------------------------------------------------------ */
   /*  Arenų sąrašas: raktai | arena | miestas | lat | lon | ! (tikslios koordinatės)   */
   /*  Raktai lyginami su klubo pavadinimu (be tarpų ir diakritikos).       */
@@ -228,7 +256,6 @@
   /* ------------------------------------------------------------------ */
   /*  Naršyklės dalis                                                     */
   /* ------------------------------------------------------------------ */
-  var GEN = { arena: 1, center: 1, centre: 1, sports: 1, sport: 1, hall: 1, palace: 1, palais: 1, palacio: 1, pabellon: 1, pavello: 1, forum: 1, dome: 1, stadium: 1, sala: 1, salle: 1, dvorana: 1, hala: 1, spor: 1, salonu: 1, indoor: 1, olympic: 1, sporthalle: 1, stadthalle: 1 };
   var NAMEFIX = { 'Czech Republic': 'Czechia', 'Bosnia and Herzegovina': 'Bosnia and Herz.', 'North Macedonia': 'Macedonia', UK: 'United Kingdom', England: 'United Kingdom' };
   var SHEET_FALLBACK = '1Qt4ijFGDmvoLLHb-gCbcAF9KGts6ZC-RHwWzQw68cZI';
 
@@ -246,7 +273,7 @@
       var cols = j.table.cols.map(function (c) { return baseNorm(c.label); });
       var ci = function (n) { return cols.indexOf(baseNorm(n)); };
       var I = { league: ci('League'), arena: ci('Arena'), main: ci('Main arena for'), over: ci('Main arena override'), city: ci('City'),
-        lat: ci('Latitude'), lon: ci('Longitude'), cap: ci('Capacity'), prec: ci('Coordinates precision') };
+        lat: ci('Latitude'), lon: ci('Longitude'), cap: ci('Capacity'), prec: ci('Coordinates precision'), aka: ci('Also known as'), inner: ci('Interior photo'), side: ci('Side photo') };
       if (I.arena < 0 || I.main < 0 || I.lat < 0 || I.lon < 0) throw new Error('Arenas: nerasti stulpeliai');
       var num = function (v) { if (v == null || v === '') return NaN; return typeof v === 'number' ? v : parseFloat(String(v).replace(/\s/g, '').replace(',', '.')); };
       return j.table.rows.map(function (r) {
@@ -255,7 +282,7 @@
         return { league: String(g('league') || ''), arena: String(g('arena') || '').trim(), city: String(g('city') || '').trim(),
           lat: lat, lon: lon, ok: isFinite(lat) && isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180,
           cap: isFinite(num(g('cap'))) ? Math.round(num(g('cap'))) : null,
-          main: sheetNames(g('main')), over: sheetNames(g('over')) };
+          aka: String(g('aka') || '').trim(), inner: String(g('inner') || '').trim(), side: String(g('side') || '').trim(), main: sheetNames(g('main')), over: sheetNames(g('over')) };
       }).filter(function (r) { return r.arena; });
     });
   }
@@ -289,26 +316,255 @@
     return 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export?bbox=' +
       (x - hw) + ',' + (y - hh) + ',' + (x + hw) + ',' + (y + hh) + '&bboxSR=3857&imageSR=3857&size=640,358&format=jpg&f=image';
   }
-  // Arenos nuotrauka ir tikslios koordinatės iš Wikipedia
+  // Arenos nuotrauka (vaizdas „iš šono“): pirmiausia ieškoma Wikipedia straipsnių aplink arenos koordinates,
+  // tada Wikidata objektų (jų nuotrauka P18) aplink koordinates, galiausiai – Wikipedia paieška pagal pavadinimą.
+  // Tinka tik straipsnis, kurio pavadinime yra arenos (ar „Also known as“) žodis, arba labai arti esanti sporto salė;
+  // atmetami miestai, klubai, futbolo stadionai (kai arena – salė), parkai, bažnyčios, tiltai ir pan.
+  var PH_GEN = { arena: 1, arene: 1, aren: 1, center: 1, centre: 1, centrum: 1, sports: 1, sport: 1, sportowa: 1, sportova: 1, sportska: 1, hall: 1, palace: 1, palais: 1, palacio: 1,
+    pabellon: 1, pavello: 1, forum: 1, dome: 1, stadium: 1, sala: 1, salle: 1, dvorana: 1, hala: 1, spor: 1, salonu: 1, indoor: 1, olympic: 1, sporthalle: 1, stadthalle: 1,
+    municipal: 1, municipale: 1, deportes: 1, esports: 1, omnisports: 1, city: 1, nuevo: 1, nouveau: 1, sportcsarnok: 1, varosi: 1, utcai: 1, mala: 1, velika: 1, osir: 1,
+    palazzetto: 1, palasport: 1, dello: 1, delle: 1 };
+  var PH_VEN = /(hall|halli|halle|hallen|areena|arena|aréna)(?![a-z])|\b(hala|palais|palau|palacio|pabell\S*|pavell\S*|pavilion|pavilh\S*|palasport|pala(?!ce)\S+|palazzetto|sporthal\S*|sportcsarnok|sportovní|salonu|dvorana|sala|salle|dome|dôme|forum|colis\S*|coliseo|gym\S*|centre|center|centar|centrum|complex|kompleks|keskus|centrs|osir|heichal|heihal|spodek|indoor|tervisekeskus|spor)\b/i;
+  var PH_STAD = /stadion|stadium|stade\b|stadio|estadio|estádio|stadyum|stadı/i;
+  var PH_NOT = /\b(park|cathedral|basilica|church|bridge|station|tram|metro|district|neighbourhood|street|square|university|school|šolski|škola|szkoła|scuola|école|escuela|museum|airport|tower|river|lake|ice|hockey|rink|patinoire|eishalle|eisstadion|jäähalli|lodowisko|palace)\b/i;
+  var PH_CLUB = /basket|\bbc\b|\bkk\b|\bbk\b|\bclub\b|\bteam\b|season|f\.c\.|football|baloncesto|pallacanestro|koszyk|basketball/i;
+  // JSON užklausa su laiko limitu ir vienu pakartojimu (Wikidata kartais atsako „per daug užklausų“)
+  function getJ(u, again) {
+    var ctl = window.AbortController ? new AbortController() : null, to = setTimeout(function () { if (ctl) ctl.abort(); }, 8000);
+    return fetch(u, ctl ? { signal: ctl.signal } : {}).then(function (r) { clearTimeout(to); return r.json(); }).catch(function () {
+      clearTimeout(to);
+      return again ? {} : new Promise(function (res) { setTimeout(res, 1500); }).then(function () { return getJ(u, true); });
+    });
+  }
+  var phWords = function (s) { return String(s || '').split(/[^0-9A-Za-zÀ-ɏͰ-ϿЀ-ӿ֐-׿]+/).map(baseNorm).filter(Boolean); };
   function wiki(e) {
     var key = e.arena + '|' + e.city;
     if (wcache[key]) return wcache[key];
-    wcache[key] = (function () {
-      var ctl = window.AbortController ? new AbortController() : null, to = setTimeout(function () { if (ctl) ctl.abort(); }, 7000);
-      var u = 'https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrsearch=' +
-        encodeURIComponent(e.arena + ' ' + e.city) + '&gsrlimit=4&prop=coordinates|pageimages&piprop=thumbnail&pithumbsize=900&colimit=4';
-      return fetch(u, ctl ? { signal: ctl.signal } : {}).then(function (r) { return r.json(); }).then(function (j) {
-        clearTimeout(to);
-        var pages = Object.keys((j.query && j.query.pages) || {}).map(function (k) { return j.query.pages[k]; }).sort(function (a, b) { return a.index - b.index; });
-        var toks = e.arena.split(/\s+/).map(baseNorm).filter(function (t) { return t.length >= 4 && !GEN[t]; }).map(function (t) { return t.slice(0, 5); });
-        var good = pages.filter(function (pg) { var n = baseNorm(pg.title); return toks.some(function (t) { return n.indexOf(t) >= 0; }); })[0];
-        if (!good) return null;
-        var c = good.coordinates && good.coordinates[0], co = c ? [c.lat, c.lon] : null;
-        if (co && km(co, [e.lat, e.lon]) > 25) co = null;
-        return { photo: good.thumbnail ? good.thumbnail.source : null, coords: co };
-      }).catch(function () { return null; });
-    })();
+    var cityW = {}, ck = cityTok(e.city).join('_');
+    [e.city].concat(CITY_I18N[ck] || [], String(CITY_NEAR[ck] || '').split(' ')).forEach(function (c) { phWords(c).forEach(function (w) { cityW[w.slice(0, 5)] = 1; }); });
+    var toks = [];
+    [e.arena].concat(String(e.aka || '').split(/[;|]/)).forEach(function (n) {
+      phWords(n).forEach(function (w) { var t = w.slice(0, 5); if (w.length >= 4 && !PH_GEN[w] && !cityW[t] && toks.indexOf(t) < 0) toks.push(t); });
+    });
+    var arenaStad = PH_STAD.test(e.arena + ' ' + (e.aka || '')), arenaVen = PH_VEN.test(e.arena), arenaNot = PH_NOT.test(e.arena);
+    var hits = function (t) { var W = phWords(t); return toks.filter(function (x) { return W.some(function (w) { return w.indexOf(x) === 0; }); }).length; };
+    var isCity = function (t) { var W = phWords(t); return !W.length || W.every(function (w) { return cityW[w.slice(0, 5)] || w.length < 3; }); };
+    var score = function (t, d, maxV) {
+      var n = hits(t), v = PH_VEN.test(t) || /^pala/i.test(t);
+      if (isCity(t) || (PH_CLUB.test(t) && !v) || (PH_NOT.test(t) && !arenaNot) || (PH_STAD.test(t) && !arenaStad)) return 0;
+      if (n && (v || !arenaVen || n >= 2)) return 2 + n;
+      // arenos pavadinime tik miestas ir bendri žodžiai (pvz. „Kėdainių arena“): tinka toks pat pavadinimas netoliese
+      if (!toks.length && v && d != null && d <= 0.4 && phWords(t).every(function (w) { return cityW[w.slice(0, 5)] || PH_GEN[w] || w.length < 3 || PH_VEN.test(w); })) return 2;
+      return v && d != null && d <= maxV ? 1 : 0;
+    };
+    var best = function (ps, maxV) {
+      var b = null, bs = 0;
+      ps.forEach(function (p) { var sc = score(p.title, p.d, maxV); if (sc > bs || (sc && sc === bs && p.d != null && (b.d == null || p.d < b.d))) { b = p; bs = sc; } });
+      return b;
+    };
+    var J = getJ;
+    var ok = e.ok && isFinite(e.lat) && isFinite(e.lon), here = [e.lat, e.lon], W = 'https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&';
+    var pagesOf = function (j) {
+      return Object.keys((j.query && j.query.pages) || {}).map(function (k) {
+        var p = j.query.pages[k], c = p.coordinates && p.coordinates[0]; p.co = c ? [c.lat, c.lon] : null; p.d = ok && p.co ? km(p.co, here) : null;
+        p.qid = p.pageprops && p.pageprops.wikibase_item; return p;
+      }).filter(function (p) { return p.thumbnail; });
+    };
+    wcache[key] = (ok ? J(W + 'generator=geosearch&ggscoord=' + e.lat + '|' + e.lon + '&ggsradius=1500&ggslimit=40&prop=pageimages|coordinates|pageprops&ppprop=wikibase_item&piprop=thumbnail&pithumbsize=900&colimit=40')
+      .then(function (j) { var g = best(pagesOf(j), 0.1); return g ? { photo: g.thumbnail.source, coords: null, cr: 'Wikipedia', qid: g.qid } : null; }) : Promise.resolve(null))
+      .then(function (r) {
+        if (r || !ok) return r;
+        return J('https://www.wikidata.org/w/api.php?action=query&list=geosearch&format=json&origin=*&gscoord=' + e.lat + '|' + e.lon + '&gsradius=600&gslimit=30').then(function (j) {
+          var gs = (j.query && j.query.geosearch) || [], dist = {};
+          if (!gs.length) return null;
+          gs.forEach(function (x) { dist[x.title] = x.dist / 1000; });
+          return J('https://www.wikidata.org/w/api.php?action=wbgetentities&format=json&origin=*&props=labels|claims&ids=' + gs.map(function (x) { return x.title; }).join('|')).then(function (w) {
+            var ps = [];
+            Object.keys(w.entities || {}).forEach(function (id) {
+              var en = w.entities[id], L = en.labels || {}, p18 = en.claims && en.claims.P18 && en.claims.P18[0].mainsnak.datavalue;
+              Object.keys(L).forEach(function (k) { ps.push({ title: L[k].value, d: dist[id], img: p18 ? p18.value : null, id: id }); });
+            });
+            var g = best(ps.filter(function (p) { return p.img; }), 0.1), any = g || best(ps, 0.1);
+            // be nuotraukos, bet su Wikidata objektu – jo reikia interjero paieškai (Commons kategorija)
+            if (!g) return any ? { photo: null, coords: null, qid: any.id } : null;
+            return { photo: 'https://commons.wikimedia.org/wiki/Special:FilePath/' + encodeURIComponent(g.img) + '?width=900', coords: null, cr: 'Wikimedia Commons', qid: g.id };
+          });
+        });
+      })
+      .then(function (r) {
+        if (r && r.photo) return r;
+        return J(W + 'generator=search&gsrsearch=' + encodeURIComponent(e.arena + ' ' + e.city) + '&gsrlimit=5&prop=pageimages|coordinates|pageprops&ppprop=wikibase_item&piprop=thumbnail&pithumbsize=900&colimit=5').then(function (j) {
+          var g = best(pagesOf(j).filter(function (p) { return hits(p.title); }), 0);
+          if (!g) return r || null;
+          return { photo: g.thumbnail.source, coords: !ok && g.co ? g.co : null, cr: 'Wikipedia', qid: g.qid || (r && r.qid) };
+        });
+      })
+      .then(function (r) { return checkSide(e, r); })
+      .catch(function () { return null; });
     return wcache[key];
+  }
+
+  // „Iš šono“ turi būti išorės vaizdas. Wikipedia / Wikidata nuotrauka kartais būna iš vidaus (pvz. Ülker, OAKA), todėl tikrinama:
+  // 1) failo Commons kategorijos ir pavadinimas (rungtynės, interjeras, čempionatai…), 2) ar viršutiniame trečdalyje matosi dangus.
+  // Netinkama keičiama kitu arenos Commons kategorijos failu su dangumi; neradus – vaizdo „iš šono“ nėra (lieka „iš vidaus“ ir „iš viršaus“).
+  // Lapo „Arenas“ stulpelis „Side photo“ (nuoroda) visada laimi.
+  var SIDE_BAD = /interior|innen|inside|\bvs\.?\b| v\.? |match|\bgames?\b|championship|eurobasket|euroleague|eurocup|world cup|supporters|\bfans\b|concert|scoreboard|press conference|retired numbers| at the \d{4}|\bfinal\b|tournament|media day|ceremony|figure skating|crowd|spectator|\bcourt\b|\bbowl\b|tribun|\bplan\b|\bmap\b|logo|construction|baustelle|ticket/i;
+  var SIDE_EXT = /exterior|außen|aussen|extérieur|facade|façade|fassade|fasad|buildings in|outside|entrance|eingang/i;
+  var CQ = 'https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&prop=categories|imageinfo&clshow=!hidden&cllimit=max&iiprop=url&iiurlwidth=120&';
+  var catsTxt = function (p) { return (p.categories || []).map(function (c) { return c.title; }).join(' | '); };
+  function fileOfUrl(u) {
+    u = String(u || '');
+    var m = u.match(/Special:FilePath\/([^?#]+)/) || u.match(/(?:upload|thumb)\.wikimedia\.org\/wikipedia\/commons\/(?:thumb\/)?[0-9a-f]\/[0-9a-f]{2}\/([^/?#]+)/);
+    try { return m ? decodeURIComponent(m[1]).replace(/_/g, ' ') : null; } catch (x) { return null; }
+  }
+  // dangaus dalis viršutiniame nuotraukos trečdalyje (0–1); null – nepavyko patikrinti
+  function skyOf(url) {
+    return new Promise(function (res) {
+      if (!/^https:\/\/(upload|thumb)\.wikimedia\.org\//.test(url || '')) return res(null);
+      var im = new Image(), to = setTimeout(function () { res(null); }, 7000);
+      im.crossOrigin = 'anonymous';
+      im.onload = function () {
+        clearTimeout(to);
+        try {
+          var Wd = 64, Hd = Math.max(8, Math.round(64 * im.naturalHeight / im.naturalWidth)), top = Math.max(2, Math.round(Hd * 0.3));
+          var cv = document.createElement('canvas'); cv.width = Wd; cv.height = Hd;
+          var x = cv.getContext('2d'); x.drawImage(im, 0, 0, Wd, Hd);
+          var d = x.getImageData(0, 0, Wd, top).data, n = 0, sky = 0;
+          for (var i = 0; i < d.length; i += 4) {
+            var R = d[i], G = d[i + 1], B = d[i + 2], mx = Math.max(R, G, B), mn = Math.min(R, G, B), l = (mx + mn) / 2, sat = mx ? (mx - mn) / mx : 0;
+            n++; if ((B >= R && B >= G - 8 && l > 90) || (l > 165 && sat < 0.18)) sky++;
+          }
+          res(n ? sky / n : null);
+        } catch (x) { res(null); }
+      };
+      im.onerror = function () { clearTimeout(to); res(null); };
+      im.src = url;
+    });
+  }
+  function checkSide(e, r) {
+    var own = String(e.side || '').trim();
+    if (/^https?:\/\//i.test(own)) {
+      var m = own.match(/commons\.wikimedia\.org\/wiki\/(File:[^?#]+)/i), host = own.replace(/^https?:\/\/(www\.)?/i, '').split('/')[0];
+      r = r || { coords: null };
+      r.photo = m ? fileUrl(decodeURIComponent(m[1])) : own; r.cr = m || /wikimedia/.test(host) ? 'Wikimedia Commons' : host;
+      return r;
+    }
+    if (!r || !r.photo) return r;
+    var f = fileOfUrl(r.photo);
+    var verdict = f ? getJ(CQ + 'titles=' + encodeURIComponent('File:' + f)).then(function (j) {
+      var p = j.query && j.query.pages && j.query.pages[Object.keys(j.query.pages)[0]];
+      if (p && SIDE_BAD.test(f + ' | ' + catsTxt(p))) return false;
+      var th = p && p.imageinfo && p.imageinfo[0] && p.imageinfo[0].thumburl;
+      return skyOf(th || r.photo).then(function (k) { return k == null || k >= 0.35; });
+    }) : skyOf(r.photo).then(function (k) { return k == null || k >= 0.35; });
+    return verdict.then(function (good) {
+      if (good) return r;
+      var bad = f;
+      r.photo = null; r.cr = null;
+      // kitas arenos kategorijos failas: pirmiausia su „exterior / facade …“ ženklais, ir būtinai su dangumi
+      return catOf(r.qid).then(function (cat) {
+        if (!cat) return r;
+        return getJ(CQ + 'generator=categorymembers&gcmtype=file&gcmlimit=50&gcmtitle=' + encodeURIComponent('Category:' + cat)).then(function (j) {
+          var ps = Object.keys((j.query && j.query.pages) || {}).map(function (k) { return j.query.pages[k]; }).filter(function (p) {
+            var t = p.title.replace(/^File:/, '');
+            return IN_IMG.test(t) && t !== bad && p.imageinfo && !SIDE_BAD.test(t + ' | ' + catsTxt(p));
+          }).sort(function (a, b) { return SIDE_EXT.test(b.title + catsTxt(b)) - SIDE_EXT.test(a.title + catsTxt(a)); }).slice(0, 8);
+          var step = function (k) {
+            if (k >= ps.length) return Promise.resolve(r);
+            return skyOf(ps[k].imageinfo[0].thumburl).then(function (sk) {
+              if (sk != null && sk >= 0.5) { r.photo = fileUrl(ps[k].title); r.cr = 'Wikimedia Commons'; return r; }
+              return step(k + 1);
+            });
+          };
+          return step(0);
+        });
+      });
+    });
+  }
+
+  // Interjero nuotrauka („Iš vidaus“): 1) lapo „Arenas“ stulpelis „Interior photo“ (nuoroda – visada laimi);
+  // 2) arenos Wikimedia Commons kategorija (per Wikidata P373): poaplankis „Interior of …“, tada failai su rungtynių / žiūrovų
+  // pavadinimais, tada rungtynių poaplankiai. Praleidžiami koncertai, kitos sporto šakos, išorės vaizdai ir pan.
+  var IN_EX = /exterior|außen|aussen|extérieur|outside|facade|façade|fasad|aerial|from above|panoram|night|logo|\bmap\b|\bplan\b|construction|baustelle|statyb|\bsign|entrance|ticket|parking|pool|baseinas|swim|skating|hockey|concert|koncert|\btour\b|festival|expo\b|\bfair\b|balsas|eurovision|boxing|\bufc\b|wrestling|gymnastic|volley|handball|futsal|tennis|pentathlon|dance|church|street|\bbus\b|tram|judo|karate|fencing|athlet|darts|davis|padel|esport|wedding|outdoor|alrededores|surroundings|umgebung|parque|parke|tienda|shop|store|museo|alley|glory|museum|statue|memorial|monument|plaque|trophy|jersey|mural|jazz|music|muzik|opera|ballet|circus|cirque|conference|congress|exhibition/i;
+  var IN_CAT = /interior|inside|innen|intérieur|interno|interieur|vidus|wnętrz|\biç\b/i;
+  // varžybos (tikrai rungtynių nuotrauka) ir bendri krepšinio žodžiai (gali būti ir išorės nuotrauka, pvz. „… Valencia Basket.jpg“)
+  var IN_COMP = /euroleague|eurolliga|euroliga|euroligue|eurocup|eurobasket|fiba|\blkl\b|\bacb\b|\bbbl\b|\blba\b|\bplk\b|\bbsl\b|\bnbl\b|\baba\b|playoff|pro a\b|betclic|liga endesa|copa del rey|supercopa|final four/i;
+  var IN_BASK = /basket|kosárk|košark|krepš|koszyk|basquet|baloncesto|pallacanestro|koripallo|korvpall|basketbol/i;
+  var IN_GAME = /\bvs\.?\b| v |match|game|final|derby|crowd|fans|public|supporter|aficion|tifosi|kibice|sirgal|hinchas|ultras|tribun|parquet|spiel|partido|partita|mecz|maç|rungtyn|innenansicht|league/i;
+  var IN_GAMECAT = / - .+ - /;
+  var IN_IMG = /\.(jpe?g|png|webp)$/i;
+  var icache = {}, p373 = {};
+  var fileUrl = function (f) { return 'https://commons.wikimedia.org/wiki/Special:FilePath/' + encodeURIComponent(String(f).replace(/^File:/, '')) + '?width=900'; };
+  var fileKey = function (u) { try { u = decodeURIComponent(String(u || '')); } catch (x) { u = String(u || ''); } return u.split(/[\/:]/).pop().replace(/\?.*$/, '').replace(/^\d+px-/, '').replace(/ /g, '_').toLowerCase(); };
+  function catOf(qid) {
+    if (!qid) return Promise.resolve(null);
+    if (qid in p373) return Promise.resolve(p373[qid]);
+    return getJ('https://www.wikidata.org/w/api.php?action=wbgetentities&format=json&origin=*&props=claims&ids=' + qid).then(function (w) {
+      var en = w.entities && w.entities[qid], c = en && en.claims && en.claims.P373;
+      return (p373[qid] = c ? c[0].mainsnak.datavalue.value : null);
+    });
+  }
+  function interior(e, info, clubs) {
+    var key = e.arena + '|' + e.city;
+    if (icache[key]) return icache[key];
+    var own = String(e.inner || '').trim();
+    if (/^https?:\/\//i.test(own)) {
+      var m = own.match(/commons\.wikimedia\.org\/wiki\/(File:[^?#]+)/i), host = own.replace(/^https?:\/\/(www\.)?/i, '').split('/')[0];
+      return (icache[key] = Promise.resolve({ photo: m ? fileUrl(decodeURIComponent(m[1])) : own, cr: m || /wikimedia/.test(host) ? 'Wikimedia Commons' : host, own: true }));
+    }
+    var C = 'https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&list=categorymembers&cmlimit=500&cmtitle=';
+    var side = fileKey(info && info.photo), cityW = {};
+    // miesto ir arenos pavadinimo žodžiai klubo žodžiais nelaikomi (pvz. „Žalgirio arena“)
+    phWords(e.city + ' ' + e.arena + ' ' + (e.aka || '')).forEach(function (w) { cityW[w.slice(0, 5)] = 1; });
+    // klubų žodžiai (pvz. „rytas“, „alba“, „zalgi“) – nuotraukos su jais tinka geriausiai
+    var ctok = [];
+    (clubs || []).forEach(function (c) { phWords(c).forEach(function (w) { var t = w.slice(0, 5); if (w.length >= 4 && !cityW[t] && !/^(bask|club|klub|kosa|krep|kosz|balo|pall|spor|bc$|kk$)/.test(w) && ctok.indexOf(t) < 0) ctok.push(t); }); });
+    // vertinimas: krepšinis / klubas +2, varžybos +2, „interjeras“ +2, rungtynės / žiūrovai +1;
+    // pavienė nuotrauka tinka tik su aiškiu ženklu, kad ji iš vidaus (interjeras, rungtynės, žiūrovai ar varžybos) –
+    // vien klubo ar „basket“ žodis nepakanka (taip pasitaiko ir išorės nuotraukų)
+    var inside = function (t) { return IN_CAT.test(t) || IN_GAME.test(t) || IN_COMP.test(t); };
+    var rank = function (t) {
+      if (IN_EX.test(t)) return -1;
+      var W = phWords(t), r = 0;
+      if (IN_BASK.test(t) || ctok.some(function (x) { return W.some(function (w) { return w.indexOf(x) === 0; }); })) r += 2;
+      if (IN_COMP.test(t)) r += 2;
+      if (IN_CAT.test(t)) r += 2;
+      if (IN_GAME.test(t)) r += 1;
+      return r;
+    };
+    var pickFile = function (titles, minRank) {
+      var b = null, br = minRank - 1;
+      titles.forEach(function (t) {
+        if (!/^File:/.test(t) || !IN_IMG.test(t) || fileKey(t) === side) return;
+        if (minRank > 0 && !inside(t)) return;
+        var r = rank(t); if (r > br) { b = t; br = r; }
+      });
+      return b;
+    };
+    var filesIn = function (cat) { return getJ(C + encodeURIComponent(cat) + '&cmtype=file').then(function (j) { return ((j.query && j.query.categorymembers) || []).map(function (x) { return x.title; }); }); };
+    icache[key] = catOf(info && info.qid).then(function (cat) {
+      if (!cat) return null;
+      return getJ(C + encodeURIComponent('Category:' + cat) + '&cmtype=file|subcat').then(function (j) {
+        var all = ((j.query && j.query.categorymembers) || []).map(function (x) { return x.title; });
+        var subs = all.filter(function (t) { return /^Category:/.test(t) && rank(t) >= 0; });
+        var inSub = subs.filter(function (t) { return IN_CAT.test(t); })[0];
+        // rungtynių poaplankiai: pirmiausia su klubo / krepšinio žodžiais
+        var gameSubs = subs.filter(function (t) { return t !== inSub && (rank(t) >= 1 || IN_GAMECAT.test(t)); })
+          .sort(function (a, b) { return rank(b) - rank(a); });
+        var order = [];
+        if (inSub) order.push([inSub, 0]);
+        order.push([all, 1]);
+        if (gameSubs[0]) order.push([gameSubs[0], 0]);
+        var step = function (k) {   // eilės tvarka bandomi šaltiniai, kol randamas tinkamas failas
+          if (k >= order.length) return Promise.resolve(null);
+          var src = order[k][0], minR = order[k][1];
+          var p = typeof src === 'string' ? filesIn(src).then(function (fs) { return pickFile(fs, minR); }) : Promise.resolve(pickFile(src, minR));
+          return p.then(function (f) { return f || step(k + 1); });
+        };
+        return step(0).then(function (f) { return f ? { photo: fileUrl(f), cr: 'Wikimedia Commons' } : null; });
+      });
+    }).catch(function () { return null; });
+    return icache[key];
   }
 
   function css() {
@@ -318,7 +574,7 @@
       '.am-wrap{position:relative;height:clamp(500px,76vh,760px);margin-top:14px;border-radius:18px;overflow:hidden;border:1px solid var(--line);background:radial-gradient(120% 90% at 50% 0%,color-mix(in srgb,var(--card) 70%,var(--bg)),var(--bg));box-shadow:var(--sh);touch-action:none;-webkit-user-select:none;user-select:none}',
       '.am-load{padding:60px 0;text-align:center;color:var(--mute)}',
       '.am-svg{position:absolute;inset:0;width:100%;height:100%}',
-      '.am-land{fill:color-mix(in srgb,var(--card) 84%,var(--ink) 5%);stroke:var(--line);stroke-width:.7;vector-effect:non-scaling-stroke}',
+      '.am-land{fill:color-mix(in srgb,var(--card) 84%,var(--ink) 5%);stroke:color-mix(in srgb,var(--ink) 34%,transparent);stroke-width:1.1;stroke-linejoin:round;vector-effect:non-scaling-stroke}',
       '.am-land.has{fill:color-mix(in srgb,var(--card) 72%,var(--a) 9%)}',
       '.am-grat{fill:none;stroke:var(--line);stroke-width:.5;opacity:.3;vector-effect:non-scaling-stroke}',
       '.am-cl{fill:var(--mute);font:600 11px var(--mono,monospace);letter-spacing:.14em;text-transform:uppercase;text-anchor:middle;pointer-events:none;paint-order:stroke;stroke:var(--card);stroke-width:3px;opacity:.85}',
@@ -346,6 +602,24 @@
       '.am-card[hidden]{display:none}.am-card:not(.on){pointer-events:none}',
       '.am-head p.cap{margin-top:2px}',
       '.am-ui{pointer-events:none}.am-ui>*{pointer-events:auto}',
+      /* paieškos pasiūlymai su logotipais (klubas arba miestas) */
+      '.am-sbox{position:relative}',
+      '.am-sug{position:absolute;left:0;top:calc(100% + 6px);width:max(100%,280px);max-width:calc(100vw - 48px);max-height:min(340px,52vh);overflow:auto;overscroll-behavior:contain;touch-action:pan-y;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 14px 34px rgba(0,0,0,.5);padding:4px;z-index:7}',
+      '.am-sug[hidden]{display:none}',
+      '.am-sug button{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border:0;border-radius:10px;background:none;color:var(--ink);text-align:left;font:inherit;font-size:14px;cursor:pointer}',
+      '.am-sug button.on,.am-sug button:hover{background:color-mix(in srgb,var(--line) 80%,transparent)}',
+      '.am-sug .sl{flex:none;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#fff;overflow:hidden}',
+      '.am-sug .sl img{width:80%;height:80%;object-fit:contain}.am-sug .sl b{font:700 10px var(--hd,sans-serif);color:#111}',
+      '.am-sug .st{min-width:0;flex:1}.am-sug .st b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+      '.am-sug .st small{display:block;color:var(--mute);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+      '.am-sug mark{background:none;color:var(--a);font-weight:700}',
+      '.am-sug .none{padding:10px 12px;color:var(--mute);font-size:13px}',
+      '@media(hover:none){.am-sug button{padding:12px 10px;font-size:15px;min-height:52px}.am-sug .sl{width:36px;height:36px}}',
+      /* miestų pavadinimai (tik PC; iš lapo „Arenas“ stulpelio City) */
+      '.am-cities{position:absolute;inset:0;pointer-events:none}',
+      '.am-city{position:absolute;left:0;top:0;white-space:nowrap;font:600 10.5px var(--mono,monospace);letter-spacing:.12em;text-transform:uppercase;color:var(--mute);text-shadow:0 0 4px var(--bg),0 0 8px var(--bg);transition:opacity .25s;will-change:transform}',
+      '.am-city.off{opacity:0}',
+      '.am-cl{transition:opacity .35s}',
       '.am-x{position:absolute;right:8px;top:8px;z-index:3;width:32px;height:32px;border-radius:50%;border:0;background:rgba(0,0,0,.55);color:#fff;font-size:20px;line-height:1;cursor:pointer}',
       '.am-media{position:relative;flex:none;height:200px;overflow:hidden;perspective:760px;background:linear-gradient(110deg,var(--card) 30%,var(--line) 50%,var(--card) 70%);background-size:200% 100%;animation:am-sh 1.4s linear infinite}',
       '.am-media.done{animation:none;background:var(--bg)}',
@@ -356,6 +630,12 @@
       '.am-media[data-v="photo"] .sat{transform:rotateX(64deg) translateY(12%) scale(1.3);opacity:0}',
       '.am-media[data-v="sat"] .photo{opacity:0;transform:scale(1.22) translateY(-7%)}',
       '.am-media .photo{animation:am-kb 16s ease-in-out infinite alternate}',
+      '.am-media .inner{opacity:0;transform:scale(1.12)}',
+      '.am-media.has-inner[data-v="inner"] .inner{opacity:1;transform:none}',
+      '.am-media[data-v="inner"] .photo,.am-media[data-v="inner"] .sat{opacity:0}',
+      '.am-sw button[hidden]{display:none}',
+      '@media(max-width:600px){.am-sw button:not(.on) .t{display:none}.am-sw{right:10px;flex-wrap:wrap}}',
+      '.am-miss .am-scan{margin:6px 0 0;padding:4px 10px;border-radius:99px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:12px;cursor:pointer}',
       '@keyframes am-kb{from{filter:none}to{filter:saturate(1.1)}}',
       '.am-none{position:absolute;inset:0;display:none;place-items:center;color:var(--mute);font-size:13px;text-align:center;padding:20px}',
       '.am-media.nomedia .am-none{display:grid}',
@@ -433,7 +713,7 @@
         Object.keys(pickRow).forEach(function (k) {
           var p = pickRow[k], r = p.row;
           if (!r.ok) { noCoord.push(p.name + ' – ' + r.arena); return; }
-          add(p.name, { arena: r.arena, city: r.city, lat: r.lat, lon: r.lon, ok: true, cap: r.cap });
+          add(p.name, { arena: r.arena, city: r.city, lat: r.lat, lon: r.lon, ok: true, cap: r.cap, league: r.league, aka: r.aka, inner: r.inner, side: r.side });
         });
         bud26.forEach(function (r) {
           if (r.nation === 'Japonija' || r.nation === 'Japan') return;
@@ -479,9 +759,9 @@
 
       // --- DOM ---
       var wrap = document.createElement('div'); wrap.className = 'am-wrap';
-      wrap.innerHTML = '<svg class="am-svg"><g class="am-g"><path class="am-grat"></path><g class="am-lands"></g><g class="am-labs"></g></g></svg><div class="am-pins"></div>' +
-        '<div class="am-ui"><input class="am-search" type="search" list="am-dl" placeholder="' + esc(T('Ieškoti klubo…', 'Find a club…')) + '" aria-label="' + esc(T('Ieškoti klubo', 'Find a club')) + '">' +
-        '<datalist id="am-dl">' + items.map(function (i) { return '<option value="' + esc(i.name) + '">'; }).join('') + '</datalist>' +
+      wrap.innerHTML = '<svg class="am-svg"><g class="am-g"><path class="am-grat"></path><g class="am-lands"></g><g class="am-labs"></g></g></svg><div class="am-cities"></div><div class="am-pins"></div>' +
+        '<div class="am-ui"><div class="am-sbox"><input class="am-search" type="search" autocomplete="off" spellcheck="false" placeholder="' + esc(T('Ieškoti klubo ar miesto…', 'Find a club or city…')) + '" aria-label="' + esc(T('Ieškoti klubo ar miesto', 'Find a club or city')) + '" role="combobox" aria-expanded="false" aria-autocomplete="list">' +
+        '<div class="am-sug" role="listbox" hidden></div></div>' +
         '<div class="am-zoom"><button type="button" data-z="in" aria-label="+">+</button><button type="button" data-z="out" aria-label="−">−</button><button type="button" data-z="home" aria-label="' + esc(T('Visi klubai', 'All clubs')) + '">⌂</button></div></div>' +
         '<div class="am-hint">' + esc(T('Burbulo dydis – 26/27 biudžetas · artinkite, kad atsirastų daugiau klubų', 'Bubble size – 26/27 budget · zoom in to reveal more clubs')) + '</div>' +
         '<aside class="am-card" hidden></aside>';
@@ -496,6 +776,53 @@
         dc.innerHTML = '<summary>' + esc(T('Arenos be koordinačių lape „Arenas“', 'Arenas without coordinates in the Arenas sheet')) + ' (' + noCoord.length + ')</summary><p>' + noCoord.map(esc).join(', ') + '</p>';
         el.appendChild(dc);
       }
+      (function () {
+        var seenA = {}, arenas = [];
+        items.forEach(function (it) {
+          var k = it.e.arena + '|' + it.e.city;
+          if (!seenA[k]) { seenA[k] = { e: it.e, clubs: [], tot: 0 }; arenas.push(seenA[k]); }
+          seenA[k].clubs.push(it.name); seenA[k].tot = Math.max(seenA[k].tot, it.total || 0);
+        });
+        var LS = 'am-inner-miss-v1', cached = null;
+        try { cached = JSON.parse(localStorage.getItem(LS) || 'null'); } catch (x) { cached = null; }
+        if (cached && (Date.now() - cached.t > 7 * 864e5)) cached = null;
+        var di = document.createElement('details'); di.className = 'am-miss';
+        var label = function (n) { return esc(T('Arenos be interjero nuotraukos', 'Arenas without an interior photo')) + (n == null ? ' (' + esc(T('spauskite, kad patikrintų', 'click to check')) + ')' : ' (' + n + ')'); };
+        var line = function (a) { return esc(a.e.arena) + ' – ' + esc(a.clubs.join(', ')); };
+        function show(list) {
+          // nuoroda lape „Interior photo“ visada tinka – tokios arenos iš sąrašo išimamos iškart
+          var miss = arenas.filter(function (a) { return list.indexOf(a.e.arena + '|' + a.e.city) >= 0 && !/^https?:/i.test(a.e.inner || ''); })
+            .sort(function (a, b) { return b.tot - a.tot; });   // didžiausių biudžetų klubai – pirmi
+          di.querySelector('summary').innerHTML = label(miss.length);
+          di.querySelector('p').innerHTML = (miss.length ? miss.map(line).join('<br>') : esc(T('Visos arenos turi interjero nuotrauką.', 'All arenas have an interior photo.'))) +
+            '<br><small>' + esc(T('Įrašykite nuotraukos nuorodą lapo „Arenas“ stulpelyje „Interior photo“.', 'Add a photo link in the "Interior photo" column of the Arenas sheet.')) + '</small>' +
+            '<br><button type="button" class="am-scan">' + esc(T('Tikrinti iš naujo', 'Check again')) + '</button>';
+        }
+        function scan() {
+          var p = di.querySelector('p'), miss = [], i = 0, done = 0;
+          p.textContent = T('Tikrinama…', 'Checking…');
+          function next() {
+            if (i >= arenas.length) return Promise.resolve();
+            var a = arenas[i++];
+            return (/^https?:/i.test(a.e.inner || '') ? Promise.resolve({}) : wiki(a.e).then(function (info) { return interior(a.e, info, a.clubs); }))
+              .then(function (r) {
+                if (!r) miss.push(a.e.arena + '|' + a.e.city);
+                done++; p.textContent = T('Tikrinama ', 'Checking ') + done + ' / ' + arenas.length + '…';
+                return new Promise(function (res) { setTimeout(res, 120); });
+              }).then(next);
+          }
+          Promise.all([next(), next(), next()]).then(function () {
+            try { localStorage.setItem(LS, JSON.stringify({ t: Date.now(), list: miss })); } catch (x) {}
+            show(miss);
+          });
+        }
+        di.innerHTML = '<summary>' + label(null) + '</summary><p></p>';
+        if (cached) show(cached.list);
+        di.addEventListener('toggle', function () { if (di.open && !di.dataset.go && !cached) { di.dataset.go = 1; scan(); } });
+        di.addEventListener('click', function (ev) { if (ev.target.closest && ev.target.closest('.am-scan')) { cached = null; scan(); } });
+        el.appendChild(di);
+
+      })();
       var note = document.createElement('p'); note.className = 'sum';
       note.style.cssText = 'font-size:13px;margin-top:8px';
       note.textContent = items.length + ' ' + T('klubų žemėlapyje', 'clubs on the map') + ' · ' + T('sezonas', 'season') + ' ' + season;
@@ -516,6 +843,44 @@
       var lands = g.select('.am-lands').selectAll('path').data(features).join('path').attr('class', function (f) { return 'am-land' + (nations[f.properties.name] ? ' has' : ''); });
       var labSel = g.select('.am-labs').selectAll('text').data(labels).join('text').attr('class', 'am-cl').text(function (d) { return labName(d.n); });
 
+      // miestai (tik PC): kiekvienas lapo „Arenas“ miestas su klubu žemėlapyje; rodomi priartinus, niekada neuždengia burbulų ir pavadinimų
+      var cityLabel = function (c) { return c; };   // miestai rodomi taip, kaip įrašyti lapo „Arenas“ stulpelyje „City“ (vertimai naudojami tik paieškai)
+      var pcMQ = window.matchMedia ? matchMedia('(hover: hover) and (pointer: fine) and (min-width: 721px)') : null;
+      var isPC = function () { return !!(pcMQ && pcMQ.matches); };
+      var cityMap = {};
+      items.forEach(function (it) {
+        var c = String(it.e.city || '').trim(); if (!c) return;
+        var k = N(c); (cityMap[k] = cityMap[k] || { name: c, lat: 0, lon: 0, n: 0, its: [] });
+        cityMap[k].lat += it.e.lat; cityMap[k].lon += it.e.lon; cityMap[k].n++; cityMap[k].its.push(it);
+      });
+      var cities = Object.keys(cityMap).map(function (k) { var c = cityMap[k]; c.lat /= c.n; c.lon /= c.n; return c; })
+        .sort(function (a, b) { return b.n - a.n || b.its.reduce(function (t, i) { return t + i.total; }, 0) - a.its.reduce(function (t, i) { return t + i.total; }, 0); });
+      var citiesEl = wrap.querySelector('.am-cities');
+      cities.forEach(function (c) { var d = document.createElement('div'), nm = cityLabel(c.name); d.className = 'am-city off'; d.textContent = nm; citiesEl.appendChild(d); c.el = d; c.w = nm.length * 8 + 6; });
+      function layoutCities() {
+        var show = isPC() && cT.k >= 3, w = W(), h = H(), boxes = [];
+        if (show) {
+          items.forEach(function (it) {
+            if (!it.on) return;
+            boxes.push([it.sx - it.s / 2, it.sy - it.s / 2, it.sx + it.s / 2, it.sy + it.s / 2]);
+            if (cT.k >= 6) { var lw = it.name.length * 3.1 + 4, ly = it.up ? it.sy - it.s / 2 - 18 : it.sy + it.s / 2 + 2; boxes.push([it.sx - lw, ly, it.sx + lw, ly + 16]); }
+          });
+          labels.forEach(function (l) { if (cT.k < 6 && l.w * cT.k > l.len * 8.5) { var lx = cT.k * l.x + cT.x, ly = cT.k * l.y + cT.y, lw = l.len * 8.3 / 2; boxes.push([lx - lw, ly - 11, lx + lw, ly + 4]); } });
+        }
+        cities.forEach(function (c) {
+          var on = false;
+          if (show && c.p) {
+            var x = cT.k * c.p[0] + cT.x, top = Infinity;
+            c.its.forEach(function (it) { if (it.on) top = Math.min(top, it.sy - it.s / 2 - (it.up && cT.k >= 6 ? 18 : 0)); });
+            var y = (top === Infinity ? cT.k * c.p[1] + cT.y : top) - 16;
+            var bb = [x - c.w / 2, y - 7, x + c.w / 2, y + 7];
+            on = bb[2] > 0 && bb[0] < w && bb[3] > 0 && bb[1] < h && !boxes.some(function (o) { return bb[0] < o[2] && bb[2] > o[0] && bb[1] < o[3] && bb[3] > o[1]; });
+            if (on) { boxes.push(bb); c.el.style.transform = 'translate(' + (x - c.w / 2).toFixed(1) + 'px,' + (y - 7).toFixed(1) + 'px)'; }
+          }
+          c.el.classList.toggle('off', !on);
+        });
+      }
+
       function project() {
         var w = W(), h = H();
         proj = d3.geoMercator().fitExtent([[12, 12], [w - 12, h - 12]], { type: 'MultiPoint', coordinates: [[-11, 31], [40, 31], [40, 62], [-11, 62]] });
@@ -526,6 +891,7 @@
         lands.attr('d', path);
         labels.forEach(function (l) { var p = proj(l.c), bb = path.bounds(l.poly); l.x = p[0]; l.y = p[1]; l.w = bb[1][0] - bb[0][0]; l.len = labName(l.n).length; });
         items.forEach(function (it) { it.p0 = proj([it.e.lon, it.e.lat]); });
+        cities.forEach(function (c) { c.p = proj([c.lon, c.lat]); });
         regroup();
       }
       project();
@@ -551,7 +917,9 @@
         wrap.classList.toggle('am-lab', cT.k >= 6);
         labSel.attr('transform', function (d) { return 'translate(' + d.x + ',' + d.y + ')'; })
           .style('font-size', (11 / cT.k) + 'px').style('stroke-width', (3 / cT.k) + 'px')
-          .style('display', function (d) { return d.w * cT.k > d.len * 8.5 ? null : 'none'; });
+          .style('display', function (d) { return d.w * cT.k > d.len * 8.5 ? null : 'none'; })
+          .style('opacity', isPC() && cT.k >= 6 ? 0 : null);   // PC: miestų lygyje šalių pavadinimai išblunka
+        layoutCities();
       }
       function apply(t) {
         cT = t; g.attr('transform', t.toString());
@@ -588,12 +956,12 @@
         card.hidden = false;
         card.innerHTML =
           '<button type="button" class="am-x" aria-label="' + esc(T('Uždaryti', 'Close')) + '">×</button>' +
-          '<div class="am-media" data-v="sat"><div class="l sat"></div><div class="l photo"></div>' +
-          '<div class="am-none">' + esc(e.arena) + ' · ' + esc(e.city) + '</div>' +
-          '<div class="am-sw" hidden><button type="button" data-v="sat">🛰 ' + esc(T('Iš viršaus', 'Top')) + '</button><button type="button" data-v="photo">📷 ' + esc(T('Iš šono', 'Side')) + '</button></div>' +
+          '<div class="am-media" data-v="sat"><div class="l sat"></div><div class="l photo"></div><div class="l inner"></div>' +
+          '<div class="am-none">' + esc(e.arena) + ' · ' + esc(cityLabel(e.city)) + '</div>' +
+          '<div class="am-sw" hidden><button type="button" data-v="sat" title="' + esc(T('Iš viršaus', 'Top')) + '">🛰<span class="t"> ' + esc(T('Iš viršaus', 'Top')) + '</span></button><button type="button" data-v="photo" hidden title="' + esc(T('Iš šono', 'Side')) + '">📷<span class="t"> ' + esc(T('Iš šono', 'Side')) + '</span></button><button type="button" data-v="inner" hidden title="' + esc(T('Iš vidaus', 'Interior')) + '">🏟<span class="t"> ' + esc(T('Iš vidaus', 'Interior')) + '</span></button></div>' +
           '<small class="am-cr"></small></div>' +
           '<div class="am-body"><div class="am-head">' + (it.logo ? '<img src="' + esc(it.logo) + '" alt="">' : '') +
-          '<div><h3>' + esc(it.name) + '</h3><p>' + esc(e.arena) + ' · ' + esc(e.city) + '</p>' + capTxt + '</div></div>' +
+          '<div><h3>' + esc(it.name) + '</h3><p>' + esc(e.arena) + ' · ' + esc(cityLabel(e.city)) + '</p>' + capTxt + '</div></div>' +
           '<div class="am-kpis"><div><small>' + esc(T('Biudžetas', 'Budget')) + ' ' + season + '</small><b>' + (bud && bud.total != null ? fmtM(bud.total) : '—') + '</b></div>' +
           '<div><small>' + esc(T('Vid. lankomumas', 'Avg. attendance')) + ' ' + season + '</small><b>' + attTxt + '</b></div></div>' +
           '<div class="am-act">' +
@@ -605,31 +973,63 @@
         loadMedia(it);
       }
       function loadMedia(it) {
-        var my = ++mtoken, box = card.querySelector('.am-media'), sat = box.querySelector('.sat'), ph = box.querySelector('.photo'), e = it.e;
+        var my = ++mtoken, box = card.querySelector('.am-media'), e = it.e;
+        var L = { sat: box.querySelector('.sat'), photo: box.querySelector('.photo'), inner: box.querySelector('.inner') };
+        var CLS = { sat: 'has-sat', photo: 'has-photo', inner: 'has-inner' };
+        var cr = { sat: '', photo: '', inner: '' }, have = { sat: false, photo: false, inner: false };
+        var ORDER = ['photo', 'inner', 'sat'];   // automatinis keitimas kas 5 s: iš šono → vidus → iš viršaus
+        var sw = box.querySelector('.am-sw'), timer = 0, manual = false;
+        function refresh() {
+          var n = 0;
+          ORDER.forEach(function (v) { sw.querySelector('[data-v="' + v + '"]').hidden = !have[v]; if (have[v]) n++; });
+          sw.hidden = n < 2;
+          if (n >= 2 && !timer && !manual) timer = setInterval(function () {
+            if (my !== mtoken) { clearInterval(timer); return; }
+            var k = ORDER.indexOf(box.dataset.v);
+            for (var s = 1; s <= ORDER.length; s++) { var v = ORDER[(k + s) % ORDER.length]; if (have[v]) { setView(v); break; } }
+          }, 5000);
+        }
+        function put(v, url, credit) {
+          return preload(url).then(function (ok) {
+            if (!ok || my !== mtoken) return;
+            L[v].style.backgroundImage = 'url("' + url + '")'; box.classList.add(CLS[v]); have[v] = true; cr[v] = credit;
+            if (box.classList.contains('done')) { box.classList.remove('nomedia'); if (!ORDER.some(function (x) { return x !== v && have[x]; })) setView(v); refresh(); }
+          });
+        }
         wiki(e).then(function (info) {
           if (my !== mtoken) return;
           var c = e.ok ? [e.lat, e.lon] : (info && info.coords ? info.coords : null);
           var sUrl = c ? roofImg(c) : null, pUrl = info && info.photo;
-          var hasS = false, hasP = false;
-          var ps = sUrl ? preload(sUrl).then(function (ok) { if (ok && my === mtoken) { sat.style.backgroundImage = 'url("' + sUrl + '")'; box.classList.add('has-sat'); hasS = true; } }) : Promise.resolve();
-          var pp = pUrl ? preload(pUrl).then(function (ok) { if (ok && my === mtoken) { ph.style.backgroundImage = 'url("' + pUrl + '")'; box.classList.add('has-photo'); hasP = true; } }) : Promise.resolve();
+          var ps = sUrl ? preload(sUrl).then(function (ok) { if (ok && my === mtoken) { L.sat.style.backgroundImage = 'url("' + sUrl + '")'; box.classList.add('has-sat'); have.sat = true; } }) : Promise.resolve();
+          var pp = pUrl ? preload(pUrl).then(function (ok) { if (ok && my === mtoken) { L.photo.style.backgroundImage = 'url("' + pUrl + '")'; box.classList.add('has-photo'); have.photo = true; cr.photo = T('Foto: ', 'Photo: ') + (info.cr || 'Wikipedia'); } }) : Promise.resolve();
+          // interjeras kraunamas lygiagrečiai ir atsiranda kaip mygtukas, kai tik randamas
+          interior(e, info, items.filter(function (o) { return o.e.arena === e.arena && o.e.city === e.city; }).map(function (o) { return o.name; })).then(function (r) {
+            if (r && my === mtoken) put('inner', r.photo, T('Foto: ', 'Photo: ') + r.cr);
+          });
           return Promise.all([ps, pp]).then(function () {
             if (my !== mtoken) return;
             box.classList.add('done');
-            if (!hasS && !hasP) { box.classList.add('nomedia'); return; }
-            if (hasP) box.querySelector('.am-cr').textContent = T('Foto: Wikipedia', 'Photo: Wikipedia');
-            if (hasS && hasP) {
-              box.querySelector('.am-sw').hidden = false;
+            var first = ORDER.filter(function (v) { return have[v]; });
+            if (!first.length) { box.classList.add('nomedia'); return; }
+            if (have.sat && first[0] !== 'sat') {
+              // pirmiausia trumpai – vaizdas iš viršaus, tada pirmas iš eilės (dažniausiai „iš šono“)
+              setView('sat');
               var wait = Math.max(0, 1800 - (performance.now() - openedAt));
-              setTimeout(function () { if (my === mtoken) setView('photo'); }, reduced ? 0 : wait);
-            } else box.dataset.v = hasP ? 'photo' : 'sat';
+              setTimeout(function () { if (my === mtoken && box.dataset.v === 'sat' && !manual) setView(ORDER.filter(function (v) { return have[v]; })[0]); }, reduced ? 0 : wait);
+            } else setView(first[0]);
+            refresh();
           });
         });
         function setView(v) {
           box.dataset.v = v;
+          box.querySelector('.am-cr').textContent = cr[v] || '';
           [].forEach.call(box.querySelectorAll('.am-sw button'), function (b) { b.classList.toggle('on', b.dataset.v === v); });
         }
-        box.addEventListener('click', function (ev) { var b = ev.target.closest && ev.target.closest('.am-sw button'); if (b) setView(b.dataset.v); });
+        // paspaudus mygtuką automatinis keitimas sustoja (rodomas pasirinktas vaizdas)
+        box.addEventListener('click', function (ev) {
+          var b = ev.target.closest && ev.target.closest('.am-sw button'); if (!b) return;
+          manual = true; clearInterval(timer); timer = 0; setView(b.dataset.v);
+        });
       }
       function closeCard() {
         mtoken++; sel = null; card.classList.remove('on');
@@ -655,12 +1055,55 @@
         else if (b.dataset.z === 'out') tr.call(zoom.scaleBy, 1 / 1.8);
         else { closeCard(); wsel.transition().duration(reduced ? 0 : 900).ease(d3.easeCubicInOut).call(zoom.transform, d3.zoomIdentity); }
       });
-      var search = wrap.querySelector('.am-search');
-      search.addEventListener('change', function () {
-        var q = N(search.value); if (!q) return;
-        var it = items.filter(function (i) { return N(i.name) === q; })[0] || items.filter(function (i) { return N(i.name).indexOf(q) >= 0; })[0];
-        if (it) { select(it); search.value = ''; search.blur(); }
+      // paieška: klubo pavadinimas arba miestas (ne arenos); sąrašas su logotipais, rodyklės + Enter (PC), dideli eilučių plotai telefone
+      var search = wrap.querySelector('.am-search'), sug = wrap.querySelector('.am-sug'), sugIt = [], sugAt = -1;
+      var tok = function (v) { return String(v || '').toLowerCase().replace(/ł/g, 'l').replace(/đ/g, 'd').replace(/ø/g, 'o').replace(/ı/g, 'i').replace(/ß/g, 'ss').normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/[^a-z0-9]+/).filter(Boolean); };
+      // miestas randamas vietiniu, angliškuoju ir lietuviškuoju pavadinimu, priemiesčiai – ir pagal didmiestį
+      items.forEach(function (it) { var c = tok(it.e.city), k = c.join('_'), v = CITY_I18N[k]; it.tn = tok(it.name); it.tc = c.concat(v ? tok(v[0] + ' ' + v[1]) : [], tok(CITY_NEAR[k] || '')); });
+      var hasAll = function (Wd, q) { return q.every(function (x) { return Wd.some(function (w) { return w.indexOf(x) === 0; }); }); };
+      function mark(text, q) {
+        return esc(text).split(/(\s+)/).map(function (w) { var t = tok(w)[0]; return t && q.some(function (x) { return t.indexOf(x) === 0; }) ? '<mark>' + w + '</mark>' : w; }).join('');
+      }
+      function suggest() {
+        var q = tok(search.value);
+        if (!q.length) { closeSug(); return; }
+        var scored = [];
+        items.forEach(function (it) {
+          var sc = hasAll(it.tn, q) ? (it.tn[0] && it.tn[0].indexOf(q[0]) === 0 ? 3 : 2) : hasAll(it.tc, q) ? 1.5 : hasAll(it.tn.concat(it.tc), q) ? 1 : 0;
+          if (sc) scored.push([sc, it]);
+        });
+        scored.sort(function (a, b) { return b[0] - a[0] || b[1].total - a[1].total || a[1].name.localeCompare(b[1].name); });
+        sugIt = scored.slice(0, 30).map(function (x) { return x[1]; }); sugAt = sugIt.length ? 0 : -1;
+        sug.innerHTML = sugIt.length ? sugIt.map(function (it, i) {
+          var ini = String(it.name).split(/\s+/).slice(0, 2).map(function (w) { return w[0]; }).join('').toUpperCase();
+          var sub = [cityLabel(it.e.city), it.nation ? (typeof dn === 'function' ? dn(it.nation) : it.nation) : '', it.e.league && it.e.league !== 'Other' ? it.e.league : ''].filter(Boolean).join(' · ');
+          return '<button type="button" role="option" data-i="' + i + '"' + (i === 0 ? ' class="on"' : '') + '><span class="sl">' + (it.logo ? '<img src="' + esc(it.logo) + '" alt="" loading="lazy">' : '<b>' + esc(ini) + '</b>') +
+            '</span><span class="st"><b>' + mark(it.name, q) + '</b><small>' + mark(sub, q) + '</small></span></button>';
+        }).join('') : '<div class="none">' + esc(T('Nieko nerasta', 'Nothing found')) + '</div>';
+        sug.hidden = false; search.setAttribute('aria-expanded', 'true');
+      }
+      function closeSug() { sug.hidden = true; sug.innerHTML = ''; sugIt = []; sugAt = -1; search.setAttribute('aria-expanded', 'false'); }
+      function pick(it) { closeSug(); search.value = ''; search.blur(); select(it); }
+      function moveSug(d) {
+        if (!sugIt.length) return;
+        sugAt = (sugAt + d + sugIt.length) % sugIt.length;
+        [].forEach.call(sug.querySelectorAll('button'), function (b, i) { b.classList.toggle('on', i === sugAt); if (i === sugAt) b.scrollIntoView({ block: 'nearest' }); });
+      }
+      search.addEventListener('input', suggest);
+      search.addEventListener('focus', function () { if (search.value) suggest(); });
+      search.addEventListener('keydown', function (ev) {
+        if (ev.key === 'ArrowDown') { ev.preventDefault(); moveSug(1); }
+        else if (ev.key === 'ArrowUp') { ev.preventDefault(); moveSug(-1); }
+        else if (ev.key === 'Enter') { ev.preventDefault(); if (sugAt >= 0) pick(sugIt[sugAt]); }
+        else if (ev.key === 'Escape') { ev.stopPropagation(); search.value = ''; closeSug(); search.blur(); }
       });
+      // pasirinkimas paspaudus (click), kad telefone sąrašą būtų galima slinkti pirštu; kol pirštas ant sąrašo – blur jo neuždaro
+      var sugDown = false;
+      sug.addEventListener('pointerdown', function (ev) { sugDown = true; if (ev.pointerType === 'mouse') ev.preventDefault(); });
+      sug.addEventListener('pointercancel', function () { sugDown = false; });
+      sug.addEventListener('pointerup', function () { setTimeout(function () { sugDown = false; }, 450); });
+      sug.addEventListener('click', function (ev) { var b = ev.target.closest('button[data-i]'); sugDown = false; if (b) pick(sugIt[+b.dataset.i]); });
+      search.addEventListener('blur', function () { setTimeout(function () { if (!sugDown && document.activeElement !== search) closeSug(); }, 200); });
       function onKey(ev) { if (ev.key === 'Escape' && sel) closeCard(); }
       document.addEventListener('keydown', onKey);
 

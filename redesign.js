@@ -101,7 +101,18 @@
       while(b.scrollWidth>b.clientWidth+1&&s>10){s-=1;b.style.fontSize=s+"px"}
       b.dataset.ft=b.textContent});
   }
-  let rzt=0;addEventListener("resize",()=>{clearTimeout(rzt);rzt=setTimeout(()=>{document.querySelectorAll("[data-ft]").forEach(b=>delete b.dataset.ft);fitLed()},150)});
+  // Klubo kortelė: paskutinė rodiklių eilutė (pvz. 4 indeksų langeliai) ištempiama per visą plotį (PC / planšetė; telefone – kaip buvo)
+  function fitKp(){
+    document.querySelectorAll("#sh .kp").forEach(k=>{
+      k.style.removeProperty("grid-template-columns");[...k.children].forEach(c=>c.style.removeProperty("grid-column"));
+      if(innerWidth<721||!k.offsetParent)return;
+      const kids=[...k.children];if(kids.length<2)return;
+      const N=getComputedStyle(k).gridTemplateColumns.split(" ").filter(Boolean).length;if(N<3)return;
+      const top=kids[kids.length-1].offsetTop,last=kids.filter(c=>c.offsetTop===top),n=last.length,g=k.querySelector(".hasg");
+      if(n>=N||(g&&g.offsetTop+g.offsetHeight>top))return;
+      k.style.gridTemplateColumns=`repeat(${N*n},minmax(0,1fr))`;
+      kids.forEach(c=>{c.style.gridColumn=c===g?`${-(2*n+1)}/-1`:last.includes(c)?`span ${N}`:`span ${n}`})})}
+  let rzt=0;addEventListener("resize",()=>{clearTimeout(rzt);rzt=setTimeout(()=>{document.querySelectorAll("[data-ft]").forEach(b=>delete b.dataset.ft);fitLed();fitKp()},150)});
 
   // ---- Lankomumo lentelės skaitymas su pataisomis: sezonai nebesislenka dėl Latvijos–Estijos lygos ----
   try{
@@ -171,7 +182,7 @@
         if(!enhance._pre){enhance._pre=1;["bcl-2026-bg.jpg","lkl-bg.jpg"].forEach(f=>{(new Image()).src=new URL(base+f,document.baseURI).href})}}}
     {const h2=she.querySelector("h2"),PBG=[[/marcus\s+foster/i,"foster-bg.jpg","center 10%"],[/arnas\s+veli[čc]ka/i,"velicka-bg.jpg","center 0%"],[/simas\s+jarumbauskas/i,"jarumbauskas-bg.jpg","center 0%"],[/giedrius\s+[žz]ib[ėe]nas/i,"zibenas-bg.jpg","46% 0%"],[/gytis\s+radzevi[čc]ius/i,"radzevicius-bg.jpg","54% 0%"],[/margiris\s+normantas/i,"normantas-bg.jpg","center 0%"],[/speedy\s+smith/i,"smith-bg.jpg","40% 0%"]],hit=h2&&!she.querySelector(".cl")?PBG.find(p=>p[0].test(h2.textContent)):null;
       she.classList.toggle("is-fos",!!hit);if(hit){she.style.setProperty("--pbg","url("+hit[1]+")");she.style.setProperty("--pbgpos",hit[2])}else{she.style.removeProperty("--pbg");she.style.removeProperty("--pbgpos")}}
-    fitLed();
+    fitLed();fitKp();
     // Klubų logotipai (naudoja jūsų esamą logos.json ir logo() funkciją)
     {const h2=document.querySelector("#sh .cl h2");if(!h2||!/rytas/i.test(h2.textContent))RY_LIT=false}
     if(typeof LOGOS!=="undefined")document.querySelectorAll("#sh .cl h2:not([data-lg])").forEach(h=>{
