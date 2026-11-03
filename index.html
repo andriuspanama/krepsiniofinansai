@@ -209,12 +209,26 @@ body.lk{position:fixed;left:0;right:0;width:100%;overflow:hidden}#md,.sheet{over
 .bar .chip[data-bg]:hover{border-color:color-mix(in srgb,var(--a) 55%,var(--line))}
 .bar .chip[data-bg].on{border-color:var(--a);background-color:color-mix(in srgb,var(--a) 22%,var(--card));box-shadow:0 0 18px color-mix(in srgb,var(--a) 45%,transparent)}
 @media(prefers-reduced-motion:reduce){#sh{transition:none}}
+/* įkėlimas: kol ateina duomenys iš lentelės, rodomi pilki „griaučiai“, o duomenys atsiranda švelniai */
+.skel{display:grid;gap:12px;animation:kfIn .3s ease both}
+.skel i{display:block;border-radius:10px;background:linear-gradient(90deg,color-mix(in srgb,var(--line) 75%,transparent) 0%,color-mix(in srgb,var(--line) 30%,transparent) 50%,color-mix(in srgb,var(--line) 75%,transparent) 100%);background-size:200% 100%;animation:kfShim 1.3s linear infinite}
+.skel .r{display:flex;gap:8px;flex-wrap:nowrap;overflow:hidden}
+.skel .c{flex:none;width:92px;height:30px;border-radius:999px}
+.skel .c.w{width:120px}.skel .c.q{width:auto;flex:1;max-width:340px}
+.skel .tb{display:grid;gap:10px;padding:14px;border:1px solid var(--line);border-radius:16px;background:var(--card)}
+.skel .ln{height:40px}.skel .ln:nth-child(3n+2){opacity:.8}.skel .ln:nth-child(3n){opacity:.65}
+#tabs:empty{min-height:42px}
+#out.in>*{animation:kfIn .4s ease both}
+@keyframes kfShim{from{background-position:200% 0}to{background-position:-200% 0}}
+@keyframes kfIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media(max-width:720px){.skel .ln{height:118px;border-radius:14px}}
+@media(prefers-reduced-motion:reduce){.skel i,.skel,#out.in>*{animation:none}}
 </style>
 </head>
 <body>
 <header><h1 id="h1">Krepšinio klubų finansai</h1><span id="st">Kraunama…</span><button class="ic" id="th" aria-label="Tema"></button><span id="lang"><button class="chip" data-l="lt">LT</button> <button class="chip" data-l="en">EN</button></span></header>
 <nav role="tablist" id="tabs"></nav>
-<main id="out"></main>
+<main id="out"><div class="skel" role="status" aria-label="Kraunama…"><div class="r"><i class="c w"></i><i class="c q"></i></div><div class="r"><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i></div><div class="r"><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i></div><div class="tb"><i class="ln"></i><i class="ln"></i><i class="ln"></i><i class="ln"></i><i class="ln"></i><i class="ln"></i><i class="ln"></i><i class="ln"></i><i class="ln"></i></div></div></main>
 <div id="md" aria-modal="true" role="dialog"><div class="sheet" id="sh"></div></div>
 <script>
 // ---- Nustatymai: Google lentelės ID (turi būti tikra Google Sheets lentelė, ne .xlsx) ----
@@ -444,7 +458,7 @@ const cell=r=>S.nation?`${logo(r.club)}<b>${esc(r.club)}</b>`:`<span title="${es
 let PHOTOS={},OWNPH={};
 // „#pf=S,C“ nuotraukos adreso gale (oficialios lygų nuotraukos iki juosmens): priartinama S kartų, galvos centras C % nuo viršaus
 const pfStyle=u=>{const m=String(u).match(/#pf=([\d.]+),([\d.]+)/);if(!m)return"";const s=+m[1],c=+m[2],y=Math.max(0,Math.min(100,(s*c-45)/(s-1)));return` style="object-position:50% 0;transform:scale(${s});transform-origin:50% ${y.toFixed(1)}%"`};
-const face=(n,own)=>{const u=own||OWNPH[norm(n)]||PHOTOS[norm(n)]||"";return`<span class="pf${u?"":" nf"}" data-pn="${esc(n)}">${u?`<img src="${esc(u)}"${pfStyle(u)} alt="" loading="lazy" onerror="this.parentNode.classList.add('nf');this.remove()">`:""}</span>`};
+const face=(n,own)=>{const u=own||OWNPH[norm(n)]||PHOTOS[norm(n)]||"";return`<span class="fc${u?"":" nf"}" data-pn="${esc(n)}">${u?`<img src="${esc(u)}"${pfStyle(u)} alt="" loading="lazy" onerror="this.parentNode.classList.add('nf');this.remove()">`:""}</span>`};
 // komandos logotipas pagal pavadinimą algų lape (pavadinimai gali skirtis nuo biudžetų lapo)
 const TLC={};
 const teamLogo=n=>{if(!n)return"";const k=norm(n);if(!(k in TLC)){let u=LOGOS[k];if(!u){const c=D.bud.find(r=>same(r.club,n));if(c)u=LOGOS[norm(c.club)]}TLC[k]=u||""}
@@ -665,16 +679,17 @@ document.addEventListener("input",e=>{if(e.target.id==="q"){S.q=e.target.value;r
 async function start(){
  setSt("Kraunama…");
  try{
+  const lgP=fetch("logos.json").then(r=>r.json()).catch(()=>({})),phP=fetch("players_photos.json").then(r=>r.json()).catch(()=>({}));   // kartu su lentele, ne po jos
   DEF=await raw("__nera_tokio_lapo__");
   const[a,b,at,sa,hi,ha]=await Promise.all(Object.entries(SHEETS).map(([k,n],i)=>{const q=load(n,i===0,GID[k]);return/^Historical/.test(n[0])?q.catch(()=>[]):q}));
   D.bud=dedupe([budgets(a,"26/27"),budgets(b,"25/26"),budgets(hi,"H")].flatMap((l,i)=>l.map(r=>(r._s=i,r))));D.att=dedupe([...attendance(at,"25/26"),...attendance(ha,"24/25")]);D.sal=salaries(sa);buildDist();
   for(const a of D.att){a.country=a.nation;if(!FL[a.nation]){const b=D.bud.find(r=>FL[r.nation]&&norm(r.club)===norm(a.club))||D.bud.find(r=>FL[r.nation]&&same(r.club,a.club));if(b)a.country=b.nation}}
   await addLive();if(!D.att.some(r=>r.season===S.aseason))S.aseason=D.att.map(r=>r.season).sort().pop()||S.aseason;
-  try{LOGOS=Object.fromEntries(Object.entries(await(await fetch("logos.json")).json()).map(([k,v])=>[norm(k),v]))}catch(e){}
-  try{PHOTOS=Object.fromEntries(Object.entries(await(await fetch("players_photos.json")).json()).filter(([k,v])=>v).map(([k,v])=>[norm(k),v]))}catch(e){}
+  try{LOGOS=Object.fromEntries(Object.entries(await lgP).map(([k,v])=>[norm(k),v]))}catch(e){}
+  try{PHOTOS=Object.fromEntries(Object.entries(await phP).filter(([k,v])=>v).map(([k,v])=>[norm(k),v]))}catch(e){}
   OWNPH={};D.sal.forEach(r=>{if(r.photo)OWNPH[norm(r.name)]=r.photo});
   setSt(`Atnaujinta ${new Date().toLocaleTimeString("lt-LT",{hour:"2-digit",minute:"2-digit"})}<button class="ic" id="reload" title="Perkrauti duomenis iš lentelės">Atnaujinti</button>`);
-  render()
+  out.classList.add("in");render();setTimeout(()=>out.classList.remove("in"),700)
  }catch(err){
   setSt('<button class="ic" id="reload">Bandyti dar kartą</button>');
   out.innerHTML=`<div class="msg"><b>Nepavyko gauti duomenų iš Google Sheets.</b><br>${esc(err.message)}<br>Patikrinkite: 1) failas turi būti išsaugotas kaip Google Sheets (<i>Failas → Išsaugoti kaip Google Sheets</i>), 2) bendrinimas: „Visi, turintys nuorodą – žiūrėtojas“, 3) kode nurodytas teisingas lentelės ID, 4) lapų pavadinimai sutampa.</div>`}}

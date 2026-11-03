@@ -284,14 +284,14 @@ tr.c:hover td.l:first-child{box-shadow:inset 2px 0 var(--a)}
 .tw td .lw.tl .lg{width:24px;height:24px}
 
 /* Žaidėjų nuotraukos */
-.pf{display:inline-block;flex:none;width:36px;height:36px;border-radius:50%;overflow:hidden;vertical-align:middle;margin-right:10px;box-sizing:border-box;border:2px solid #3a4352;
+.fc{display:inline-block;flex:none;width:36px;height:36px;border-radius:50%;overflow:hidden;vertical-align:middle;margin-right:10px;box-sizing:border-box;border:2px solid #3a4352;
  background:#1a1f29 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30' fill='%236d7788'%3E%3Ccircle cx='15' cy='11' r='6'/%3E%3Cpath d='M3 30c0-7 5.4-11 12-11s12 4 12 11z'/%3E%3C/svg%3E") center bottom/80% no-repeat}
-.pf img{width:100%;height:100%;object-fit:cover;object-position:50% 18%;display:block;background:#1a1f29}
+.fc img{width:100%;height:100%;object-fit:cover;object-position:50% 18%;display:block;background:#1a1f29}
 .tw td.l .nm{display:inline-flex;flex-direction:column;vertical-align:middle;line-height:1.2}
 .tw td.l .nm small{display:block;font-size:12px;color:var(--mute);margin:0}
 .tw td.l .nm small.co{color:#7cc4ff}
 .phd{display:flex;align-items:center;gap:14px}
-.phd .pf{width:64px;height:64px;margin:0}
+.phd .fc{width:64px;height:64px;margin:0}
 .phd h2{margin:0}
 
 /* Šaltiniai: vienas mygtukas „N ↗“ + sąrašas */
@@ -356,5 +356,5 @@ p.sum .srcs.sg{vertical-align:middle;margin-left:4px}
  #out .tw:has(td[data-lb="Mėnesio alga"],td[data-lb="Monthly salary"]) td[data-lb="Mėnesio alga"],#out .tw:has(td[data-lb="Monthly salary"]) td[data-lb="Monthly salary"]{order:6}
  #out .tw:has(td[data-lb="Mėnesio alga"],td[data-lb="Monthly salary"]) td[data-lb="Trukmė"],#out .tw:has(td[data-lb="Monthly salary"]) td[data-lb="Length"]{order:7}
  #out .tw:has(td[data-lb="Mėnesio alga"],td[data-lb="Monthly salary"]) td[data-lb="Šaltiniai"],#out .tw:has(td[data-lb="Monthly salary"]) td[data-lb="Sources"]{order:8}
- .tw td.l .pf{width:40px;height:40px}
+ .tw td.l .fc{width:40px;height:40px}
 }

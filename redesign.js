@@ -214,12 +214,12 @@
         if(p)res[n]=p.thumbnail.source}catch(e){}}
     return res}
   async function faces(){
-    if(pfBusy)return;const now=Date.now(),els=[...document.querySelectorAll(".pf.nf[data-pn]:not([data-tried])")];if(!els.length)return;
+    if(pfBusy)return;const now=Date.now(),els=[...document.querySelectorAll(".fc.nf[data-pn]:not([data-tried])")];if(!els.length)return;
     els.forEach(e=>{const c=PF[norm(e.dataset.pn)];if(c&&c.u)put(e,c.u)});
     const need=[...new Set(els.filter(e=>!e.querySelector("img")).map(e=>e.dataset.pn))].filter(n=>{const c=PF[norm(n)];return!c||(!c.u&&now-c.t>7*864e5)}).slice(0,40);
     els.forEach(e=>e.dataset.tried=1);if(!need.length)return;
     pfBusy=true;try{for(let i=0;i<need.length;i+=20){const part=need.slice(i,i+20),got=await pfLookup(part);
-      part.forEach(n=>{PF[norm(n)]={u:got[n]||"",t:now};if(got[n])document.querySelectorAll(`.pf.nf[data-pn="${CSS.escape(n)}"]`).forEach(e=>put(e,got[n]))})}}finally{pfBusy=false;pfSave()}
+      part.forEach(n=>{PF[norm(n)]={u:got[n]||"",t:now};if(got[n])document.querySelectorAll(`.fc.nf[data-pn="${CSS.escape(n)}"]`).forEach(e=>put(e,got[n]))})}}finally{pfBusy=false;pfSave()}
     function put(e,u){if(e.querySelector("img"))return;const im=new Image();im.alt="";im.loading="lazy";im.onerror=()=>{im.remove();e.classList.add("nf")};im.src=u;e.appendChild(im);e.classList.remove("nf")}
   }
   setInterval(()=>{try{faces()}catch(e){}},1500);
@@ -729,10 +729,11 @@
     const of=T("iš","of");
     if(CTX.k==="c"){
       if(!sm)return html;const se=sm[1],mt=x=>(!CTX.nation||x.nation===CTX.nation||x.country===CTX.nation)&&same(x.club,CTX.name),me=D.bud.find(x=>x.season===se&&x.total>0&&mt(x));if(!me)return html;
-      const S0=D.bud.filter(x=>x.season===se&&x.total>0),L=S0.filter(x=>x.nation===me.nation&&(me.div==null||x.div==null||x.div===me.div)),
+      const BNXT=["Belgija","Nyderlandai"],bx=BNXT.includes(me.nation)&&(me.div==null||me.div===1),   // Belgija ir Nyderlandai žaidžia vienoje BNXT lygoje
+        S0=D.bud.filter(x=>x.season===se&&x.total>0),L=S0.filter(x=>(bx?BNXT.includes(x.nation):x.nation===me.nation)&&(me.div==null||x.div==null||x.div===me.div)),
         cp=s=>(s||"").split(/\s[-–]\s/)[0].trim().toLowerCase(),comp=(me.eu||"").split(/\s[-–]\s/)[0].trim(),Pp=comp?S0.filter(x=>cp(x.eu)===comp.toLowerCase()):[],
-        a=pr(L,me.total,"total",4),b=pr(Pp,me.total,"total",4),c=pr(S0,me.total,"total",20),cs=[];
-      if(a)cs.push(pcard(T("Savo lygoje","In the league"),place(a.rank),`${of} ${a.n} · ${a.x.toFixed(1)}× ${T("lygos mediana","league median")} (${mF(a.md)})`,"vs "+esc(me.nation),"g"));
+        a=pr(L,me.total,"total",3),b=pr(Pp,me.total,"total",4),c=pr(S0,me.total,"total",20),cs=[];
+      if(a)cs.push(pcard(T("Savo lygoje","In the league"),place(a.rank),`${of} ${a.n} · ${a.x.toFixed(1)}× ${T("lygos mediana","league median")} (${mF(a.md)})`,"vs "+(bx?"BNXT":esc(me.nation)),"g"));
       const rg=typeof rlg==="function"?rlg(me):"",rd=rg?pr(S0.filter(x=>rlg(x)===rg),me.total,"total",4):null;
       if(rd)cs.push(pcard(rg==="ABA"?T("ABA lygoje","In ABA League"):T("Latvijos–Estijos lygoje","In Latvian–Estonian League"),place(rd.rank),`${of} ${rd.n} · ${rd.x.toFixed(1)}× ${T("mediana","median")} (${mF(rd.md)})`,"vs "+(rg==="ABA"?T("ABA lyga","ABA League"):T("Latvijos–Estijos lyga","Latvian–Estonian League")),"a"));
       if(b)cs.push(pcard(T("Tarp panašių","Among peers"),place(b.rank),`${of} ${b.n} · ${b.x.toFixed(2)}× ${T("mediana","median")} (${mF(b.md)})`,"vs "+esc(comp),"v"));
