@@ -600,5 +600,15 @@
   "league: ENBL": "https://upload.wikimedia.org/wikipedia/en/f/f6/EuropeanNorthBasketballLeagueLogo.png",
   "league: Alpe Adria Cup": "https://upload.wikimedia.org/wikipedia/en/7/72/Alpe_Adria_Cup.png",
   "league: LEBL": "https://upload.wikimedia.org/wikipedia/commons/b/ba/Optibet_Latvian-Estonian_Basketball_League_logo.jpg",
-  "league: ABA": "https://www.aba-liga.com/images/aba_logo_550x150.png"
+  "league: ABA": "https://www.aba-liga.com/images/aba_logo_550x150.png",
+  "KK Mladost SP": "https://thumb.wikimedia.org/wikipedia/en/thumb/8/8f/KK-maldost-zemun-logo.png/250px-KK-maldost-zemun-logo.png?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "KK Železničar": "https://upload.wikimedia.org/wikipedia/en/9/92/Zele-grb1.png?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+  "league: Estonia": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/ba/Optibet_Latvian-Estonian_Basketball_League_logo.jpg/250px-Optibet_Latvian-Estonian_Basketball_League_logo.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "league: Latvia": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/ba/Optibet_Latvian-Estonian_Basketball_League_logo.jpg/250px-Optibet_Latvian-Estonian_Basketball_League_logo.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "league: Russia": "https://thumb.wikimedia.org/wikipedia/en/thumb/4/4c/VTB_United_League_logo.png/250px-VTB_United_League_logo.png?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "league: South Korea": "https://thumb.wikimedia.org/wikipedia/en/thumb/8/87/Korean_Basketball_League_logo.png/250px-Korean_Basketball_League_logo.png?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "league: Ukraine": "https://thumb.wikimedia.org/wikipedia/en/thumb/c/c1/Ukrainian_Basketball_SuperLeague_logo.png/250px-Ukrainian_Basketball_SuperLeague_logo.png?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "league: USA": "https://thumb.wikimedia.org/wikipedia/en/thumb/0/03/National_Basketball_Association_logo.svg/250px-National_Basketball_Association_logo.svg.png?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "league: Venezuela": "https://thumb.wikimedia.org/wikipedia/en/thumb/d/dd/Superliga_Profesional_de_Baloncesto_logo.png/250px-Superliga_Profesional_de_Baloncesto_logo.png?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "league: Norway": "https://thumb.wikimedia.org/wikipedia/en/thumb/7/77/BLNO_logo.png/250px-BLNO_logo.png?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail"
 }
