@@ -155,6 +155,7 @@
     D.att.forEach(r=>{if(r.nation===LE){if(!r.country||r.country===LE)r.country=nationOfClub(r.club)||"Latvija";return}const lv=v=>v==="Latvija"||v==="Estija",real=lv(r.country)?r.country:lv(r.nation)?r.nation:null;if(real&&r.nation!==LE){r.country=real;r.nation=LE;ch++}});
     if(ch&&S.tab==="att")render();
   }
+  let SPD=null;const SPC=new Map(),SPN=new Map();
   function enhance(){
     if(!ok())return;
     if(D.att&&!D.att.__le){D.att.__le=1;leagueFix()}
@@ -171,7 +172,10 @@
     if(typeof V!=="undefined")document.querySelectorAll("tr.c:not([data-sp])").forEach(tr=>{
       tr.dataset.sp=1;const td=[...tr.children].find(c=>/Bendras biudžetas|Total budget/.test(c.dataset.lb||""));if(!td)return;
       const r=V[+tr.dataset.i];if(!r||!r.club)return;
-      const h=D.bud.filter(x=>x.total!=null&&x.nation===r.nation&&same(x.club,r.club)).sort((a,b)=>a.season.localeCompare(b.season)).map(x=>x.total);
+      // istorija skaičiuojama vieną kartą kiekvienam klubui (anksčiau – kas kartą per visą biudžetų lentelę kiekvienai eilutei)
+      if(SPD!==D.bud){SPD=D.bud;SPC.clear();SPN.clear();D.bud.forEach(x=>{if(x.total==null)return;const L=SPN.get(x.nation)||[];L.push(x);SPN.set(x.nation,L)})}
+      const sk=r.nation+"|"+norm(r.club);let h=SPC.get(sk);
+      if(!h){h=(SPN.get(r.nation)||[]).filter(x=>same(x.club,r.club)).sort((a,b)=>a.season.localeCompare(b.season)).map(x=>x.total);SPC.set(sk,h)}
       td.insertAdjacentHTML("afterbegin",spark(h))});
     document.querySelectorAll("#sh .kp div:not([data-e])").forEach(d=>{
       d.dataset.e=1;if(!/Užpildymas|Filling rate/.test(d.querySelector("small")?.textContent||""))return;
@@ -326,7 +330,7 @@
     if(!tw){tw=document.createElement("span");tw.className="tlw";tw.innerHTML=`<button type="button" class="tlb" aria-haspopup="true" aria-expanded="false">${ico("tools")}<span class="tlt">${T("Įrankiai","Tools")}</span> <span class="car">▾</span></button><span class="tlm" role="menu" hidden></span>`}
     const menu=tw.querySelector(".tlm");
     main.forEach(b=>{tb.appendChild(b);if(!b.querySelector(".ni")){const k=b.dataset.tab||b.className.split(" ")[0];
-      const sh={sal:T("Algos","Salaries")}[k];b.innerHTML=ico(k)+`<span class="tlt">${b.textContent}</span>`+(sh?`<span class="tls">${sh}</span>`:"")}});
+      const sh={sal:T("Algos","Salaries"),att:T("Lankom.","Attend."),mapt:T("Žemėl.","Map")}[k];b.innerHTML=ico(k)+`<span class="tlt">${b.textContent}</span>`+(sh?`<span class="tls">${sh}</span>`:"")}});
     tb.appendChild(tw);tools.forEach(b=>{if(b.parentNode!==menu)menu.appendChild(b)});
     tw.classList.toggle("on",sel)}
   document.addEventListener("click",e=>{const b=e.target.closest(".tlb"),tw=document.querySelector("#tabs .tlw");if(!tw)return;
@@ -597,12 +601,13 @@
   }
   function pickEnhance(){
     const k=S.tab;
-    if(PK[k])document.querySelectorAll("#out tr.c:not([data-pk])").forEach(tr=>{
-      tr.dataset.pk=1;const td=tr.querySelector("td"),r=V[+tr.dataset.i];if(!td||!r)return;
-      if(getComputedStyle(td).position==="static")td.style.position="relative";
-      const on=PK[k].some(p=>p.id===pkId(k,r));
-      td.insertAdjacentHTML("beforeend",`<button type="button" class="pk" data-pk="${tr.dataset.i}" aria-pressed="${on}" aria-label="${T("Pasirinkti palyginimui","Select")}"></button>`);
-    });
+    if(PK[k]){
+      // be getComputedStyle – „position:relative“ nustato CSS (#out tr.c>td:first-child), todėl puslapio stilius neperskaičiuojamas papildomai
+      const rows=[...document.querySelectorAll("#out tr.c:not([data-pk])")].map(tr=>({tr,td:tr.querySelector("td"),r:V[+tr.dataset.i]}));
+      const sel=new Set(PK[k].map(p=>p.id)),lab=T("Pasirinkti palyginimui","Select");
+      rows.forEach(({tr,td,r})=>{tr.dataset.pk=1;if(!td||!r)return;
+        td.insertAdjacentHTML("beforeend",`<button type="button" class="pk" data-pk="${tr.dataset.i}" aria-pressed="${sel.has(pkId(k,r))}" aria-label="${lab}"></button>`)});
+    }
     pkBar();
   }
   function pkToggle(btn){

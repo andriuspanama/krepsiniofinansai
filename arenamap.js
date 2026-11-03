@@ -660,6 +660,7 @@
       '.am-miss{margin-top:8px;font-size:13px;color:var(--mute)}',
       '.am-trv{margin:-4px 0 12px}.am-trv[hidden]{display:none}.am-trv .am-kpis{margin-bottom:4px}.am-trv b small{font:600 11px var(--mono,monospace);color:var(--mute);margin-left:4px}',
       '.am-trv p{margin:0;font-size:11px;color:var(--mute)}',
+      '.am-mv svg path{shape-rendering:optimizeSpeed}',
       '.am-exp{position:absolute;left:10px;top:10px;z-index:3;width:32px;height:32px;border-radius:50%;border:0;background:rgba(0,0,0,.55);color:#fff;font-size:17px;line-height:1;cursor:pointer;display:none}',
       '.am-media.has-photo[data-v="photo"] .am-exp,.am-media.has-inner[data-v="inner"] .am-exp{display:block}.am-exp:hover{background:var(--a);color:#1a1200}',
       '.am-lb{position:fixed;inset:0;z-index:1000;background:rgba(4,6,10,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:56px 16px 20px;opacity:0;transition:opacity .25s}',
@@ -932,9 +933,12 @@
           .style('opacity', isPC() && cT.k >= 6 ? 0 : null);   // PC: miestų lygyje šalių pavadinimai išblunka
         layoutCities();
       }
+      var mvT = 0;
       function apply(t) {
         cT = t; g.attr('transform', t.toString());
         if (!raf) raf = requestAnimationFrame(layout);
+        // judinant/artinant žemėlapį šalių kontūrai piešiami greičiau (be glotninimo), sustojus – vėl ryškūs
+        wrap.classList.add('am-mv'); clearTimeout(mvT); mvT = setTimeout(function () { wrap.classList.remove('am-mv'); }, 180);
         wrap.querySelector('.am-hint').classList.add('hide');
       }
 

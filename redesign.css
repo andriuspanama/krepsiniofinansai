@@ -322,13 +322,15 @@ p.sum .srcs.sg{vertical-align:middle;margin-left:4px}
  #tabs{gap:0;padding:4px 4px calc(4px + env(safe-area-inset-bottom,0px))}
  #tabs>button,#tabs .tlb{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;font:700 13px var(--hd);padding:6px 2px;min-width:0}
  #tabs .ni{display:block}
- #tabs>button[data-tab="sal"] .tlt{display:none}
- #tabs>button[data-tab="sal"] .tls{display:inline}
+ #tabs>button[data-tab="sal"] .tlt,#tabs>button[data-tab="att"] .tlt{display:none}
+ #tabs>button[data-tab="sal"] .tls,#tabs>button[data-tab="att"] .tls{display:inline}
+ #tabs>button .tlt,#tabs>button .tls,#tabs .tlb .tlt{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
  #tabs .tlw{flex:1;margin:0;padding:0;border:0;display:flex}
  #tabs .tlb{width:100%;border-bottom:0;border-top:2px solid transparent}
  #tabs .tlb .car{display:none}
  #tabs .tlw.on .tlb{border-top-color:var(--a);color:var(--a)}
  #tabs>button[aria-selected=true]{color:var(--a)}
+ nav#tabs{overflow:visible}   /* kitaip „Įrankiai“ meniu apkerpamas ir nepaspaudžiamas */
  #tabs .tlm{top:auto;bottom:calc(100% + 8px);left:auto;right:4px}
  .srow .llg{height:40px;max-width:110px;padding:4px 8px;border-radius:9px;margin-left:0}
  .srow #q{flex:1 1 140px}
@@ -348,13 +350,15 @@ p.sum .srcs.sg{vertical-align:middle;margin-left:4px}
  #out .tw td[data-lb="Mažiausias"],#out .tw td[data-lb="Lowest"]{order:4}
  #out .tw td[data-lb*="žiūrov"],#out .tw td[data-lb*="per fan"]{order:6}
  /* Žaidėjų algos */
- #out .tw:has(td[data-lb="Mėnesio alga"],td[data-lb="Monthly salary"]) td[data-lb="Šalis"],#out .tw:has(td[data-lb="Monthly salary"]) td[data-lb="Country"]{order:1}
- #out .tw:has(td[data-lb="Mėnesio alga"],td[data-lb="Monthly salary"]) td[data-lb="Komanda"],#out .tw:has(td[data-lb="Monthly salary"]) td[data-lb="Team"]{order:2}
- #out .tw:has(td[data-lb="Mėnesio alga"],td[data-lb="Monthly salary"]) td[data-lb="Sezonas"],#out .tw:has(td[data-lb="Monthly salary"]) td[data-lb="Season"]{order:3}
- #out .tw:has(td[data-lb="Mėnesio alga"],td[data-lb="Monthly salary"]) td[data-lb="Lyga"],#out .tw:has(td[data-lb="Monthly salary"]) td[data-lb="Division"]{order:4}
- #out .tw:has(td[data-lb="Mėnesio alga"],td[data-lb="Monthly salary"]) td[data-lb="Sutarties vertė"],#out .tw:has(td[data-lb="Monthly salary"]) td[data-lb="Contract value"]{order:5}
- #out .tw:has(td[data-lb="Mėnesio alga"],td[data-lb="Monthly salary"]) td[data-lb="Mėnesio alga"],#out .tw:has(td[data-lb="Monthly salary"]) td[data-lb="Monthly salary"]{order:6}
- #out .tw:has(td[data-lb="Mėnesio alga"],td[data-lb="Monthly salary"]) td[data-lb="Trukmė"],#out .tw:has(td[data-lb="Monthly salary"]) td[data-lb="Length"]{order:7}
- #out .tw:has(td[data-lb="Mėnesio alga"],td[data-lb="Monthly salary"]) td[data-lb="Šaltiniai"],#out .tw:has(td[data-lb="Monthly salary"]) td[data-lb="Sources"]{order:8}
+ #out[data-tab="sal"] .tw td[data-lb="Šalis"],#out[data-tab="sal"] .tw td[data-lb="Country"]{order:1}
+ #out[data-tab="sal"] .tw td[data-lb="Komanda"],#out[data-tab="sal"] .tw td[data-lb="Team"]{order:2}
+ #out[data-tab="sal"] .tw td[data-lb="Sezonas"],#out[data-tab="sal"] .tw td[data-lb="Season"]{order:3}
+ #out[data-tab="sal"] .tw td[data-lb="Lyga"],#out[data-tab="sal"] .tw td[data-lb="Division"]{order:4}
+ #out[data-tab="sal"] .tw td[data-lb="Sutarties vertė"],#out[data-tab="sal"] .tw td[data-lb="Contract value"]{order:5}
+ #out[data-tab="sal"] .tw td[data-lb="Mėnesio alga"],#out[data-tab="sal"] .tw td[data-lb="Monthly salary"]{order:6}
+ #out[data-tab="sal"] .tw td[data-lb="Trukmė"],#out[data-tab="sal"] .tw td[data-lb="Length"]{order:7}
+ #out[data-tab="sal"] .tw td[data-lb="Šaltiniai"],#out[data-tab="sal"] .tw td[data-lb="Sources"]{order:8}
  .tw td.l .fc{width:40px;height:40px}
 }
+/* palyginimo „+“ mygtukas pozicionuojamas pirmame langelyje (anksčiau – per getComputedStyle kiekvienai eilutei) */
+#out tr.c>td:first-child{position:relative}

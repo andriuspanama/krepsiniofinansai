@@ -247,7 +247,7 @@ const CF=(h,on)=>on?`<span class="cfe">${h}</span>`:h,CFL=(on,k)=>on?`<span clas
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const wd=s=>String(s??"").toLowerCase().replace(/ł/g,"l").replace(/đ/g,"d").replace(/ø/g,"o").replace(/ı/g,"i").replace(/ß/g,"ss").normalize("NFD").replace(/[\u0300-\u036f]/g,"").split(/[^a-z0-9]+/).filter(Boolean);
 const mt=(t,q)=>{const qt=wd(q);if(!qt.length)return true;const W=wd(t);return qt.every(x=>W.some(w=>w.startsWith(x)))};
-const norm=s=>String(s).toLowerCase().normalize("NFD").replace(/[^a-z0-9]/g,"");
+const NMC=new Map(),norm=s=>{s=String(s);let r=NMC.get(s);if(r===undefined){r=s.toLowerCase().normalize("NFD").replace(/[^a-z0-9]/g,"");if(NMC.size<50000)NMC.set(s,r)}return r};   // rezultatai įsimenami – kviečiama dešimtis tūkstančių kartų
 const nat=n=>NAT[n]||n;
 const num=v=>{if(v==null)return null;const s=String(v).replace(/[\s\u00a0€$%~≈*]/g,"").replace(/,/g,"");if(!/^-?\d/.test(s))return null;const n=parseFloat(s);return isNaN(n)?null:n};
 const est=v=>num(v)!=null&&/[~≈*]/.test(String(v));
@@ -274,7 +274,7 @@ async function rawGid(g){
  return t}
 async function load(names,first,gid){
  if(gid){try{const r=csv(await rawGid(gid));if(r.some(x=>x.some(c=>(c||"").trim()==="Club")))return r;throw new Error("netinkamas lapas")}catch(e){console.warn("export nepavyko, naudojamas gviz:",e.message)}}
- for(const n of names){const t=await raw(n);if(first||t!==DEF)return csv(t)}
+ for(const n of names){const t=await raw(n);if(first||t!==await DEF)return csv(t)}   // DEF – pažadas, siunčiamas kartu su lapais
  throw new Error(`Lapas „${names[0]}" nerastas – patikrinkite jo pavadinimą lentelėje`)}
 // Suranda lenteles, kurių antraštės eilutė prasideda reikšme hdr antrame stulpelyje
 function blocks(rows,hdr){const out=[];let title="";
@@ -328,7 +328,11 @@ const LIVE_BASE=["https://andriuspanama.github.io/ACBattendance/","https://raw.g
 const LIVE_DIRS=["data","data/lkl","data/bbl","data/bsl","data/aba","data/ita","data/pol","data/gre","data/lvee","data/fin","data/nbl","data/isr"];
 // Atsarginiai pavadinimai (jei main_arenas.json dar neturi „names“)
 const LAL={"Recoletas Salud San Pablo Burgos":"CB San Pablo Burgos","Kosner Baskonia":"Saski Baskonia","Casademont Zaragoza":"Basket Zaragoza","Leyma Coruna":"Basquet Coruna","Monbus Obradoiro":"Obradoiro CAB","Ilerna Lleida":"Forca Lleida CE","Rio Breogan":"Club Baloncesto Breogan","Asisa Joventut":"Club Joventut Badalona","Fiatc Girona":"Basquet Girona","Barca":"FC Barcelona Basquet","Kidsandus Manresa":"Basquet Manresa","La Laguna Tenerife":"CB Canarias Tenerife","Morabanc Andorra":"BC Andorra","Ulm":"Ratiopharm Ulm","Basketball Braunschweig":"Lowen Braunschweig"};
-async function getJ(path){for(const b of LIVE_BASE){try{const r=await fetch(b+path+"?t="+Math.floor(Date.now()/60000));if(r.ok)return await r.json()}catch(e){}}return null}
+async function getJ0(path){for(const b of LIVE_BASE){try{const r=await fetch(b+path+"?t="+Math.floor(Date.now()/60000));if(r.ok)return await r.json()}catch(e){}}return null}
+// tas pats failas per vieną įkėlimą atsisiunčiamas vieną kartą; liveWarm() pradeda siųsti lankomumo failus kartu su lentele, ne po jos
+let GJ={};const getJ=path=>GJ[path]||(GJ[path]=getJ0(path));
+function liveWarm(){GJ={};getJ("data/main_arenas.json");getJ("data/fan_index.json");
+ getJ("data/leagues.json").then(man=>{const dirs=man&&Array.isArray(man.leagues)&&man.leagues.length?man.leagues.map(l=>l.dir):LIVE_DIRS;dirs.forEach(d=>{getJ(d+"/attendance_averages.json");getJ(d+"/capacity.json")})})}
 // lentelės klubas (biudžetai, o jei ten nėra – senesnis lankomumas) pagal pavadinimą
 const isCountry=n=>C.some(c=>c[1]===n);
 function liveRef(nm){const k=norm(nm),rec=(a,b)=>String(b.season).localeCompare(String(a.season));
@@ -393,17 +397,18 @@ const isDark=()=>TH?TH==="dark":matchMedia("(prefers-color-scheme:dark)").matche
 function syncTheme(){const f=document.querySelector("iframe");try{f.contentDocument.documentElement.setAttribute("data-t",isDark()?"dark":"light")}catch(e){}}
 function setTheme(t){TH=t;document.documentElement.setAttribute("data-t",t);try{localStorage.setItem("theme",t)}catch(e){}$("th").textContent=isDark()?"☀️":"🌙";syncTheme()}
 let LOGOS={},V=[],H=[];
-const tk=s=>String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").split(/[^a-z0-9]+/).filter(Boolean);
+const TKC=new Map(),tk=s=>{s=String(s||"");let r=TKC.get(s);if(!r){r=s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").split(/[^a-z0-9]+/).filter(Boolean);if(TKC.size<50000)TKC.set(s,r)}return r};   // įsimenama (same() kviečiamas labai dažnai); grąžinto masyvo nekeisti
 const same=(a,b)=>{const x=tk(a),y=tk(b);if(!x.length||!y.length)return false;if(x.join("")===y.join(""))return true;if(DIST&&DIST.has(x.join("")+"~"+y.join("")))return false;const[s,l]=x.length<=y.length?[x,y]:[y,x];return s.join("").length>3&&s.every(w=>l.includes(w))};
 // skirtingi klubai panašiais pavadinimais (pvz. „KK Mladost Zemun“ ir „KK Zemun“): jei abu yra tą patį sezoną tos pačios šalies lentelėje,
 // tai du klubai – same() jų nebelaiko tuo pačiu (kitaip kortelės grafike susimaišo biudžetai)
 let DIST=null;
-function buildDist(){DIST=null;const D2=new Set(),tj=s=>tk(s).join("");
+function buildDist(){DIST=null;const D2=new Set(),TK=new Map(),tok=n=>{let t=TK.get(n);if(!t){const w=tk(n);t={w,j:w.join("")};TK.set(n,t)}return t};
+ const fz=(x,y)=>{const[s,l]=x.w.length<=y.w.length?[x,y]:[y,x];return s.j.length>3&&s.w.every(w=>l.w.includes(w))};   // tas pats kaip same(), su paruoštais žodžiais
  [D.bud||[],D.att||[]].forEach(A=>{const g={};A.forEach(r=>{if(r.club)(g[r.season+"|"+(r.nation||"")]=g[r.season+"|"+(r.nation||"")]||new Set()).add(r.club)});
-  Object.values(g).forEach(S=>{const L=[...S];for(let i=0;i<L.length;i++)for(let j=i+1;j<L.length;j++){const a=tj(L[i]),b=tj(L[j]);if(a!==b&&same(L[i],L[j])){D2.add(a+"~"+b);D2.add(b+"~"+a)}}})});
+  Object.values(g).forEach(S=>{const L=[...S].map(tok);for(let i=0;i<L.length;i++)for(let j=i+1;j<L.length;j++){const a=L[i],b=L[j];if(a.j&&b.j&&a.j!==b.j&&fz(a,b)){D2.add(a.j+"~"+b.j);D2.add(b.j+"~"+a.j)}}})});
  DIST=D2}
 const logo=n=>{const u=LOGOS[norm(n)],i=n.split(/\s+/).slice(0,2).map(w=>w[0]).join("").toUpperCase();
- return`<span class="lw"><span class="lg in" style="background:hsl(${[...n].reduce((a,c)=>(a*31+c.charCodeAt(0))%360,7)} 40% 38%)">${esc(i)}</span>${u?`<img class="lg" src="${esc(u)}" alt="" loading="lazy" onerror="this.remove()">`:""}</span>`};
+ return`<span class="lw"><span class="lg in" style="background:hsl(${[...n].reduce((a,c)=>(a*31+c.charCodeAt(0))%360,7)} 40% 38%)">${esc(i)}</span>${u?`<img class="lg" src="${esc(u)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">`:""}</span>`};
 const n0=n=>n==null?"–":nf.format(n),f2=n=>n==null?"–":n.toFixed(2).replace(".",LANG==="en"?".":",");
 const PROF=[
 [/strong in europe and own/i,"Stipri Europoje ir savo lygoje","Pritraukia aiškiai daugiau žiūrovų nei tikėtasi – ir savo lygoje, ir palyginus su Europos klubais. Pagal bet kokį matą – vienas geriausiai žiūrovus pritraukiančių klubų.","Draws clearly more fans than expected, both in its own league and compared with clubs across Europe. A top fan-attraction club by any measure."],
@@ -458,11 +463,16 @@ const cell=r=>S.nation?`${logo(r.club)}<b>${esc(r.club)}</b>`:`<span title="${es
 let PHOTOS={},OWNPH={};
 // „#pf=S,C“ nuotraukos adreso gale (oficialios lygų nuotraukos iki juosmens): priartinama S kartų, galvos centras C % nuo viršaus
 const pfStyle=u=>{const m=String(u).match(/#pf=([\d.]+),([\d.]+)/);if(!m)return"";const s=+m[1],c=+m[2],y=Math.max(0,Math.min(100,(s*c-45)/(s-1)));return` style="object-position:50% 0;transform:scale(${s});transform-origin:50% ${y.toFixed(1)}%"`};
-const face=(n,own)=>{const u=own||OWNPH[norm(n)]||PHOTOS[norm(n)]||"";return`<span class="fc${u?"":" nf"}" data-pn="${esc(n)}">${u?`<img src="${esc(u)}"${pfStyle(u)} alt="" loading="lazy" onerror="this.parentNode.classList.add('nf');this.remove()">`:""}</span>`};
+// mažesnės nuotraukų kopijos iš tų pačių serverių: EuroLeague/EuroCup (750×1000 PNG ~550 KB -> 300 px WebP ~15 KB), FIBA (mažesnis kvadratas)
+const small=u=>{u=String(u||"");const [a,h]=u.split("#");let b=a;
+ if(/^https:\/\/media-cdn\.cortextech\.io\//.test(b)&&!b.includes("?"))b+="?width=300&format=webp";
+ else if(/^https:\/\/assets\.fiba\.basketball\//.test(b))b=b.replace("w_240,h_240","w_160,h_160").replace("/q_auto/","/q_auto:eco/");
+ return h?b+"#"+h:b};
+const face=(n,own)=>{const u=small(own||OWNPH[norm(n)]||PHOTOS[norm(n)]||"");return`<span class="fc${u?"":" nf"}" data-pn="${esc(n)}">${u?`<img src="${esc(u)}"${pfStyle(u)} alt="" loading="lazy" decoding="async" onerror="this.parentNode.classList.add('nf');this.remove()">`:""}</span>`};
 // komandos logotipas pagal pavadinimą algų lape (pavadinimai gali skirtis nuo biudžetų lapo)
 const TLC={};
 const teamLogo=n=>{if(!n)return"";const k=norm(n);if(!(k in TLC)){let u=LOGOS[k];if(!u){const c=D.bud.find(r=>same(r.club,n));if(c)u=LOGOS[norm(c.club)]}TLC[k]=u||""}
- return TLC[k]?`<span class="lw tl"><img class="lg" src="${esc(TLC[k])}" alt="" loading="lazy" onerror="this.parentNode.remove()"></span>`:""};
+ return TLC[k]?`<span class="lw tl"><img class="lg" src="${esc(TLC[k])}" alt="" loading="lazy" decoding="async" onerror="this.parentNode.remove()"></span>`:""};
 // lygų logotipai: logos.json raktai „league: Spain“, „league: Euroleague“, „league: ABA“, „league: LEBL“
 const leagueKeys=()=>{const k=[];const n=S.nation;
  if(n){k.push(n==="ABA"?"ABA":/latvij|estij/i.test(n)?"LEBL":(LT2EN[n]||n))}
@@ -643,6 +653,7 @@ function cmpView(){const C=S.cmp,m=C.mode,MODES=[["club","Klubai"],["league","Ly
   +(cols.length?`<div class="cmpw"><table><thead><tr><th>Rodiklis</th>${cols.map(c=>`<th>${esc(c.h)}${c.sub?`<small style="display:block;color:var(--mute);font:400 12px var(--tx)">${esc(c.sub)}</small>`:""}</th>`).join("")}</tr></thead><tbody>${body}</tbody></table></div>`:`<p class="sum">Pasirink, ką lyginti – paieška aukščiau.</p>`)}
 function render(){const sl=[...out.querySelectorAll(".bar.n")].map(b=>b.scrollLeft);render0();out.querySelectorAll(".bar.n").forEach((b,i)=>{if(sl[i])b.scrollLeft=sl[i]})}
 function render0(){
+ out.dataset.tab=S.tab;   // CSS žino, kuris skirtukas (vietoj lėto :has())
  $tabs.innerHTML=TABS.map(([k,l])=>`<button role="tab" data-tab="${k}" aria-selected="${S.tab===k}">${tr(l)}</button>`).join("");
  const fid=document.activeElement&&["q","cq"].includes(document.activeElement.id)?document.activeElement.id:null;
  out.innerHTML=S.tab==="tax"?'<iframe src="basketball_tax_calculator_2026.html" title="Mokesčių skaičiuoklė" onload="syncTheme()"></iframe>'
@@ -675,17 +686,19 @@ document.addEventListener("click",e=>{if(e.target.id==="md")return closeAll();
  render()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeAll();if(e.key==="Enter"&&e.target.matches("th[data-k]"))e.target.click()});
 document.addEventListener("change",e=>{if(e.target.id==="srole"){S.srole=e.target.value;return render()}if(e.target.id==="sone"){S.one=e.target.checked;return render()}if(e.target.id==="ms"){const k=e.target.value;S.sort[S.tab]=[k,k==="club"||k==="name"?1:-1];render()}});
-document.addEventListener("input",e=>{if(e.target.id==="q"){S.q=e.target.value;render()}else if(e.target.id==="cq"){S.cmp.q=e.target.value;render()}});
+let QT=0;document.addEventListener("input",e=>{if(e.target.id==="q"){S.q=e.target.value;clearTimeout(QT);QT=setTimeout(render,120)}else if(e.target.id==="cq"){S.cmp.q=e.target.value;render()}});
 async function start(){
  setSt("Kraunama…");
  try{
+  liveWarm();
   const lgP=fetch("logos.json").then(r=>r.json()).catch(()=>({})),phP=fetch("players_photos.json").then(r=>r.json()).catch(()=>({}));   // kartu su lentele, ne po jos
-  DEF=await raw("__nera_tokio_lapo__");
+  DEF=raw("__nera_tokio_lapo__");DEF.catch(()=>{});   // neegzistuojančio lapo atsakymas (kaip atrodo „lapo nėra“) – lygiagrečiai, nelaukiant
   const[a,b,at,sa,hi,ha]=await Promise.all(Object.entries(SHEETS).map(([k,n],i)=>{const q=load(n,i===0,GID[k]);return/^Historical/.test(n[0])?q.catch(()=>[]):q}));
   D.bud=dedupe([budgets(a,"26/27"),budgets(b,"25/26"),budgets(hi,"H")].flatMap((l,i)=>l.map(r=>(r._s=i,r))));D.att=dedupe([...attendance(at,"25/26"),...attendance(ha,"24/25")]);D.sal=salaries(sa);buildDist();
   for(const a of D.att){a.country=a.nation;if(!FL[a.nation]){const b=D.bud.find(r=>FL[r.nation]&&norm(r.club)===norm(a.club))||D.bud.find(r=>FL[r.nation]&&same(r.club,a.club));if(b)a.country=b.nation}}
   await addLive();if(!D.att.some(r=>r.season===S.aseason))S.aseason=D.att.map(r=>r.season).sort().pop()||S.aseason;
   try{LOGOS=Object.fromEntries(Object.entries(await lgP).map(([k,v])=>[norm(k),v]))}catch(e){}
+  for(const k in TLC)delete TLC[k];   // „Atnaujinti“: komandų logotipai iš naujo pagal naują logos.json
   try{PHOTOS=Object.fromEntries(Object.entries(await phP).filter(([k,v])=>v).map(([k,v])=>[norm(k),v]))}catch(e){}
   OWNPH={};D.sal.forEach(r=>{if(r.photo)OWNPH[norm(r.name)]=r.photo});
   setSt(`Atnaujinta ${new Date().toLocaleTimeString("lt-LT",{hour:"2-digit",minute:"2-digit"})}<button class="ic" id="reload" title="Perkrauti duomenis iš lentelės">Atnaujinti</button>`);
