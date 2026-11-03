@@ -1,0 +1,39 @@
+name: Logotipai ir žaidėjų nuotraukos
+
+# Kas savaitę papildo logos.json (trūkstami klubų ir lygų logotipai) ir players_photos.json (trūkstami žaidėjų veidai).
+# Esami įrašai nekeičiami. Galima paleisti ir ranka: Actions → „Logotipai ir žaidėjų nuotraukos“ → Run workflow.
+on:
+  schedule:
+    - cron: "17 4 * * 1"      # pirmadieniais 04:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: media
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Ieškoti trūkstamų logotipų ir nuotraukų
+        run: node update_media.mjs
+      - name: Išsaugoti pakeitimus
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add logos.json players_photos.json media_state.json
+          if git diff --cached --quiet; then
+            echo "Naujų logotipų ar nuotraukų nerasta."
+          else
+            git commit -m "Papildyti logotipai ir žaidėjų nuotraukos"
+            git pull --rebase
+            git push
+          fi
