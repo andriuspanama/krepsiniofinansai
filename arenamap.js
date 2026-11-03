@@ -673,7 +673,12 @@
       '@media(max-width:819px){.am-card{position:fixed;z-index:1001;top:50%;left:50%;right:auto;bottom:auto;translate:-50% -50%;width:min(520px,calc(100vw - 24px));max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);transform:translateY(18px) scale(.98)}.am-card.on{transform:none}.am-body{overscroll-behavior:contain;touch-action:pan-y}.am-media{height:clamp(170px,30vh,240px)}.am-search{width:min(200px,50vw)}'+
         '.am-bd{position:fixed;inset:0;z-index:1000;background:rgba(4,6,10,.62);touch-action:none;opacity:0;transition:opacity .3s;pointer-events:none}.am-card.on+.am-bd{opacity:1;pointer-events:auto}}',
       '@media(min-width:820px){.am-bd{display:none}}',
-      'body.lk .am-card,body.lk .am-bd{visibility:hidden}',   /* kol atidaryta klubo kortelė, žemėlapio kortelė paslėpta; uždarius – vėl matoma */
+      'body.lk .am-card,body.lk .am-bd,body.lk .am-wrap.am-fs{visibility:hidden}',
+      /* telefone: žemėlapis per visą ekraną (atgal / Esc – grįžta) */
+      '.am-fsb{display:none;width:38px;height:38px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);cursor:pointer;padding:0;place-items:center}',
+      '.am-fsb::before{content:"";width:14px;height:14px;background:linear-gradient(currentColor,currentColor) 0 0/6px 2px,linear-gradient(currentColor,currentColor) 0 0/2px 6px,linear-gradient(currentColor,currentColor) 100% 0/6px 2px,linear-gradient(currentColor,currentColor) 100% 0/2px 6px,linear-gradient(currentColor,currentColor) 0 100%/6px 2px,linear-gradient(currentColor,currentColor) 0 100%/2px 6px,linear-gradient(currentColor,currentColor) 100% 100%/6px 2px,linear-gradient(currentColor,currentColor) 100% 100%/2px 6px;background-repeat:no-repeat}',
+      '.am-fs .am-fsb::before{content:"×";background:none;width:auto;height:auto;font-size:24px;line-height:1}',
+      '@media(max-width:720px){.am-fsb{display:grid}.am-wrap.am-fs{position:fixed;inset:0;z-index:999;height:auto;margin:0;border-radius:0;border:0}.am-fs .am-ui{top:calc(12px + env(safe-area-inset-top,0px))}.am-fs .am-hint{bottom:calc(12px + env(safe-area-inset-bottom,0px))}}',   /* kol atidaryta klubo kortelė, žemėlapio kortelė paslėpta; uždarius – vėl matoma */
       '@media(prefers-reduced-motion:reduce){.am-card,.am-media .l,.am-pin .in{transition:none}.am-pin.sel .in,.am-media .photo{animation:none}}'
     ].join('\n');
     document.head.appendChild(s);
@@ -777,7 +782,8 @@
       wrap.innerHTML = '<svg class="am-svg"><g class="am-g"><path class="am-grat"></path><g class="am-lands"></g><g class="am-labs"></g></g></svg><div class="am-cities"></div><div class="am-pins"></div>' +
         '<div class="am-ui"><div class="am-sbox"><input class="am-search" type="search" autocomplete="off" spellcheck="false" placeholder="' + esc(T('Ieškoti klubo ar miesto…', 'Find a club or city…')) + '" aria-label="' + esc(T('Ieškoti klubo ar miesto', 'Find a club or city')) + '" role="combobox" aria-expanded="false" aria-autocomplete="list">' +
         '<div class="am-sug" role="listbox" hidden></div></div>' +
-        '<div class="am-zoom"><button type="button" data-z="in" aria-label="+">+</button><button type="button" data-z="out" aria-label="−">−</button><button type="button" data-z="home" aria-label="' + esc(T('Visi klubai', 'All clubs')) + '">⌂</button></div></div>' +
+        '<div class="am-zoom"><button type="button" data-z="in" aria-label="+">+</button><button type="button" data-z="out" aria-label="−">−</button><button type="button" data-z="home" aria-label="' + esc(T('Visi klubai', 'All clubs')) + '">⌂</button></div>' +
+        '<button type="button" class="am-fsb" aria-pressed="false" aria-label="' + esc(T('Žemėlapis per visą ekraną', 'Full-screen map')) + '" title="' + esc(T('Per visą ekraną', 'Full screen')) + '"></button></div>' +
         '<div class="am-hint">' + esc(T('Burbulo dydis – 26/27 biudžetas · artinkite, kad atsirastų daugiau klubų', 'Bubble size – 26/27 budget · zoom in to reveal more clubs')) + '</div>' +
         '<aside class="am-card" hidden></aside><div class="am-bd"></div>';
       el.innerHTML = ''; el.appendChild(wrap);
@@ -1171,6 +1177,14 @@
         else if (b.dataset.z === 'out') tr.call(zoom.scaleBy, 1 / 1.8);
         else { closeCard(); wsel.transition().duration(reduced ? 0 : 900).ease(d3.easeCubicInOut).call(zoom.transform, d3.zoomIdentity); }
       });
+      var fs = false, fsb = wrap.querySelector('.am-fsb');
+      function setFs(on, fromPop) {
+        if (on === fs) return;
+        fs = on; wrap.classList.toggle('am-fs', on); fsb.setAttribute('aria-pressed', on);
+        if (on) history.pushState({ amfs: 1 }, '');
+        else if (!fromPop && history.state && history.state.amfs) history.back();
+      }
+      fsb.addEventListener('click', function () { setFs(!fs); });
       // paieška: klubo pavadinimas arba miestas (ne arenos); sąrašas su logotipais, rodyklės + Enter (PC), dideli eilučių plotai telefone
       var search = wrap.querySelector('.am-search'), sug = wrap.querySelector('.am-sug'), sugIt = [], sugAt = -1;
       var tok = function (v) { return String(v || '').toLowerCase().replace(/ł/g, 'l').replace(/đ/g, 'd').replace(/ø/g, 'o').replace(/ı/g, 'i').replace(/ß/g, 'ss').normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/[^a-z0-9]+/).filter(Boolean); };
@@ -1220,12 +1234,16 @@
       sug.addEventListener('pointerup', function () { setTimeout(function () { sugDown = false; }, 450); });
       sug.addEventListener('click', function (ev) { var b = ev.target.closest('button[data-i]'); sugDown = false; if (b) pick(sugIt[+b.dataset.i]); });
       search.addEventListener('blur', function () { setTimeout(function () { if (!sugDown && document.activeElement !== search) closeSug(); }, 200); });
-      function onKey(ev) { if (ev.key === 'Escape' && !ev.defaultPrevented && sel && !(LB && LB.open()) && !document.querySelector('#md.o')) closeCard(); }   // atidaryta klubo kortelė uždaroma pirma
+      function onKey(ev) {
+        if (ev.key !== 'Escape' || ev.defaultPrevented || (LB && LB.open()) || document.querySelector('#md.o')) return;   // atidaryta klubo kortelė uždaroma pirma
+        if (sel) closeCard(); else if (fs) setFs(false);
+      }   // atidaryta klubo kortelė uždaroma pirma
       // telefono „atgal“: pirma uždaroma išdidinta nuotrauka, paskui kortelė
       function onPop() {
         var st = history.state || {};
         if (LB && LB.open() && !st.amlb) LB.close(true);
         if (card.classList.contains('on') && !st.am && !st.amlb) closeCard(true);
+        if (fs && !st.amfs && !st.am && !st.amlb) setFs(false, true);
       }
       window.addEventListener('popstate', onPop);
       document.addEventListener('keydown', onKey);
@@ -1233,11 +1251,14 @@
       var lastW = W(), lastH = H();
       var ro = window.ResizeObserver ? new ResizeObserver(function () {
         if (Math.abs(W() - lastW) < 8 && Math.abs(H() - lastH) < 8) return;
-        lastW = W(); lastH = H(); project(); setExt(); wsel.call(zoom.transform, d3.zoomIdentity); layout();
+        var c0 = proj.invert(cT.invert([lastW / 2, lastH / 2])), s0 = proj.scale() * cT.k, whole = cT.k <= kMin + 1e-6;
+        lastW = W(); lastH = H(); project(); setExt();
+        var k = Math.max(kMin, Math.min(ZMAX, s0 / proj.scale())), p = proj(c0);
+        wsel.call(zoom.transform, whole ? d3.zoomIdentity : d3.zoomIdentity.translate(lastW / 2 - p[0] * k, lastH / 2 - p[1] * k).scale(k)); layout();
       }) : null;
       if (ro) ro.observe(wrap);
 
-      cur = { destroy: function () { document.removeEventListener('keydown', onKey); window.removeEventListener('popstate', onPop); if (LB && LB.open()) LB.close(true); if (history.state && (history.state.am || history.state.amlb)) history.go(history.state.amlb ? -2 : -1); if (ro) ro.disconnect(); if (raf) cancelAnimationFrame(raf); mtoken++; } };
+      cur = { destroy: function () { document.removeEventListener('keydown', onKey); window.removeEventListener('popstate', onPop); if (LB && LB.open()) LB.close(true); var hs = history.state || {}, hn = (hs.amlb ? 2 : hs.am ? 1 : 0) + (fs ? 1 : 0); fs = false; if (hn) history.go(-hn); if (ro) ro.disconnect(); if (raf) cancelAnimationFrame(raf); mtoken++; } };
     }
   }
 
