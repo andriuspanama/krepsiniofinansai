@@ -442,7 +442,9 @@ const pct=n=>n==null?"–":Math.round(n*100)+"%";
 const cell=r=>S.nation?`${logo(r.club)}<b>${esc(r.club)}</b>`:`<span title="${esc(r.nation)}">${flag(r.country||r.nation)}</span><b>${esc(r.club)}</b>`;
 // Žaidėjų nuotraukos: stulpelis „Photo“ lape > players_photos.json > automatinė paieška (redesign.js)
 let PHOTOS={},OWNPH={};
-const face=(n,own)=>{const u=own||OWNPH[norm(n)]||PHOTOS[norm(n)]||"";return`<span class="pf${u?"":" nf"}" data-pn="${esc(n)}">${u?`<img src="${esc(u)}" alt="" loading="lazy" onerror="this.parentNode.classList.add('nf');this.remove()">`:""}</span>`};
+// „#pf=S,C“ nuotraukos adreso gale (oficialios lygų nuotraukos iki juosmens): priartinama S kartų, galvos centras C % nuo viršaus
+const pfStyle=u=>{const m=String(u).match(/#pf=([\d.]+),([\d.]+)/);if(!m)return"";const s=+m[1],c=+m[2],y=Math.max(0,Math.min(100,(s*c-45)/(s-1)));return` style="object-position:50% 0;transform:scale(${s});transform-origin:50% ${y.toFixed(1)}%"`};
+const face=(n,own)=>{const u=own||OWNPH[norm(n)]||PHOTOS[norm(n)]||"";return`<span class="pf${u?"":" nf"}" data-pn="${esc(n)}">${u?`<img src="${esc(u)}"${pfStyle(u)} alt="" loading="lazy" onerror="this.parentNode.classList.add('nf');this.remove()">`:""}</span>`};
 // komandos logotipas pagal pavadinimą algų lape (pavadinimai gali skirtis nuo biudžetų lapo)
 const TLC={};
 const teamLogo=n=>{if(!n)return"";const k=norm(n);if(!(k in TLC)){let u=LOGOS[k];if(!u){const c=D.bud.find(r=>same(r.club,n));if(c)u=LOGOS[norm(c.club)]}TLC[k]=u||""}

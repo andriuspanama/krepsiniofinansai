@@ -1,5 +1,6 @@
 // Kas savaitę: papildo logos.json (klubų ir lygų logotipai) ir players_photos.json (žaidėjų veidai) TRŪKSTAMAIS įrašais.
-// Esami įrašai niekada nekeičiami ir netrinami. Šaltinis – anglų Wikipedia (portretinės nuotraukos, griežtas vardo atitikimas).
+// Esami įrašai niekada nekeičiami ir netrinami. Veidų šaltiniai iš eilės: EuroLeague, EuroCup, FIBA (BCL, FIBA Europe Cup, rinktinės),
+// ACB, LKL, Winner League, GBL, BeBasket, o kurių nerasta – anglų Wikipedia (portretinės nuotraukos, griežtas vardo atitikimas).
 // Paleidimas: node update_media.mjs   (GitHub Actions: .github/workflows/media.yml)
 import { readFile, writeFile } from "node:fs/promises";
 
@@ -15,7 +16,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 async function get(url, json = true) {
   for (let i = 0; i < 4; i++) {
     try {
-      const r = await fetch(url, { headers: { "User-Agent": UA } });
+      const r = await fetch(url, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(30000) });
       if (r.status === 429 || r.status >= 500) { await sleep(2000 * (i + 1)); continue; }
       if (!r.ok) return null;
       return json ? await r.json() : await r.text();
@@ -63,6 +64,177 @@ export function peopleFromSalaries(rows) {        // [{name, role, photo}]
     if (name) out.push({ name, role: (r[1] || "").trim(), photo: pi >= 0 ? (r[pi] || "").trim() : "" });
   }
   return out;
+}
+
+// ---------- oficialūs lygų ir turnyrų puslapiai (pirmiausia) ----------
+// Kiekvienas šaltinis grąžina [{name, url}] – dabartinio sezono sudėtis su oficialiomis nuotraukomis.
+// Skaitomi tik vieši puslapiai (be prisijungimų ir raktų). Pirmas šaltinis sąraše laimi.
+// Nuotraukos gale „#pf=S,C“ – kaip priartinti veidą apskritime (S – mastelis, C – galvos centras % nuo viršaus); svetainė tai supranta.
+const SEASON = (() => { const d = new Date(); return d.getUTCMonth() >= 7 ? d.getUTCFullYear() : d.getUTCFullYear() - 1; })();   // 2026 = 2026/27
+const yy = y => String(y % 100).padStart(2, "0");
+const unesc = t => String(t || "").replace(/\\\\"/g, "").replace(/\\"/g, '"').replace(/\\u0026/g, "&");
+const ent = s => String(s || "").replace(/&amp;/g, "&").replace(/&#0?39;|&apos;/g, "'").replace(/&quot;/g, '"').replace(/&nbsp;/g, " ").replace(/&#(\d+);/g, (m, n) => String.fromCharCode(+n)).replace(/&#x([0-9a-f]+);/gi, (m, h) => String.fromCharCode(parseInt(h, 16)));
+const abs = (u, base) => { try { return new URL(ent(u), base).href; } catch (e) { return ""; } };
+const uniq = a => [...new Set(a)];
+async function page(url) { const t = await get(url, false); await sleep(250); return t || ""; }
+async function exists(url) {
+  try { const r = await fetch(url, { method: "GET", headers: { "User-Agent": UA, Range: "bytes=0-0" }, signal: AbortSignal.timeout(20000) }); return r.ok || r.status === 206; } catch (e) { return false; }
+}
+// „SIFTAR, JAKOB“ -> „Jakob Siftar“
+const flip = n => { const m = String(n).match(/^([^,]+),\s*(.+)$/); const s = m ? m[2] + " " + m[1] : String(n); return s.toLowerCase().replace(/(^|[\s'-])\p{L}/gu, x => x.toUpperCase()); };
+
+// EuroLeague (E) ir EuroCup (U): viešas duomenų srautas su „headshot“ nuotraukomis
+async function srcEuroleague(code) {
+  const out = [];
+  for (const y of [SEASON, SEASON - 1]) {
+    const j = await get(`https://api-live.euroleague.net/v2/competitions/${code}/seasons/${code}${y}/people?personType=J`);
+    for (const p of (j && j.data) || []) {
+      const u = p.images && p.images.headshot; if (u && p.person && p.person.name) out.push({ name: flip(p.person.name), url: u + "#pf=2.8,21" });
+    }
+    await sleep(300);
+  }
+  return out;
+}
+// FIBA platforma (BCL, FIBA Europe Cup, rinktinių turnyrai): komandų puslapiuose – žaidėjų ir trenerių personId,
+// nuotrauka – FIBA „headshot“ pagal personId (apkirpta ties veidu). Neegzistuojanti nuotrauka grąžina 404 – tikrinama.
+const fibaFace = id => `https://assets.fiba.basketball/image/upload/c_thumb,g_face,z_0.75,w_240,h_240/q_auto/f_auto/.headshot--person_${id}`;
+export function parseFibaPeople(html) {
+  const u = unesc(html), out = [], re = /"personId":(\d+),"firstName":"([^"]*)","lastName":"([^"]*)"/g; let m;
+  while ((m = re.exec(u))) out.push({ id: m[1], name: (m[2] + " " + m[3]).replace(/\s+/g, " ").trim() });
+  return out;
+}
+async function fibaEvent(listUrl, linkRe) {
+  const list = await page(listUrl), base = new URL(listUrl).origin;
+  const teams = uniq([...list.matchAll(linkRe)].map(m => abs(m[0], base)));
+  const ppl = [];
+  for (const t of teams) ppl.push(...parseFibaPeople(await page(t)));
+  return ppl;
+}
+async function srcFiba() {
+  const lists = [
+    [`https://www.championsleague.basketball/en/teams`, /\/en\/teams\/[a-z0-9-]+/g],
+    ...[`fiba-europe-cup-${yy(SEASON)}-${yy(SEASON + 1)}`, `fiba-europe-cup-${yy(SEASON - 1)}-${yy(SEASON)}`, ...FIBA_EVENTS]
+      .map(s => [`https://www.fiba.basketball/en/events/${s}/teams`, new RegExp(`/en/events/${s}/teams/[a-z0-9-]+`, "g")])
+  ];
+  const ppl = [];
+  for (const [u, re] of lists) ppl.push(...await fibaEvent(u, re));
+  return ppl.map(p => ({ name: p.name, url: fibaFace(p.id), check: true }));
+}
+// rinktinių turnyrai FIBA svetainėje (papildykite, kai prasideda nauji)
+export const FIBA_EVENTS = ["fiba-basketball-world-cup-2027-european-qualifiers", "fiba-eurobasket-2025", "fiba-basketball-world-cup-2027-americas-qualifiers",
+  "fiba-basketball-world-cup-2027-asian-qualifiers", "fiba-americup-2025", "fiba-afrobasket-2025"];
+
+// ACB (Ispanija): komandų puslapiuose – sudėtis su „headshotImageUrl“
+export function parseAcb(html) {
+  const u = unesc(html), out = [], re = /"firstName":"([^"]*)","lastName":"([^"]*)"(?:,"[a-zA-Z]+":(?:"[^"]*"|null|\d+))*?,"headshotImageUrl":"(https?:[^"]+)"/g; let m;
+  while ((m = re.exec(u))) {
+    const url = m[3], nick = (m[0].match(/"nickname":"([^"]+)"/) || [])[1];
+    out.push({ name: (m[1] + " " + m[2]).trim(), url });
+    if (nick) out.push({ name: nick, url });
+  }
+  return out;
+}
+async function srcAcb() {
+  const home = await page("https://www.acb.com/es/liga");
+  const teams = uniq([...home.matchAll(/\/es\/liga\/equipos\/[a-z0-9-]+/g)].map(m => "https://www.acb.com" + m[0]));
+  const out = []; for (const t of teams) out.push(...parseAcb(await page(t)));
+  return out;
+}
+// LKL (Lietuva): žaidėjų sąraše (lkl.lt/zaidejai) kiekvienoje eilutėje – nuotrauka ir vardas
+export function parseLkl(html, base = "https://lkl.lt") {
+  const out = [];
+  for (const row of String(html).split(/<tr[\s>]/).slice(1)) {
+    const img = (row.match(/<img[^>]*src="([^"]*\/media\/players\/[^"]+)"/) || [])[1];
+    const nm = (row.match(/class="player-title"[^>]*>([^<]+)</) || [])[1];
+    if (img && nm) out.push({ name: ent(nm).trim(), url: abs(img, base) + "#pf=2.8,21" });
+  }
+  return out;
+}
+async function srcLkl() { return parseLkl(await page("https://lkl.lt/zaidejai")); }
+// Izraelis (Winner League): komandos puslapyje – media day nuotraukos su vardu (alt)
+export function parseIsrael(html, base = "https://basket.co.il/") {
+  const out = [];
+  for (const m of String(html).matchAll(/class="box_role_data"\s*>\s*<img[^>]*src="([^"]+\.(?:jpe?g|png|webp))"[^>]*alt="([^"]+)"/gi)) {
+    const n = ent(m[2]).trim(); if (n.split(/\s+/).length >= 2 && !/default|no_?pic|no_?photo/i.test(m[1])) out.push({ name: n, url: abs(m[1], base) + "#pf=2.2,25" });
+  }
+  return out;
+}
+async function srcIsrael() {
+  const home = await page("https://basket.co.il/?lang=en");
+  const ids = uniq([...home.matchAll(/team\.asp\?TeamId=(\d+)/g)].map(m => m[1]));
+  const out = []; for (const id of ids) out.push(...parseIsrael(await page(`https://basket.co.il/team.asp?TeamId=${id}&lang=en`)));
+  return out;
+}
+// Graikija (GBL, esake.gr): komandos puslapyje – žaidėjo nuotrauka (fone) ir vardas „PAVARDĖ VARDAS“
+export function parseGreece(html, base = "https://www.esake.gr") {
+  const out = [];
+  for (const m of String(html).matchAll(/url\('(\/dat\/esakeplayer\/[^']+)'\)[\s\S]{0,900}?player-title-name[^>]*>([\s\S]{0,200}?)<div class="player-title-post/g)) {
+    const n = ent(m[2].replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim();
+    if (n && /^[A-Z][A-Z' .-]+$/.test(n)) out.push({ name: n, url: abs(m[1], base) + "#pf=2.7,19" });
+  }
+  return out;
+}
+async function srcGreece() {
+  const home = await page("https://www.esake.gr/en/action/EsakeTeams");
+  const ids = uniq([...home.matchAll(/EsaketeamView\?idteam=([0-9A-F]+)/g)].map(m => m[1]));
+  const out = []; for (const id of ids) out.push(...parseGreece(await page(`https://www.esake.gr/en/action/EsaketeamView?idteam=${id}&mode=1`)));
+  return out;
+}
+
+// vardų sutapimas: tie patys žodžiai (be diakritikų, eilės tvarka nesvarbi, „Jr.“ ir pan. ignoruojami)
+const toks = n => String(n || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/ø/g, "o").replace(/ł/g, "l").replace(/đ/g, "d").replace(/ß/g, "ss")
+  .split(/[^a-z]+/).filter(w => w && !/^(jr|sr|ii|iii|iv)$/.test(w));
+export const nameKey = n => toks(n).sort().join(" ");
+// papildomi raktai rašybos skirtumams („Mc Clung“ = „McClung“, „Lofton Kenneth“ = „Kenneth Lofton“)
+const altKeys = n => { const t = toks(n); return t.length ? ["=" + t.join(""), "=" + [t[t.length - 1], ...t.slice(0, -1)].join("")] : []; };
+export const SOURCES = [
+  ["EuroLeague", () => srcEuroleague("E")], ["EuroCup", () => srcEuroleague("U")], ["FIBA (BCL, FIBA Europe Cup, rinktinės)", srcFiba],
+  ["ACB", srcAcb], ["LKL", srcLkl], ["Winner League", srcIsrael], ["GBL", srcGreece]
+];
+export async function findLeaguePhotos(names) {               // {name: url} – tik tiems, kurių vardas tiksliai sutampa
+  const want = new Map();
+  for (const n of names) { want.set(nameKey(n), n); for (const k of altKeys(n)) if (!want.has(k)) want.set(k, n); }
+  const keyOf = n => [nameKey(n), ...altKeys(n)].find(k => want.has(k));
+  const res = {};
+  for (const [label, fn] of SOURCES) {
+    let items = [];
+    try { items = await fn(n => !!keyOf(n)); } catch (e) { console.log(`${label}: klaida – ${e.message}`); continue; }
+    const by = new Map();                                       // tas pats žmogus su skirtingomis nuotraukomis -> neaišku, praleidžiama
+    for (const it of items) { const k = keyOf(it.name); if (!k) continue; it.nm = want.get(k); const s = by.get(it.nm) || new Set(); s.add(it.url); by.set(it.nm, s); }
+    let n = 0;
+    for (const it of items) {
+      const nm = it.nm; if (!nm || res[nm] || by.get(nm).size > 1) continue;
+      if (it.check && !(await exists(it.url))) continue;
+      res[nm] = it.url; n++;
+    }
+    console.log(`${label}: sudėtyse ${items.length}, priskirta ${n}`);
+  }
+  return res;
+}
+
+// BeBasket (bebasket.fr): žaidėjo profilis bebasket.fr/joueur/vardas-pavarde – kvadratinė portretinė nuotrauka (og:image).
+// Tinka ir buvusiems Prancūzijos lygų žaidėjams. Imama tik tada, kai puslapio pavadinime – tas pats vardas.
+const MAX_BEBASKET = 1500;                                       // profilių per vieną paleidimą (likusieji – kitą savaitę)
+const slugs = n => { const b = String(n).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ø/g, "o").replace(/ł/g, "l").replace(/đ/g, "d").replace(/ß/g, "ss");
+  return uniq([b.replace(/['’]/g, "").replace(/[^a-z0-9]+/g, "-"), b.replace(/[^a-z0-9]+/g, "-")].map(x => x.replace(/^-+|-+$/g, "")).filter(Boolean)); };
+export function parseBebasket(html) {
+  const og = (String(html).match(/property="og:image"\s+content="([^"]+)"/) || String(html).match(/content="([^"]+)"\s+property="og:image"/) || [])[1] || "";
+  const title = ent((String(html).match(/<title>([^<]*)<\/title>/) || [])[1] || "").split(/\s*[:|]\s*/)[0].trim();
+  return /cdn\.bebasket\.fr\/resources\/images\/player\//.test(og) ? { name: title, url: ent(og) } : null;
+}
+export async function findBebasket(names, budget = MAX_BEBASKET) {
+  const got = {}, seen = {}; let used = 0;
+  for (const n of names) {
+    if (used >= budget) break;
+    for (const sl of slugs(n)) {
+      used++;
+      const p = parseBebasket(await page("https://www.bebasket.fr/joueur/" + sl));
+      if (p && nameKey(p.name) === nameKey(n)) { got[n] = p.url; (seen[p.url] = seen[p.url] || []).push(n); break; }
+    }
+  }
+  for (const [u, ns] of Object.entries(seen)) if (ns.length > 2) ns.forEach(n => delete got[n]);   // ta pati nuotrauka keliems – tai šablonas
+  console.log(`BeBasket: patikrinta ${used} profilių, priskirta ${Object.keys(got).length}`);
+  return got;
 }
 
 // ---------- Wikipedia ----------
@@ -209,7 +381,12 @@ async function main() {
   const pk = new Set(Object.keys(photos).map(norm));
   const need = [...new Map(ppl.map(p => [norm(p.name), p.name])).entries()]
     .filter(([k]) => !pk.has(k) && !own.has(k) && !recent("p:" + k)).map(([, n]) => n);
-  const got = await findPhotos(need);
+  // pirmiausia oficialūs lygų ir turnyrų puslapiai, likusiems – Wikipedia
+  const got = need.length ? await findLeaguePhotos(need) : {};
+  const left = need.filter(n => !got[n]);
+  Object.assign(got, left.length ? await findBebasket(left) : {});
+  const rest = need.filter(n => !got[n]);
+  Object.assign(got, rest.length ? await findPhotos(rest) : {});
   for (const n of need) { if (got[n]) { photos[n] = got[n]; addedP++; } else state.tried["p:" + norm(n)] = now; }
 
   if (addedL) await writeFile("logos.json", JSON.stringify(logos, null, 2) + "\n");
