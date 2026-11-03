@@ -334,7 +334,8 @@ p.sum .srcs.sg{vertical-align:middle;margin-left:4px}
  #tabs .tlm{top:auto;bottom:calc(100% + 8px);left:auto;right:4px}
  .srow .llg{height:40px;max-width:110px;padding:4px 8px;border-radius:9px;margin-left:0}
  .srow{min-height:40px}
- .srow #q{flex:1 1 140px}
+ /* telefonas: sezonas, paieška ir lygos logotipas – vienoje eilutėje (kiti filtrai – žemiau) */
+ .srow>*{order:3}.srow>.sx:first-child,.srow>.chip:first-child{order:0}.srow #q{order:1;flex:1 1 60px;min-width:0}.srow .llg{order:2;max-width:84px;height:40px}
  .tw td.sc{grid-column:auto}
  /* Biudžetai */
  #out .tw td[data-lb="Bendras biudžetas"],#out .tw td[data-lb="Total budget"]{order:1}

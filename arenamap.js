@@ -963,6 +963,7 @@
 
       // --- kortelė ---
       var card = wrap.querySelector('.am-card');
+      var LB = null;   // išdidintos nuotraukos valdymas (uždaryti / ar atidaryta)
       function fmtM(v) { return (v / 1e6).toFixed(1).replace('.', ',') + ' M €'; }
       function openCard(it) {
         var e = it.e, bud = it.bud, att = it.att;
@@ -1121,29 +1122,34 @@
           lb.querySelector('.am-sw').innerHTML = ['photo', 'inner'].filter(function (x) { return have[x] && urlOf[x]; }).length > 1 ? ['photo', 'inner'].map(function (x) {
             return '<button type="button" data-v="' + x + '" class="' + (x === v ? 'on' : '') + '">' + (x === 'photo' ? '📷 ' + esc(T('Iš šono', 'Side')) : '🏟 ' + esc(T('Iš vidaus', 'Interior'))) + '</button>';
           }).join('') : '';
-          if (lb.hidden) { lb.hidden = false; requestAnimationFrame(function () { lb.classList.add('on'); }); document.addEventListener('keydown', lbKey); }
+          if (lb.hidden) { lb.hidden = false; requestAnimationFrame(function () { lb.classList.add('on'); }); document.addEventListener('keydown', lbKey); if (!(history.state && history.state.amlb)) history.pushState({ amlb: 1 }, ''); }
           lb.dataset.v = v;
         }
-        function lbClose() {
-          if (!lb || lb.hidden) return;
+        function lbClose(fromPop) {
+          if (!lb || lb.hidden || !lb.classList.contains('on')) return;
+          if (!fromPop && history.state && history.state.amlb) history.back();   // telefono „atgal“ / Esc / ✕ – tas pats žingsnis istorijoje
           lb.classList.remove('on'); document.removeEventListener('keydown', lbKey);
           setTimeout(function () { if (!lb.classList.contains('on')) lb.hidden = true; }, 250);
           if (lb.dataset.v && lb.dataset.v !== box.dataset.v && my === mtoken) setView(lb.dataset.v);
         }
         function lbKey(ev) { if (ev.key === 'Escape') lbClose(); }
+        LB = { close: lbClose, open: function () { return !!(lb && lb.classList.contains('on')); } };
         box.addEventListener('click', function (ev) {
           if (ev.target.closest && ev.target.closest('.am-exp')) { lbShow(box.dataset.v); return; }
           var b = ev.target.closest && ev.target.closest('.am-sw button'); if (!b) return;
           manual = true; clearInterval(timer); timer = 0; setView(b.dataset.v);
         });
       }
-      function closeCard() {
+      function closeCard(fromPop) {
+        if (LB && LB.open()) LB.close(true);
+        if (!fromPop && card.classList.contains('on') && history.state && (history.state.am || history.state.amlb)) history.go(history.state.amlb ? -2 : -1);
         mtoken++; sel = null; card.classList.remove('on');
         setTimeout(function () { if (!card.classList.contains('on')) card.hidden = true; }, 400);
         items.forEach(function (i) { i.el.classList.remove('sel'); });
         layout();
       }
       function select(it) {
+        if (!card.classList.contains('on') && !(history.state && history.state.am)) history.pushState({ am: 1 }, '');   // „atgal“ uždaro kortelę
         items.forEach(function (i) { i.el.classList.toggle('sel', i === it); });
         sel = it; openCard(it); fly(it); layout();
       }
@@ -1210,7 +1216,14 @@
       sug.addEventListener('pointerup', function () { setTimeout(function () { sugDown = false; }, 450); });
       sug.addEventListener('click', function (ev) { var b = ev.target.closest('button[data-i]'); sugDown = false; if (b) pick(sugIt[+b.dataset.i]); });
       search.addEventListener('blur', function () { setTimeout(function () { if (!sugDown && document.activeElement !== search) closeSug(); }, 200); });
-      function onKey(ev) { if (ev.key === 'Escape' && sel) closeCard(); }
+      function onKey(ev) { if (ev.key === 'Escape' && sel && !(LB && LB.open())) closeCard(); }
+      // telefono „atgal“: pirma uždaroma išdidinta nuotrauka, paskui kortelė
+      function onPop() {
+        var st = history.state || {};
+        if (LB && LB.open() && !st.amlb) LB.close(true);
+        if (card.classList.contains('on') && !st.am && !st.amlb) closeCard(true);
+      }
+      window.addEventListener('popstate', onPop);
       document.addEventListener('keydown', onKey);
 
       var lastW = W(), lastH = H();
@@ -1220,7 +1233,7 @@
       }) : null;
       if (ro) ro.observe(wrap);
 
-      cur = { destroy: function () { document.removeEventListener('keydown', onKey); if (ro) ro.disconnect(); if (raf) cancelAnimationFrame(raf); mtoken++; } };
+      cur = { destroy: function () { document.removeEventListener('keydown', onKey); window.removeEventListener('popstate', onPop); if (LB && LB.open()) LB.close(true); if (history.state && (history.state.am || history.state.amlb)) history.go(history.state.amlb ? -2 : -1); if (ro) ro.disconnect(); if (raf) cancelAnimationFrame(raf); mtoken++; } };
     }
   }
 

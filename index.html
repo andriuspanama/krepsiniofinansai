@@ -378,7 +378,9 @@ const EN={"Krepšinio klubų finansai":"Basketball Club Finances","Kraunama…":
 C.forEach(c=>EN[c[1]]=c[0]);Object.assign(EN,{"ABA lyga":"ABA League","Latvijos–Estijos lyga":"Latvian–Estonian League","Visi sezonai":"All seasons","Visos pareigos":"All roles","Žaidėjas":"Player","Treneris":"Coach","Asistentas":"Assistant","Patarėjas":"Advisor","Vienas įrašas žmogui (naujausia sutartis)":"One row per person (latest contract)"});
 const PAIRS=Object.entries(EN).sort((x,y)=>y[0].length-x[0].length).map(([k,v])=>[new RegExp("(?<![\\p{L}])"+k.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"(?![\\p{L}])","gu"),v]);
 let LANG=(()=>{try{return localStorage.getItem("lang")||"lt"}catch(e){return"lt"}})(),stH="";
-const tr=s=>LANG==="en"?PAIRS.reduce((a,[re,v])=>a.replace(re,v),s):s;
+// vienas praėjimas per tekstą su visais žodžiais vienoje išraiškoje (anksčiau – po vieną kiekvienam žodžiui, lėta dideliems puslapiams)
+const TRRE=new RegExp("(?<![\\p{L}])(?:"+Object.keys(EN).sort((x,y)=>y.length-x.length).map(k=>k.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("|")+")(?![\\p{L}])","gu");
+const tr=s=>LANG==="en"?String(s).replace(TRRE,m=>EN[m]??m):s;
 const setSt=s=>{stH=s;$("st").innerHTML=tr(s)};
 function setLang(l){LANG=l;try{localStorage.setItem("lang",l)}catch(e){}
  nf=new Intl.NumberFormat(l==="en"?"en-GB":"lt-LT",{maximumFractionDigits:0});document.documentElement.lang=l;
@@ -481,7 +483,7 @@ const leagueLogos=()=>leagueKeys().map(x=>{const u=LOGOS[norm("league: "+x)];ret
 let HP=0,LY=0,RP=false;
 function show(html){H.push(html);if(RP)RP=false;else{history.pushState({m:1},"");HP++}draw()}
 function closeAll(){const n=HP;H=[];HP=0;draw();if(n)history.go(-n)}
-addEventListener("popstate",()=>{if(HP>0){HP--;H.pop();draw()}});
+addEventListener("popstate",()=>{if(SGO){sgClose(true);return}if(HP>0){HP--;H.pop();draw()}});
 function draw(){const m=$("md"),b=document.body;
  if(!H.length){m.classList.remove("o");if(b.classList.contains("lk")){b.classList.remove("lk");b.style.top="";scrollTo(0,LY)}return}
  if(!b.classList.contains("lk")){LY=scrollY;b.style.top=-LY+"px";b.classList.add("lk")}
@@ -518,11 +520,14 @@ const money=k=>({k,v:r=>r[k],f:r=>r[k]==null?'<span class="na">–</span>':CF(E(
 const host=u=>{try{return new URL(u).hostname.replace(/^www\./,"")}catch(e){return u}};
 // Šaltiniai sugrupuoti: vienas mygtukas „N ↗“, paspaudus – nuorodų sąrašas
 const links=r=>{const a=(r.src||[]).slice(0,4);return a.length?`<span class="srcs sg"><button type="button" class="sgb" aria-expanded="false" aria-label="Šaltiniai: ${a.length}">${a.length} ↗</button><span class="sgl" hidden>${a.map((u,i)=>`<a href="${esc(u)}" target="_blank" rel="noopener"><b>${i+1}</b> ${esc(host(u))} ↗</a>`).join("")}</span></span>`:'<span class="na">–</span>'};
-function sgClose(){document.querySelectorAll(".sgb[aria-expanded=true]").forEach(b=>{b.setAttribute("aria-expanded","false");const l=b.nextElementSibling;if(l)l.hidden=true})}
-function sgToggle(b){const on=b.getAttribute("aria-expanded")==="true";sgClose();if(on)return;const l=b.nextElementSibling;if(!l)return;
- b.setAttribute("aria-expanded","true");l.hidden=false;const r=b.getBoundingClientRect(),w=l.offsetWidth,h=l.offsetHeight;
+// šaltinių sąrašas: atidarius įrašomas naršyklės istorijos žingsnis, todėl telefono „atgal“ ir Esc jį tik uždaro
+let SGO=false;
+function sgClose(fromPop){const was=SGO;SGO=false;document.querySelectorAll(".sgb[aria-expanded=true]").forEach(b=>{b.setAttribute("aria-expanded","false");const l=b.nextElementSibling;if(l)l.hidden=true});
+ if(was&&!fromPop&&history.state&&history.state.sg)history.back()}
+function sgToggle(b){const on=b.getAttribute("aria-expanded")==="true";if(on)return sgClose();sgClose(true);const l=b.nextElementSibling;if(!l)return;
+ b.setAttribute("aria-expanded","true");l.hidden=false;SGO=true;if(!(history.state&&history.state.sg))history.pushState({sg:1},"");const r=b.getBoundingClientRect(),w=l.offsetWidth,h=l.offsetHeight;
  l.style.left=Math.max(8,Math.min(innerWidth-w-8,r.right-w))+"px";l.style.top=(r.bottom+h+8<innerHeight?r.bottom+6:Math.max(8,r.top-h-6))+"px"}
-addEventListener("scroll",sgClose,true);addEventListener("resize",sgClose);
+addEventListener("scroll",()=>sgClose(),true);addEventListener("resize",()=>sgClose());
 function dedupe(a){const o=[];for(const x of a){
  const m=o.find(y=>y.season===x.season&&(norm(y.club)===norm(x.club)||(y.nation===x.nation&&(x._s==null||y._s!==x._s)&&same(y.club,x.club))));
  if(!m)o.push({...x});else{for(const k in x)if(k!=="src"&&k!=="est"&&(m[k]==null||m[k]==="")){m[k]=x[k];if(x.est&&x.est[k])(m.est=m.est||{})[k]=true;if(x.cf&&k in x.cf)(m.cf={...(m.cf||{})})[k]=x.cf[k]};if(x.src)m.src=[...new Set([...(m.src||[]),...x.src])]}}return o}
@@ -664,7 +669,7 @@ function render0(){
 const $=id=>document.getElementById(id),$tabs=$("tabs"),out=$("out");
 document.addEventListener("click",e=>{if(e.target.id==="md")return closeAll();
  if(e.target.closest("a"))return;
- {const g=e.target.closest(".sgb");if(g){e.stopPropagation();return sgToggle(g)}if(!e.target.closest(".sgl"))sgClose()}
+ {const g=e.target.closest(".sgb");if(g){e.stopPropagation();return sgToggle(g)}if(SGO&&!e.target.closest(".sgl")){sgClose();return}}   // atidarytą šaltinių sąrašą pirmas paspaudimas tik uždaro
  const t=e.target.closest("[data-sseason],[data-srole],#th,[data-l],#cl,#bk,tr.c,[data-p],[data-club],[data-tab],[data-nation],[data-season],th[data-k],[data-cs],[data-ct],[data-ca],[data-aseason],[data-cm],[data-cms],[data-cra],[data-crm],[data-eu],#reload");if(!t)return;
  if(t.id==="th")return setTheme(isDark()?"light":"dark");
  if(t.dataset.l)return setLang(t.dataset.l);
@@ -686,7 +691,7 @@ document.addEventListener("click",e=>{if(e.target.id==="md")return closeAll();
  else if(t.dataset.k){const s=S.sort[S.tab];S.sort[S.tab]=[t.dataset.k,s[0]===t.dataset.k?-s[1]:(t.dataset.k==="club"||t.dataset.k==="name"?1:-1)]}
  else return start();
  render()});
-document.addEventListener("keydown",e=>{if(e.key==="Escape")closeAll();if(e.key==="Enter"&&e.target.matches("th[data-k]"))e.target.click()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(SGO)return sgClose();if(document.querySelector(".am-card.on,.am-lb.on"))return;closeAll()}if(e.key==="Enter"&&e.target.matches("th[data-k]"))e.target.click()});
 document.addEventListener("change",e=>{if(e.target.id==="srole"){S.srole=e.target.value;return render()}if(e.target.id==="sone"){S.one=e.target.checked;return render()}if(e.target.id==="ms"){const k=e.target.value;S.sort[S.tab]=[k,k==="club"||k==="name"?1:-1];render()}});
 let QT=0;document.addEventListener("input",e=>{if(e.target.id==="q"){S.q=e.target.value;clearTimeout(QT);QT=setTimeout(render,120)}else if(e.target.id==="cq"){S.cmp.q=e.target.value;render()}});
 async function start(){
