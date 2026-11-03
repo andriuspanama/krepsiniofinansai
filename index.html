@@ -691,7 +691,7 @@ document.addEventListener("click",e=>{if(e.target.id==="md")return closeAll();
  else if(t.dataset.k){const s=S.sort[S.tab];S.sort[S.tab]=[t.dataset.k,s[0]===t.dataset.k?-s[1]:(t.dataset.k==="club"||t.dataset.k==="name"?1:-1)]}
  else return start();
  render()});
-document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(SGO)return sgClose();if(document.querySelector(".am-card.on,.am-lb.on"))return;closeAll()}if(e.key==="Enter"&&e.target.matches("th[data-k]"))e.target.click()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(SGO){e.preventDefault();return sgClose()}if(H.length){e.preventDefault();return closeAll()}if(document.querySelector(".am-card.on,.am-lb.on"))return;closeAll()}if(e.key==="Enter"&&e.target.matches("th[data-k]"))e.target.click()});
 document.addEventListener("change",e=>{if(e.target.id==="srole"){S.srole=e.target.value;return render()}if(e.target.id==="sone"){S.one=e.target.checked;return render()}if(e.target.id==="ms"){const k=e.target.value;S.sort[S.tab]=[k,k==="club"||k==="name"?1:-1];render()}});
 let QT=0;document.addEventListener("input",e=>{if(e.target.id==="q"){S.q=e.target.value;clearTimeout(QT);QT=setTimeout(render,120)}else if(e.target.id==="cq"){S.cmp.q=e.target.value;render()}});
 async function start(){

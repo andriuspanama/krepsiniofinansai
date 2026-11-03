@@ -673,6 +673,7 @@
       '@media(max-width:819px){.am-card{position:fixed;z-index:1001;top:50%;left:50%;right:auto;bottom:auto;translate:-50% -50%;width:min(520px,calc(100vw - 24px));max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);transform:translateY(18px) scale(.98)}.am-card.on{transform:none}.am-body{overscroll-behavior:contain;touch-action:pan-y}.am-media{height:clamp(170px,30vh,240px)}.am-search{width:min(200px,50vw)}'+
         '.am-bd{position:fixed;inset:0;z-index:1000;background:rgba(4,6,10,.62);touch-action:none;opacity:0;transition:opacity .3s;pointer-events:none}.am-card.on+.am-bd{opacity:1;pointer-events:auto}}',
       '@media(min-width:820px){.am-bd{display:none}}',
+      'body.lk .am-card,body.lk .am-bd{visibility:hidden}',   /* kol atidaryta klubo kortelė, žemėlapio kortelė paslėpta; uždarius – vėl matoma */
       '@media(prefers-reduced-motion:reduce){.am-card,.am-media .l,.am-pin .in{transition:none}.am-pin.sel .in,.am-media .photo{animation:none}}'
     ].join('\n');
     document.head.appendChild(s);
@@ -1219,7 +1220,7 @@
       sug.addEventListener('pointerup', function () { setTimeout(function () { sugDown = false; }, 450); });
       sug.addEventListener('click', function (ev) { var b = ev.target.closest('button[data-i]'); sugDown = false; if (b) pick(sugIt[+b.dataset.i]); });
       search.addEventListener('blur', function () { setTimeout(function () { if (!sugDown && document.activeElement !== search) closeSug(); }, 200); });
-      function onKey(ev) { if (ev.key === 'Escape' && sel && !(LB && LB.open())) closeCard(); }
+      function onKey(ev) { if (ev.key === 'Escape' && !ev.defaultPrevented && sel && !(LB && LB.open()) && !document.querySelector('#md.o')) closeCard(); }   // atidaryta klubo kortelė uždaroma pirma
       // telefono „atgal“: pirma uždaroma išdidinta nuotrauka, paskui kortelė
       function onPop() {
         var st = history.state || {};
