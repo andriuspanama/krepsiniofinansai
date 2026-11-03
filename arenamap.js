@@ -658,6 +658,17 @@
       '.am-sec{background:none;border:1px solid var(--line)!important;color:var(--ink)}',
       '.am-sv{color:var(--mute);font-size:12px;text-decoration:none;margin-left:auto}.am-sv:hover{color:var(--a)}',
       '.am-miss{margin-top:8px;font-size:13px;color:var(--mute)}',
+      '.am-trv{margin:-4px 0 12px}.am-trv[hidden]{display:none}.am-trv .am-kpis{margin-bottom:4px}.am-trv b small{font:600 11px var(--mono,monospace);color:var(--mute);margin-left:4px}',
+      '.am-trv p{margin:0;font-size:11px;color:var(--mute)}',
+      '.am-exp{position:absolute;left:10px;top:10px;z-index:3;width:32px;height:32px;border-radius:50%;border:0;background:rgba(0,0,0,.55);color:#fff;font-size:17px;line-height:1;cursor:pointer;display:none}',
+      '.am-media.has-photo[data-v="photo"] .am-exp,.am-media.has-inner[data-v="inner"] .am-exp{display:block}.am-exp:hover{background:var(--a);color:#1a1200}',
+      '.am-lb{position:fixed;inset:0;z-index:1000;background:rgba(4,6,10,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:56px 16px 20px;opacity:0;transition:opacity .25s}',
+      '.am-lb.on{opacity:1}.am-lb[hidden]{display:none}',
+      '.am-lb img{max-width:min(1400px,100%);max-height:calc(100% - 70px);object-fit:contain;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.6)}',
+      '.am-lb-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 14px;color:#fff;font-size:13px;max-width:100%}',
+      '.am-lb-bar b{font:700 17px var(--hd,sans-serif)}.am-lb-bar small{opacity:.7;font-size:11px}',
+      '.am-lb .am-sw{position:static}',
+      '.am-lb-x{position:absolute;right:14px;top:12px;width:40px;height:40px;border-radius:50%;border:0;background:rgba(255,255,255,.12);color:#fff;font-size:24px;line-height:1;cursor:pointer}.am-lb-x:hover{background:var(--a);color:#1a1200}',
       '@media(max-width:819px){.am-card{top:auto;left:10px;right:10px;bottom:10px;width:auto;max-height:64%}.am-media{height:150px}.am-search{width:min(200px,50vw)}}',
       '@media(prefers-reduced-motion:reduce){.am-card,.am-media .l,.am-pin .in{transition:none}.am-pin.sel .in,.am-media .photo{animation:none}}'
     ].join('\n');
@@ -959,11 +970,13 @@
           '<div class="am-media" data-v="sat"><div class="l sat"></div><div class="l photo"></div><div class="l inner"></div>' +
           '<div class="am-none">' + esc(e.arena) + ' · ' + esc(cityLabel(e.city)) + '</div>' +
           '<div class="am-sw" hidden><button type="button" data-v="sat" title="' + esc(T('Iš viršaus', 'Top')) + '">🛰<span class="t"> ' + esc(T('Iš viršaus', 'Top')) + '</span></button><button type="button" data-v="photo" hidden title="' + esc(T('Iš šono', 'Side')) + '">📷<span class="t"> ' + esc(T('Iš šono', 'Side')) + '</span></button><button type="button" data-v="inner" hidden title="' + esc(T('Iš vidaus', 'Interior')) + '">🏟<span class="t"> ' + esc(T('Iš vidaus', 'Interior')) + '</span></button></div>' +
+          '<button type="button" class="am-exp" aria-label="' + esc(T('Išdidinti nuotrauką', 'Expand photo')) + '" title="' + esc(T('Išdidinti', 'Expand')) + '">⤢</button>' +
           '<small class="am-cr"></small></div>' +
           '<div class="am-body"><div class="am-head">' + (it.logo ? '<img src="' + esc(it.logo) + '" alt="">' : '') +
           '<div><h3>' + esc(it.name) + '</h3><p>' + esc(e.arena) + ' · ' + esc(cityLabel(e.city)) + '</p>' + capTxt + '</div></div>' +
           '<div class="am-kpis"><div><small>' + esc(T('Biudžetas', 'Budget')) + ' ' + season + '</small><b>' + (bud && bud.total != null ? fmtM(bud.total) : '—') + '</b></div>' +
           '<div><small>' + esc(T('Vid. lankomumas', 'Avg. attendance')) + ' ' + season + '</small><b>' + attTxt + '</b></div></div>' +
+          '<div class="am-trv" hidden></div>' +
           '<div class="am-act">' +
           (it.hasCard ? '<button type="button" class="am-pri" data-a="card">' + esc(T('Atidaryti klubo kortelę', 'Open club card')) + '</button>' : '') +
           '<a class="am-sv" target="_blank" rel="noopener" href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=' + e.lat + ',' + e.lon + '">' + esc(T('Gatvės vaizdas ↗', 'Street View ↗')) + '</a>' +
@@ -971,6 +984,61 @@
         requestAnimationFrame(function () { card.classList.add('on'); });
         openedAt = performance.now();
         loadMedia(it);
+        showTravel(it);
+      }
+      // --- kelionės: visam reguliariajam sezonui, iš anksto. Lyga = klubo lentelė biudžetų lape (ABA / Latvijos–Estijos)
+      // arba šalis + divizionas. Skaičiuojama tik tada, kai žemėlapyje yra VISI lygos klubai su koordinatėmis.
+      // Atstumas – tiesia linija tarp namų arenų, į abi puses; išvykų skaičius = pusė reguliariojo sezono rungtynių.
+      var LEAGUES = {      // raktas: [pavadinimas, komandų skaičius, reguliariojo sezono rungtynės komandai (0 = 2 ratai)]
+        'Ispanija|1': ['ACB', 18, 0], 'Lietuva|1': ['LKL', 10, 36], 'Vokietija|1': ['BBL', 18, 0], 'Italija|1': ['LBA', 16, 0],
+        'Turkija|1': ['BSL', 16, 0], 'Graikija|1': ['GBL', 14, 0], 'Izraelis|1': ['Winner League', 14, 0], 'Lenkija|1': ['PLK', 16, 0],
+        'Australija|1': ['NBL', 10, 33], 'Suomija|1': ['Korisliiga', 12, 0], 'Prancūzija|1': ['Betclic Elite', 16, 0],
+        'Prancūzija|2': ['Elite 2', 20, 0], 'Vengrija|1': ['NB I/A', 14, 0], 'ABA': ['ABA', 20, 0], 'LEBL': ['LEBL', 15, 0]
+      };
+      // lankomumo lapo lygų pavadinimai -> tie patys raktai (lankomumas renkamas pilnai, todėl jis papildo biudžetų lapą)
+      var ATTLG = { 'ACB': 'Ispanija|1', 'LKL': 'Lietuva|1', 'BBL': 'Vokietija|1', 'LBA': 'Italija|1', 'BSL': 'Turkija|1', 'GBL': 'Graikija|1',
+        'Winner League': 'Izraelis|1', 'PLK': 'Lenkija|1', 'NBL': 'Australija|1', 'Korisliiga': 'Suomija|1', 'Betclic Elite': 'Prancūzija|1',
+        'NB I/A': 'Vengrija|1', 'ABA': 'ABA', 'LEBL': 'LEBL' };
+      var TRV = null;
+      function travelIndex() {
+        if (TRV) return TRV;
+        TRV = {};
+        var rg = typeof rlg === 'function' ? rlg : function () { return ''; };
+        var budKey = function (r) { return rg(r) || (r.nation + '|' + (r.div == null ? 1 : r.div)); };
+        // lygos sudėtis = biudžetų lapo klubai (lentelė / šalis + div.) + šio sezono lankomumo klubai (stulpelis League)
+        var M = {}, addM = function (k, n) { if (!k || !n) return; var L = M[k] = M[k] || []; if (!L.some(function (x) { return same(x, n); })) L.push(n); };
+        (D.bud || []).forEach(function (r) { if (r.season === season && r.club) addM(budKey(r), r.club); });
+        (D.att || []).forEach(function (r) { if (r.season === season && r.club && ATTLG[r.league]) addM(ATTLG[r.league], r.club); });
+        var onMap = function (n) {
+          var k = N(n);
+          return items.filter(function (i) { return N(i.name) === k; })[0] || items.filter(function (i) { return same(i.name, n) || (i.bud && same(i.bud.club, n)); })[0];
+        };
+        Object.keys(M).forEach(function (k) {
+          var cfg = LEAGUES[k]; if (!cfg) return;
+          var L = [], ok = true;
+          M[k].forEach(function (n) { var it = onMap(n); if (!it || !it.e || !it.e.ok) ok = false; else if (L.indexOf(it) < 0) L.push(it); });
+          var n = L.length;
+          if (!ok || n !== cfg[1]) return;                                   // ne visi lygos klubai turi koordinates
+          var games = cfg[2] || 2 * (n - 1), away = games / 2;
+          var R = L.map(function (a) {
+            var s = 0; L.forEach(function (b) { if (b !== a) s += km([a.e.lat, a.e.lon], [b.e.lat, b.e.lon]); });
+            var trip = 2 * s / (n - 1);
+            return { it: a, trip: trip, total: trip * away, away: away };
+          }).sort(function (x, y) { return y.total - x.total; });
+          R.forEach(function (r, i) { r.rank = i + 1; r.of = n; r.league = cfg[0]; TRV[N(r.it.name)] = r; });
+        });
+        return TRV;
+      }
+      function showTravel(it) {
+        var box = card.querySelector('.am-trv'); if (!box) return;
+        var r = travelIndex()[N(it.name)]; if (!r) return;
+        var f = function (v) { return Math.round(v).toLocaleString(T('lt-LT', 'en-US')); };
+        box.innerHTML = '<div class="am-kpis">' +
+          '<div><small>' + esc(T('Kelionės', 'Travel')) + ' ' + season + ' · ' + esc(r.league) + '</small><b>' + f(r.total) + ' km<small>' + f(r.away) + ' ' + esc(T('išv.', 'away')) + '</small></b></div>' +
+          '<div><small>' + esc(T('Vid. vienai išvykai', 'Avg. per away game')) + '</small><b>' + f(r.trip) + ' km<small>#' + r.rank + '/' + r.of + '</small></b></div></div>' +
+          '<p>' + esc(T('Visas reguliarusis sezonas: kiekviena išvyka į abi puses, tiesia linija tarp namų arenų. #1 – daugiausiai keliaujantis lygoje.',
+            'Whole regular season: every away game, there and back, straight line between home arenas. #1 = most travel in the league.')) + '</p>';
+        box.hidden = false;
       }
       function loadMedia(it) {
         var my = ++mtoken, box = card.querySelector('.am-media'), e = it.e;
@@ -978,21 +1046,23 @@
         var CLS = { sat: 'has-sat', photo: 'has-photo', inner: 'has-inner' };
         var cr = { sat: '', photo: '', inner: '' }, have = { sat: false, photo: false, inner: false };
         var ORDER = ['photo', 'inner', 'sat'];   // automatinis keitimas kas 5 s: iš šono → vidus → iš viršaus
-        var sw = box.querySelector('.am-sw'), timer = 0, manual = false;
+        var sw = box.querySelector('.am-sw'), timer = 0, manual = false, url = { sat: '', photo: '', inner: '' }, lb = null;
         function refresh() {
           var n = 0;
           ORDER.forEach(function (v) { sw.querySelector('[data-v="' + v + '"]').hidden = !have[v]; if (have[v]) n++; });
           sw.hidden = n < 2;
           if (n >= 2 && !timer && !manual) timer = setInterval(function () {
             if (my !== mtoken) { clearInterval(timer); return; }
+            if (lb && !lb.hidden) return;                                   // išdidintas vaizdas – nekeičiama
             var k = ORDER.indexOf(box.dataset.v);
             for (var s = 1; s <= ORDER.length; s++) { var v = ORDER[(k + s) % ORDER.length]; if (have[v]) { setView(v); break; } }
           }, 5000);
         }
+        var urlOf = url;
         function put(v, url, credit) {
           return preload(url).then(function (ok) {
             if (!ok || my !== mtoken) return;
-            L[v].style.backgroundImage = 'url("' + url + '")'; box.classList.add(CLS[v]); have[v] = true; cr[v] = credit;
+            L[v].style.backgroundImage = 'url("' + url + '")'; box.classList.add(CLS[v]); have[v] = true; cr[v] = credit; urlOf[v] = url;
             if (box.classList.contains('done')) { box.classList.remove('nomedia'); if (!ORDER.some(function (x) { return x !== v && have[x]; })) setView(v); refresh(); }
           });
         }
@@ -1001,7 +1071,7 @@
           var c = e.ok ? [e.lat, e.lon] : (info && info.coords ? info.coords : null);
           var sUrl = c ? roofImg(c) : null, pUrl = info && info.photo;
           var ps = sUrl ? preload(sUrl).then(function (ok) { if (ok && my === mtoken) { L.sat.style.backgroundImage = 'url("' + sUrl + '")'; box.classList.add('has-sat'); have.sat = true; } }) : Promise.resolve();
-          var pp = pUrl ? preload(pUrl).then(function (ok) { if (ok && my === mtoken) { L.photo.style.backgroundImage = 'url("' + pUrl + '")'; box.classList.add('has-photo'); have.photo = true; cr.photo = T('Foto: ', 'Photo: ') + (info.cr || 'Wikipedia'); } }) : Promise.resolve();
+          var pp = pUrl ? preload(pUrl).then(function (ok) { if (ok && my === mtoken) { L.photo.style.backgroundImage = 'url("' + pUrl + '")'; box.classList.add('has-photo'); have.photo = true; urlOf.photo = pUrl; cr.photo = T('Foto: ', 'Photo: ') + (info.cr || 'Wikipedia'); } }) : Promise.resolve();
           // interjeras kraunamas lygiagrečiai ir atsiranda kaip mygtukas, kai tik randamas
           interior(e, info, items.filter(function (o) { return o.e.arena === e.arena && o.e.city === e.city; }).map(function (o) { return o.name; })).then(function (r) {
             if (r && my === mtoken) put('inner', r.photo, T('Foto: ', 'Photo: ') + r.cr);
@@ -1026,7 +1096,39 @@
           [].forEach.call(box.querySelectorAll('.am-sw button'), function (b) { b.classList.toggle('on', b.dataset.v === v); });
         }
         // paspaudus mygtuką automatinis keitimas sustoja (rodomas pasirinktas vaizdas)
+        function lbShow(v) {
+          if (!lb) {
+            [].forEach.call(document.querySelectorAll('.am-lb'), function (o) { o.remove(); });   // ankstesnės kortelės
+            lb = document.createElement('div'); lb.className = 'am-lb'; lb.hidden = true;
+            lb.setAttribute('role', 'dialog'); lb.setAttribute('aria-modal', 'true');
+            lb.innerHTML = '<button type="button" class="am-lb-x" aria-label="' + esc(T('Uždaryti', 'Close')) + '">×</button><img alt=""><div class="am-lb-bar"><b></b><span class="am-sw"></span><small></small></div>';
+            document.body.appendChild(lb);
+            lb.addEventListener('click', function (ev) {
+              var b = ev.target.closest('.am-sw button');
+              if (b) { lbShow(b.dataset.v); return; }
+              if (ev.target === lb || ev.target.closest('.am-lb-x')) lbClose();
+            });
+          }
+          if (!urlOf[v]) return;
+          lb.querySelector('img').src = urlOf[v];
+          lb.querySelector('img').alt = it.e.arena;
+          lb.querySelector('b').textContent = it.e.arena + ' · ' + cityLabel(it.e.city);
+          lb.querySelector('small').textContent = cr[v] || '';
+          lb.querySelector('.am-sw').innerHTML = ['photo', 'inner'].filter(function (x) { return have[x] && urlOf[x]; }).length > 1 ? ['photo', 'inner'].map(function (x) {
+            return '<button type="button" data-v="' + x + '" class="' + (x === v ? 'on' : '') + '">' + (x === 'photo' ? '📷 ' + esc(T('Iš šono', 'Side')) : '🏟 ' + esc(T('Iš vidaus', 'Interior'))) + '</button>';
+          }).join('') : '';
+          if (lb.hidden) { lb.hidden = false; requestAnimationFrame(function () { lb.classList.add('on'); }); document.addEventListener('keydown', lbKey); }
+          lb.dataset.v = v;
+        }
+        function lbClose() {
+          if (!lb || lb.hidden) return;
+          lb.classList.remove('on'); document.removeEventListener('keydown', lbKey);
+          setTimeout(function () { if (!lb.classList.contains('on')) lb.hidden = true; }, 250);
+          if (lb.dataset.v && lb.dataset.v !== box.dataset.v && my === mtoken) setView(lb.dataset.v);
+        }
+        function lbKey(ev) { if (ev.key === 'Escape') lbClose(); }
         box.addEventListener('click', function (ev) {
+          if (ev.target.closest && ev.target.closest('.am-exp')) { lbShow(box.dataset.v); return; }
           var b = ev.target.closest && ev.target.closest('.am-sw button'); if (!b) return;
           manual = true; clearInterval(timer); timer = 0; setView(b.dataset.v);
         });

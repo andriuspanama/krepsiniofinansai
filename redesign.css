@@ -260,3 +260,101 @@ tr.c:hover td.l:first-child{box-shadow:inset 2px 0 var(--a)}
 #sh.is-fos{background:linear-gradient(180deg,color-mix(in srgb,var(--card) 60%,transparent) 0,color-mix(in srgb,var(--card) 80%,transparent) 50%,var(--card) 100%),var(--pbg) var(--pbgpos,center 10%)/cover no-repeat,var(--card)}
 #sh.is-fos .top{background:color-mix(in srgb,var(--card) 48%,transparent);backdrop-filter:blur(4px)}
 #sh.is-fos .kp div:not(:first-child),#sh.is-fos .tw,#sh.is-fos .ps-c{background:color-mix(in srgb,var(--card) 74%,transparent);backdrop-filter:blur(3px)}
+
+/* ===================== 2026-11: dizaino atnaujinimas ===================== */
+/* Sezonas + paieška + filtrai + lygos logotipas vienoje eilutėje */
+.srow{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.srow #q{flex:0 1 300px;min-width:140px}
+.srow .llg{height:60px;max-width:160px;padding:6px 10px;box-sizing:border-box;border-radius:12px;background:#fff;object-fit:contain;flex:none}
+.srow .llg:first-of-type{margin-left:auto}
+.rsel{display:flex;align-items:center;gap:8px;color:var(--mute);font-size:14px}
+.rsel select{height:36px;border-radius:99px;border:1px solid var(--a);background:var(--a);color:#1a1200;font:600 14px var(--tx,inherit);padding:0 12px;cursor:pointer}
+.tgl{position:relative;display:flex;align-items:center;gap:10px;height:36px;padding:0 14px 0 6px;border-radius:99px;border:1px solid var(--line);font-size:14px;cursor:pointer;user-select:none}
+.tgl input{position:absolute;opacity:0;width:1px;height:1px}
+.tgl i{width:38px;height:22px;border-radius:99px;background:var(--line);position:relative;flex:none}
+.tgl i::after{content:"";position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:var(--mute);transition:transform .2s}
+.tgl input:checked+i{background:var(--a)}
+.tgl input:checked+i::after{transform:translateX(16px);background:#1a1200}
+.tgl input:focus-visible+i{outline:2px solid var(--a);outline-offset:2px}
+
+/* Logotipai lentelėse (tik pasirinkus šalį) */
+.tw td.l>.lw{margin-right:10px}
+.tw td .lg{width:30px;height:30px}
+.tw td .lw.tl{margin-right:8px}
+.tw td .lw.tl .lg{width:24px;height:24px}
+
+/* Žaidėjų nuotraukos */
+.pf{display:inline-block;flex:none;width:36px;height:36px;border-radius:50%;overflow:hidden;vertical-align:middle;margin-right:10px;box-sizing:border-box;border:2px solid #3a4352;
+ background:#1a1f29 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30' fill='%236d7788'%3E%3Ccircle cx='15' cy='11' r='6'/%3E%3Cpath d='M3 30c0-7 5.4-11 12-11s12 4 12 11z'/%3E%3C/svg%3E") center bottom/80% no-repeat}
+.pf img{width:100%;height:100%;object-fit:cover;object-position:50% 18%;display:block;background:#1a1f29}
+.tw td.l .nm{display:inline-flex;flex-direction:column;vertical-align:middle;line-height:1.2}
+.tw td.l .nm small{display:block;font-size:12px;color:var(--mute);margin:0}
+.tw td.l .nm small.co{color:#7cc4ff}
+.phd{display:flex;align-items:center;gap:14px}
+.phd .pf{width:64px;height:64px;margin:0}
+.phd h2{margin:0}
+
+/* Šaltiniai: vienas mygtukas „N ↗“ + sąrašas */
+.srcs.sg{display:inline-block}
+.sgb{height:30px;padding:0 12px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--b);font:700 14px var(--mono);cursor:pointer;white-space:nowrap}
+.sgb:hover,.sgb[aria-expanded=true]{border-color:var(--b);background:color-mix(in srgb,var(--b) 10%,transparent)}
+.sgl{position:fixed;z-index:80;display:flex;flex-direction:column;min-width:220px;max-width:min(360px,92vw);padding:6px;border-radius:12px;border:1px solid var(--line);background:var(--card);box-shadow:0 14px 40px rgba(0,0,0,.5)}
+.sgl[hidden]{display:none}
+.srcs.sg .sgl a{display:flex;justify-content:flex-start;gap:10px;align-items:center;height:auto;min-width:0;padding:9px 10px;margin:0;border:0;border-radius:8px;background:transparent;color:var(--ink);text-decoration:none;font:400 14px var(--tx,inherit);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.srcs.sg .sgl a b{font:700 13px var(--mono);color:var(--b)}
+.srcs.sg .sgl a:hover{background:color-mix(in srgb,var(--b) 14%,transparent)}
+p.sum .srcs.sg{vertical-align:middle;margin-left:4px}
+
+/* Navigacija: pagrindiniai skirtukai | „Įrankiai ▾“ */
+@media(min-width:721px){nav{overflow:visible}}
+#tabs .ni,#tabs .tls{display:none}
+#tabs .tlw{position:relative;display:inline-flex;align-items:flex-end;margin-left:14px;padding-left:18px;border-left:1px solid var(--line)}
+#tabs .tlb{background:none;border:0;border-bottom:3px solid transparent;font:700 20px var(--hd);padding:6px 12px;color:var(--mute);white-space:nowrap;cursor:pointer}
+#tabs .tlw.on .tlb{color:var(--ink);border-color:var(--a)}
+#tabs .tlm{position:absolute;top:calc(100% + 6px);left:12px;z-index:50;display:flex;flex-direction:column;min-width:220px;padding:6px;border-radius:12px;border:1px solid var(--line);background:var(--card);box-shadow:0 14px 40px rgba(0,0,0,.5)}
+#tabs .tlm[hidden]{display:none}
+#tabs .tlm button{display:block;width:100%;text-align:left;border:0;border-radius:8px;padding:10px 12px;font:600 15px var(--tx,inherit);color:var(--ink);background:none}
+#tabs .tlm button:hover,#tabs .tlm button[aria-selected=true]{background:color-mix(in srgb,var(--a) 16%,transparent)}
+#tabs .tlm button .ni,#tabs .tlm button .tls{display:none}
+
+/* Telefonas: apatinė juosta su piktogramomis, kortelių laukų tvarka */
+@media(max-width:720px){
+ #tabs{gap:0;padding:4px 4px calc(4px + env(safe-area-inset-bottom,0px))}
+ #tabs>button,#tabs .tlb{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;font:700 13px var(--hd);padding:6px 2px;min-width:0}
+ #tabs .ni{display:block}
+ #tabs>button[data-tab="sal"] .tlt{display:none}
+ #tabs>button[data-tab="sal"] .tls{display:inline}
+ #tabs .tlw{flex:1;margin:0;padding:0;border:0;display:flex}
+ #tabs .tlb{width:100%;border-bottom:0;border-top:2px solid transparent}
+ #tabs .tlb .car{display:none}
+ #tabs .tlw.on .tlb{border-top-color:var(--a);color:var(--a)}
+ #tabs>button[aria-selected=true]{color:var(--a)}
+ #tabs .tlm{top:auto;bottom:calc(100% + 8px);left:auto;right:4px}
+ .srow .llg{height:40px;max-width:110px;padding:4px 8px;border-radius:9px;margin-left:0}
+ .srow #q{flex:1 1 140px}
+ .tw td.sc{grid-column:auto}
+ /* Biudžetai */
+ #out .tw td[data-lb="Bendras biudžetas"],#out .tw td[data-lb="Total budget"]{order:1}
+ #out .tw td[data-lb="Biudžeto pokytis"],#out .tw td[data-lb="Budget change"]{order:2}
+ #out .tw td[data-lb="Atlyginimų biudžetas"],#out .tw td[data-lb="Salary budget"]{order:3}
+ #out .tw td[data-lb="Atlyginimų dalis"],#out .tw td[data-lb="Salary share"]{order:4}
+ #out .tw td[data-lb="Lyga"],#out .tw td[data-lb="Division"]{order:5}
+ #out .tw td[data-lb="Šaltiniai"],#out .tw td[data-lb="Sources"]{order:6}
+ #out .tw td[data-lb="Vieta lygoje"],#out .tw td[data-lb="League place"]{order:7}
+ /* Lankomumas */
+ #out .tw td[data-lb="Vid. lankomumas"],#out .tw td[data-lb="Avg. attendance"]{order:1}
+ #out .tw td[data-lb="Užpildymas"],#out .tw td[data-lb="Filling rate"]{order:2}
+ #out .tw td[data-lb="Didžiausias"],#out .tw td[data-lb="Highest"]{order:3}
+ #out .tw td[data-lb="Mažiausias"],#out .tw td[data-lb="Lowest"]{order:4}
+ #out .tw td[data-lb*="žiūrov"],#out .tw td[data-lb*="per fan"]{order:6}
+ /* Žaidėjų algos */
+ #out .tw:has(td[data-lb="Mėnesio alga"],td[data-lb="Monthly salary"]) td[data-lb="Šalis"],#out .tw:has(td[data-lb="Monthly salary"]) td[data-lb="Country"]{order:1}
+ #out .tw:has(td[data-lb="Mėnesio alga"],td[data-lb="Monthly salary"]) td[data-lb="Komanda"],#out .tw:has(td[data-lb="Monthly salary"]) td[data-lb="Team"]{order:2}
+ #out .tw:has(td[data-lb="Mėnesio alga"],td[data-lb="Monthly salary"]) td[data-lb="Sezonas"],#out .tw:has(td[data-lb="Monthly salary"]) td[data-lb="Season"]{order:3}
+ #out .tw:has(td[data-lb="Mėnesio alga"],td[data-lb="Monthly salary"]) td[data-lb="Lyga"],#out .tw:has(td[data-lb="Monthly salary"]) td[data-lb="Division"]{order:4}
+ #out .tw:has(td[data-lb="Mėnesio alga"],td[data-lb="Monthly salary"]) td[data-lb="Sutarties vertė"],#out .tw:has(td[data-lb="Monthly salary"]) td[data-lb="Contract value"]{order:5}
+ #out .tw:has(td[data-lb="Mėnesio alga"],td[data-lb="Monthly salary"]) td[data-lb="Mėnesio alga"],#out .tw:has(td[data-lb="Monthly salary"]) td[data-lb="Monthly salary"]{order:6}
+ #out .tw:has(td[data-lb="Mėnesio alga"],td[data-lb="Monthly salary"]) td[data-lb="Trukmė"],#out .tw:has(td[data-lb="Monthly salary"]) td[data-lb="Length"]{order:7}
+ #out .tw:has(td[data-lb="Mėnesio alga"],td[data-lb="Monthly salary"]) td[data-lb="Šaltiniai"],#out .tw:has(td[data-lb="Monthly salary"]) td[data-lb="Sources"]{order:8}
+ .tw td.l .pf{width:40px;height:40px}
+}
