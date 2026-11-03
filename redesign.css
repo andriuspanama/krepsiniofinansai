@@ -263,7 +263,7 @@ tr.c:hover td.l:first-child{box-shadow:inset 2px 0 var(--a)}
 
 /* ===================== 2026-11: dizaino atnaujinimas ===================== */
 /* Sezonas + paieška + filtrai + lygos logotipas vienoje eilutėje */
-.srow{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.srow{display:flex;flex-wrap:wrap;align-items:center;gap:10px;min-height:60px}   /* aukštis nesikeičia, kai atsiranda/dingsta lygos logotipas */
 .srow #q{flex:0 1 300px;min-width:140px}
 .srow .llg{height:60px;max-width:160px;padding:6px 10px;box-sizing:border-box;border-radius:12px;background:#fff;object-fit:contain;flex:none}
 .srow .llg:first-of-type{margin-left:auto}
@@ -333,6 +333,7 @@ p.sum .srcs.sg{vertical-align:middle;margin-left:4px}
  nav#tabs{overflow:visible}   /* kitaip „Įrankiai“ meniu apkerpamas ir nepaspaudžiamas */
  #tabs .tlm{top:auto;bottom:calc(100% + 8px);left:auto;right:4px}
  .srow .llg{height:40px;max-width:110px;padding:4px 8px;border-radius:9px;margin-left:0}
+ .srow{min-height:40px}
  .srow #q{flex:1 1 140px}
  .tw td.sc{grid-column:auto}
  /* Biudžetai */
@@ -350,15 +351,17 @@ p.sum .srcs.sg{vertical-align:middle;margin-left:4px}
  #out .tw td[data-lb="Mažiausias"],#out .tw td[data-lb="Lowest"]{order:4}
  #out .tw td[data-lb*="žiūrov"],#out .tw td[data-lb*="per fan"]{order:6}
  /* Žaidėjų algos */
- #out[data-tab="sal"] .tw td[data-lb="Šalis"],#out[data-tab="sal"] .tw td[data-lb="Country"]{order:1}
- #out[data-tab="sal"] .tw td[data-lb="Komanda"],#out[data-tab="sal"] .tw td[data-lb="Team"]{order:2}
- #out[data-tab="sal"] .tw td[data-lb="Sezonas"],#out[data-tab="sal"] .tw td[data-lb="Season"]{order:3}
- #out[data-tab="sal"] .tw td[data-lb="Lyga"],#out[data-tab="sal"] .tw td[data-lb="Division"]{order:4}
- #out[data-tab="sal"] .tw td[data-lb="Sutarties vertė"],#out[data-tab="sal"] .tw td[data-lb="Contract value"]{order:5}
- #out[data-tab="sal"] .tw td[data-lb="Mėnesio alga"],#out[data-tab="sal"] .tw td[data-lb="Monthly salary"]{order:6}
- #out[data-tab="sal"] .tw td[data-lb="Trukmė"],#out[data-tab="sal"] .tw td[data-lb="Length"]{order:7}
- #out[data-tab="sal"] .tw td[data-lb="Šaltiniai"],#out[data-tab="sal"] .tw td[data-lb="Sources"]{order:8}
+ #out[data-view="sal"] .tw td[data-lb="Šalis"],#out[data-view="sal"] .tw td[data-lb="Country"]{order:1}
+ #out[data-view="sal"] .tw td[data-lb="Komanda"],#out[data-view="sal"] .tw td[data-lb="Team"]{order:2}
+ #out[data-view="sal"] .tw td[data-lb="Sezonas"],#out[data-view="sal"] .tw td[data-lb="Season"]{order:3}
+ #out[data-view="sal"] .tw td[data-lb="Lyga"],#out[data-view="sal"] .tw td[data-lb="Division"]{order:4}
+ #out[data-view="sal"] .tw td[data-lb="Sutarties vertė"],#out[data-view="sal"] .tw td[data-lb="Contract value"]{order:5}
+ #out[data-view="sal"] .tw td[data-lb="Mėnesio alga"],#out[data-view="sal"] .tw td[data-lb="Monthly salary"]{order:6}
+ #out[data-view="sal"] .tw td[data-lb="Trukmė"],#out[data-view="sal"] .tw td[data-lb="Length"]{order:7}
+ #out[data-view="sal"] .tw td[data-lb="Šaltiniai"],#out[data-view="sal"] .tw td[data-lb="Sources"]{order:8}
  .tw td.l .fc{width:40px;height:40px}
 }
 /* palyginimo „+“ mygtukas pozicionuojamas pirmame langelyje (anksčiau – per getComputedStyle kiekvienai eilutei) */
 #out tr.c>td:first-child{position:relative}
+/* pareigų sąrašas – siauras stulpelis, kad netilptų už ekrano krašto */
+.sx.sxr .opts{width:auto;flex-direction:column;flex-wrap:nowrap;align-items:stretch}
