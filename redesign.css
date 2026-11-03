@@ -366,3 +366,6 @@ p.sum .srcs.sg{vertical-align:middle;margin-left:4px}
 #out tr.c>td:first-child{position:relative}
 /* pareigų sąrašas – siauras stulpelis, kad netilptų už ekrano krašto */
 .sx.sxr .opts{width:auto;flex-direction:column;flex-wrap:nowrap;align-items:stretch}
+
+/* telefone: žemėlapio paaiškinimas suskleistas į 2 eilutes, paspaudus išsiskleidžia; „+“ mygtukas neužlipa ant teksto */
+@media(max-width:720px){.msum{position:relative;padding-right:26px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;cursor:pointer;-webkit-tap-highlight-color:transparent}.msum::after{content:"";position:absolute;right:6px;bottom:7px;width:8px;height:8px;border-right:2px solid var(--a);border-bottom:2px solid var(--a);transform:rotate(45deg);transition:transform .2s}.msum.op{display:block;-webkit-line-clamp:unset}.msum.op::after{transform:rotate(-135deg);bottom:3px}#out tr.c>td:first-child{min-height:38px}#out tr.c .pk{top:50%;translate:0 -50%}}

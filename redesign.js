@@ -839,7 +839,8 @@
   function renderMap(){
     const o=document.getElementById("out");
     if(!o||typeof D==="undefined")return;
-    o.innerHTML='<div class="map-root"><p class="sum">'+T("Interaktyvus arenų žemėlapis – klubai ir jų pagrindinės arenos iš lentelės lapo „Arenas“. Paspauskite ant klubo – žemėlapis priartės, kortelėje matysite 26/27 biudžetą, lankomumą ir areną iš viršaus bei iš šono. Artinant atsiranda daugiau klubų.","Interactive arena map – clubs and their main arenas from the Arenas sheet. Click a club to zoom in and see its 26/27 budget, attendance and the arena from above and from the side. More clubs appear as you zoom.")+'</p><div class="map-host"></div></div>';
+    o.innerHTML='<div class="map-root"><p class="sum msum" role="button" tabindex="0" aria-expanded="false">'+T("Interaktyvus arenų žemėlapis – klubai ir jų pagrindinės arenos iš lentelės lapo „Arenas“. Paspauskite ant klubo – žemėlapis priartės, kortelėje matysite 26/27 biudžetą, lankomumą ir areną iš viršaus bei iš šono. Artinant atsiranda daugiau klubų.","Interactive arena map – clubs and their main arenas from the Arenas sheet. Click a club to zoom in and see its 26/27 budget, attendance and the arena from above and from the side. More clubs appear as you zoom.")+'</p><div class="map-host"></div></div>';
+    const ms=o.querySelector(".msum");if(ms){const tg=()=>{const on=ms.classList.toggle("op");ms.setAttribute("aria-expanded",on)};ms.addEventListener("click",tg);ms.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();tg()}})}   // telefone paaiškinimas suskleistas, paspaudus išsiskleidžia
     if(window.ArenaMap)ArenaMap.mount(o.querySelector(".map-host"),{D,T,esc,norm,same,club,season:"26/27",logo:n=>LOGOS[norm(n)],sheetId:SHEET_ID});
     else setTimeout(()=>{if(MAP&&document.querySelector("#out .map-host:empty"))renderMap()},300);
   }

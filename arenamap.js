@@ -663,14 +663,16 @@
       '.am-mv svg path{shape-rendering:optimizeSpeed}',
       '.am-exp{position:absolute;left:10px;top:10px;z-index:3;width:32px;height:32px;border-radius:50%;border:0;background:rgba(0,0,0,.55);color:#fff;font-size:17px;line-height:1;cursor:pointer;display:none}',
       '.am-media.has-photo[data-v="photo"] .am-exp,.am-media.has-inner[data-v="inner"] .am-exp{display:block}.am-exp:hover{background:var(--a);color:#1a1200}',
-      '.am-lb{position:fixed;inset:0;z-index:1000;background:rgba(4,6,10,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:56px 16px 20px;opacity:0;transition:opacity .25s}',
+      '.am-lb{position:fixed;inset:0;z-index:1002;background:rgba(4,6,10,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:56px 16px 20px;opacity:0;transition:opacity .25s}',
       '.am-lb.on{opacity:1}.am-lb[hidden]{display:none}',
       '.am-lb img{max-width:min(1400px,100%);max-height:calc(100% - 70px);object-fit:contain;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.6)}',
       '.am-lb-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 14px;color:#fff;font-size:13px;max-width:100%}',
       '.am-lb-bar b{font:700 17px var(--hd,sans-serif)}.am-lb-bar small{opacity:.7;font-size:11px}',
       '.am-lb .am-sw{position:static}',
       '.am-lb-x{position:absolute;right:14px;top:12px;width:40px;height:40px;border-radius:50%;border:0;background:rgba(255,255,255,.12);color:#fff;font-size:24px;line-height:1;cursor:pointer}.am-lb-x:hover{background:var(--a);color:#1a1200}',
-      '@media(max-width:819px){.am-card{top:auto;left:10px;right:10px;bottom:10px;width:auto;max-height:64%}.am-media{height:150px}.am-search{width:min(200px,50vw)}}',
+      '@media(max-width:819px){.am-card{position:fixed;z-index:1001;top:50%;left:50%;right:auto;bottom:auto;translate:-50% -50%;width:min(520px,calc(100vw - 24px));max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);transform:translateY(18px) scale(.98)}.am-card.on{transform:none}.am-body{overscroll-behavior:contain;touch-action:pan-y}.am-media{height:clamp(170px,30vh,240px)}.am-search{width:min(200px,50vw)}'+
+        '.am-bd{position:fixed;inset:0;z-index:1000;background:rgba(4,6,10,.62);touch-action:none;opacity:0;transition:opacity .3s;pointer-events:none}.am-card.on+.am-bd{opacity:1;pointer-events:auto}}',
+      '@media(min-width:820px){.am-bd{display:none}}',
       '@media(prefers-reduced-motion:reduce){.am-card,.am-media .l,.am-pin .in{transition:none}.am-pin.sel .in,.am-media .photo{animation:none}}'
     ].join('\n');
     document.head.appendChild(s);
@@ -776,7 +778,7 @@
         '<div class="am-sug" role="listbox" hidden></div></div>' +
         '<div class="am-zoom"><button type="button" data-z="in" aria-label="+">+</button><button type="button" data-z="out" aria-label="−">−</button><button type="button" data-z="home" aria-label="' + esc(T('Visi klubai', 'All clubs')) + '">⌂</button></div></div>' +
         '<div class="am-hint">' + esc(T('Burbulo dydis – 26/27 biudžetas · artinkite, kad atsirastų daugiau klubų', 'Bubble size – 26/27 budget · zoom in to reveal more clubs')) + '</div>' +
-        '<aside class="am-card" hidden></aside>';
+        '<aside class="am-card" hidden></aside><div class="am-bd"></div>';
       el.innerHTML = ''; el.appendChild(wrap);
       if (missing.length) {
         var det = document.createElement('details'); det.className = 'am-miss';
@@ -946,7 +948,7 @@
       var zoom = d3.zoom().scaleExtent([kMin, ZMAX])
         .extent(function () { return [[0, 0], [W(), H()]]; })
         .translateExtent(ext)
-        .filter(function (ev) { return !(ev.target.closest && ev.target.closest('.am-card,.am-ui')) && (!ev.ctrlKey || ev.type === 'wheel') && !ev.button; })
+        .filter(function (ev) { return !(ev.target.closest && ev.target.closest('.am-card,.am-ui,.am-bd')) && (!ev.ctrlKey || ev.type === 'wheel') && !ev.button; })
         .on('zoom', function (ev) { apply(ev.transform); });
       var wsel = d3.select(wrap);
       wsel.call(zoom);
@@ -1153,6 +1155,7 @@
         items.forEach(function (i) { i.el.classList.toggle('sel', i === it); });
         sel = it; openCard(it); fly(it); layout();
       }
+      wrap.querySelector('.am-bd').addEventListener('click', function () { closeCard(); });   // telefone: paspaudus šalia kortelės ji užsidaro
       card.addEventListener('click', function (ev) {
         if (ev.target.closest('.am-x')) return closeCard();
         var b = ev.target.closest('[data-a]');
