@@ -1298,11 +1298,11 @@
     var s = document.createElement('style'); s.id = 'mg-css';
     s.textContent = [
       '.mg .am-wrap{height:clamp(460px,72vh,760px);margin-top:10px;cursor:crosshair}',
-      '.mg .am-ui{top:76px}.mg .am-wrap.am-fs{height:auto;margin:0}.am-fs .mg-bar{top:calc(10px + env(safe-area-inset-top,0px))}',
+      '.mg .am-ui{top:100px}.mg .am-wrap.am-fs{height:auto;margin:0}.am-fs .mg-bar{top:calc(10px + env(safe-area-inset-top,0px))}',
       '.mg-bar{position:absolute;left:10px;right:10px;top:10px;z-index:6;display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:14px;background:color-mix(in srgb,var(--card) 94%,transparent);border:1px solid var(--line);box-shadow:0 8px 24px rgba(0,0,0,.35);pointer-events:none}',
       '.mg-bar[hidden],.mg-act[hidden]{display:none}',
-      '.mg-lg{flex:none;width:44px;height:44px;border-radius:50%;background:#fff;display:grid;place-items:center;overflow:hidden}',
-      '.mg-lg img{width:80%;height:80%;object-fit:contain}.mg-lg b{font:700 13px var(--hd,sans-serif);color:#111}',
+      '.mg-lg{flex:none;width:68px;height:68px;border-radius:50%;background:#fff;display:grid;place-items:center;overflow:hidden;box-shadow:0 0 0 3px var(--a)}',
+      '.mg-lg img{width:82%;height:82%;object-fit:contain}',
       '.mg-q{min-width:0;flex:1}.mg-q small{display:block;color:var(--mute);font:600 11px var(--mono,monospace);letter-spacing:.06em;text-transform:uppercase}',
       '.mg-q b{display:block;font:700 18px/1.15 var(--hd,sans-serif);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
       '.mg-sc{flex:none;text-align:right}.mg-sc small{display:block;color:var(--mute);font-size:11px}.mg-sc b{font:700 18px var(--mono,monospace);color:var(--a)}',
@@ -1311,10 +1311,10 @@
       '.mg-btn{border:0;border-radius:99px;padding:10px 18px;font:700 14px var(--tx,inherit);background:var(--a);color:#1a1200;cursor:pointer;white-space:nowrap}',
       '.mg-btn.sec{background:none;border:1px solid var(--line);color:var(--ink)}.mg-btn:disabled{opacity:.45;cursor:default}',
       '.mg-pins{position:absolute;inset:0;pointer-events:none;z-index:3}',
-      '.mg-g,.mg-a{position:absolute;left:0;top:0;will-change:transform}',
+      '.mg-g,.mg-a{position:absolute;left:0;top:0;will-change:transform}.mg-g[hidden],.mg-a[hidden]{display:none}',
       '.mg-g{width:22px;height:22px;margin:-22px 0 0 -11px}',
       '.mg-g::before{content:"";position:absolute;inset:0;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--b,#4DA3FF);border:2px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,.5)}',
-      '.mg-a{width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;background:#fff;border:3px solid var(--a);display:grid;place-items:center;overflow:hidden;box-shadow:0 0 0 6px color-mix(in srgb,var(--a) 30%,transparent),0 6px 18px rgba(0,0,0,.5);animation:mg-in .45s cubic-bezier(.2,1.4,.4,1)}',
+      '.mg-a{width:50px;height:50px;margin:-25px 0 0 -25px;border-radius:50%;background:#fff;border:3px solid var(--a);display:grid;place-items:center;overflow:hidden;box-shadow:0 0 0 6px color-mix(in srgb,var(--a) 30%,transparent),0 6px 18px rgba(0,0,0,.5);animation:mg-in .45s cubic-bezier(.2,1.4,.4,1)}',
       '.mg-a img{width:78%;height:78%;object-fit:contain}.mg-a b{font:700 11px var(--hd,sans-serif);color:#111}',
       '@keyframes mg-in{from{transform:var(--t) scale(.2);opacity:0}}',
       '.mg-line{fill:none;stroke:var(--a);stroke-width:2.5;stroke-dasharray:7 6;vector-effect:non-scaling-stroke}',
@@ -1353,7 +1353,7 @@
       var d3 = window.d3, topojson = window.topojson;
       var LT2EN_ = typeof LT2EN !== 'undefined' ? LT2EN : {}, NAT_ = typeof NAT !== 'undefined' ? NAT : {};
       var enName = function (n) { var e = LT2EN_[n] || n; return NAMEFIX[e] || e; };
-      var items = clubItems(D, sheet, deps, N, same, season).items.filter(function (it) { return it.e && isFinite(it.e.lat) && isFinite(it.e.lon); });
+      var items = clubItems(D, sheet, deps, N, same, season).items.filter(function (it) { return it.logo && it.e && isFinite(it.e.lat) && isFinite(it.e.lon); });   // tik klubai su logotipu – pavadinimas nerodomas (jame dažnai miestas)
       if (items.length < MG_N) { el.innerHTML = '<p class="sum">' + esc(T('Per mažai klubų žaidimui.', 'Not enough clubs to play.')) + '</p>'; return; }
       var byName = {}; items.forEach(function (it) { byName[N(it.name)] = it; });
       var bx = [-30, 18, 70, 72];
@@ -1398,13 +1398,13 @@
       var nations = {}; items.forEach(function (i) { if (i.nation) nations[enName(i.nation)] = 1; });
       var unfix = { Czechia: 'Czech Republic', 'Bosnia and Herz.': 'Bosnia and Herzegovina', Macedonia: 'North Macedonia' };
       var labName = function (n) { var e = unfix[n] || n; return T(NAT_[e] || e, e); };
-      var labels = features.filter(function (f) { return nations[f.properties.name]; }).map(function (f) { var m = mainCentroid(d3, f); return { c: m.c, poly: m.poly, n: f.properties.name }; });
+      var labels = [];   // žaidime šalių pavadinimų nėra – būtų per didelė užuomina
       var lands = g.select('.am-lands').selectAll('path').data(features).join('path').attr('class', function (f) { return 'am-land' + (nations[f.properties.name] ? ' has' : ''); });
       var labSel = g.select('.am-labs').selectAll('text').data(labels).join('text').attr('class', 'am-cl').text(function (d) { return labName(d.n); });
       var proj, path, ext, kMin = 1, cT = d3.zoomIdentity, ZMAX = 48;
       function project() {
         var w = W(), h = H();
-        proj = d3.geoMercator().fitExtent([[12, 70], [w - 12, h - 12]], { type: 'MultiPoint', coordinates: [[-11, 31], [40, 31], [40, 62], [-11, 62]] });
+        proj = d3.geoMercator().fitExtent([[12, 96], [w - 12, h - 12]], { type: 'MultiPoint', coordinates: [[-11, 31], [40, 31], [40, 62], [-11, 62]] });
         path = d3.geoPath(proj);
         var a = proj([bx[0], bx[3]]), b = proj([bx[2], bx[1]]); ext = [[Math.min(a[0], 0), Math.min(a[1], 0)], [Math.max(b[0], w), Math.max(b[1], h)]];
         kMin = Math.min(1, w / (ext[1][0] - ext[0][0]), h / (ext[1][1] - ext[0][1]));
@@ -1453,7 +1453,7 @@
         bar.hidden = false;
         bar.querySelector('.mg-lg').innerHTML = logoHtml(it);
         bar.querySelector('small').textContent = (st.kind === 'day' ? T('Dienos iššūkis', 'Daily challenge') + ' #' + mgNo(st.day) + ' · ' : '') + (st.i + 1) + ' / ' + MG_N;
-        bar.querySelector('.mg-q b').textContent = it.name;
+        bar.querySelector('.mg-q b').textContent = st.g[st.i] ? it.name : T('Kur šio klubo arena?', 'Where is this club\'s arena?');
         bar.querySelector('.mg-sc b').textContent = fmt(total());
       }
       function round() {
@@ -1463,7 +1463,7 @@
         showBar(); drawLine();
         if (r) return reveal(false);
         act.hidden = false; act.className = 'mg-act only';
-        act.innerHTML = '<span>' + esc(T('Palieskite žemėlapį – kur šio klubo arena?', 'Tap the map – where is this club\'s arena?')) + '</span>';
+        act.innerHTML = '<span>' + esc(T('Palieskite žemėlapį ten, kur, jūsų manymu, yra arena', 'Tap the map where you think the arena is')) + '</span>';
         home(700); layout();
       }
       function setGuess(ll) {
@@ -1523,8 +1523,8 @@
         var dd = mgLoad(dKey), done = valid(dd) && dd.i >= MG_N, started = valid(dd) && dd.g.length > 0 && !done;
         var best = +(mgLoad('mg-best') || 0), fr = MG.free && valid(MG.free) && MG.free.i < MG_N && MG.free.g.length;
         box.innerHTML = '<h3>📍 ' + esc(T('Kur arena?', 'Where\'s the arena?')) + '</h3>' +
-          '<p>' + esc(T('Rodomas klubas – palieskite žemėlapį ten, kur, jūsų manymu, yra jo namų arena, ir patvirtinkite. Kuo arčiau, tuo daugiau taškų: iki 1000 už klubą (10 km ir arčiau – visi 1000). Žaidimas – 10 klubų, daugiausia 10 000 taškų.',
-            'You get a club – tap the map where you think its home arena is and confirm. The closer, the more points: up to 1000 per club (within 10 km = full 1000). A game is 10 clubs, 10,000 points max.')) + '</p>' +
+          '<p>' + esc(T('Rodomas klubo logotipas – palieskite žemėlapį ten, kur, jūsų manymu, yra jo namų arena, ir patvirtinkite. Kuo arčiau, tuo daugiau taškų: iki 1000 už klubą (10 km ir arčiau – visi 1000). Žaidimas – 10 klubų, daugiausia 10 000 taškų.',
+            'You see a club logo – tap the map where you think its home arena is and confirm. The closer, the more points: up to 1000 per club (within 10 km = full 1000). A game is 10 clubs, 10,000 points max.')) + '</p>' +
           '<button type="button" class="mg-btn" data-mg="day">📅 ' + esc(done ? T('Dienos iššūkis #', 'Daily challenge #') + mgNo(day) + ' – ' + T('rezultatas', 'result') + ': ' + fmt(dd.g.reduce(function (t, x) { return t + x.p; }, 0)) :
             (started ? T('Tęsti dienos iššūkį #', 'Continue daily challenge #') : T('Dienos iššūkis #', 'Daily challenge #')) + mgNo(day)) + '</button>' +
           (fr ? '<button type="button" class="mg-btn sec" data-mg="resume">▶ ' + esc(T('Tęsti laisvą žaidimą', 'Continue free play')) + ' (' + MG.free.i + '/' + MG_N + ')</button>' : '') +
