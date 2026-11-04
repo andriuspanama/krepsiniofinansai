@@ -602,7 +602,6 @@
   "league: LEBL": "https://upload.wikimedia.org/wikipedia/commons/b/ba/Optibet_Latvian-Estonian_Basketball_League_logo.jpg",
   "league: ABA": "https://www.aba-liga.com/images/aba_logo_550x150.png",
   "KK Mladost SP": "https://thumb.wikimedia.org/wikipedia/en/thumb/8/8f/KK-maldost-zemun-logo.png/250px-KK-maldost-zemun-logo.png?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
-  "KK Železničar": "https://upload.wikimedia.org/wikipedia/en/9/92/Zele-grb1.png?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
   "league: Estonia": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/ba/Optibet_Latvian-Estonian_Basketball_League_logo.jpg/250px-Optibet_Latvian-Estonian_Basketball_League_logo.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
   "league: Latvia": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/ba/Optibet_Latvian-Estonian_Basketball_League_logo.jpg/250px-Optibet_Latvian-Estonian_Basketball_League_logo.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
   "league: Russia": "https://thumb.wikimedia.org/wikipedia/en/thumb/4/4c/VTB_United_League_logo.png/250px-VTB_United_League_logo.png?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
@@ -615,5 +614,14 @@
   "BC Balkan Botevgrad": "https://upload.wikimedia.org/wikipedia/en/b/ba/BC_Balkan_logo.png",
   "BC Rilski Sportist": "https://upload.wikimedia.org/wikipedia/en/f/f5/BC_Rilski_Sportist_logo.png",
   "Lions de Geneve": "https://upload.wikimedia.org/wikipedia/en/b/b9/Lions_de_Gen%C3%A8ve.svg",
-  "Nitra Blue Wings": "https://assets.fiba.basketball/image/upload/w_200/f_png/q_auto/.logoflag--light--organisation_89491"
+  "Nitra Blue Wings": "https://assets.fiba.basketball/image/upload/w_200/f_png/q_auto/.logoflag--light--organisation_89491",
+  "KK Niš": "https://new-api.dscore.live/photo/profile_photos/7k8OuPsfGKxD8mEaHWfOXza9J3rZGOjW8M1gZ1Iq.png",
+  "KK Dinamo Pančevo": "https://api-playerbase.dscore.live/storage/club/121/logos/25CTmIRvPZ1TJGgFFwnRVYeQt7LabC20RqKETC11.png",
+  "KK Sloven Ruma": "https://api-playerbase.dscore.live/storage/club/840/logos/6aPKmIwVECosKF03Y8wcatc3AI7aDabsrJYVNdDT.png",
+  "OKK Šabac": "https://api-playerbase.dscore.live/storage/club/401/logos/6hYWur4pTj7Zvm51C8plLvkomDL9X40TuIyo3xyz.png",
+  "KK IBC": "https://api-playerbase.dscore.live/storage/club/1142/logos/C0NvA9B3LhHTXcU212k6O9FI9xh4ntrNxra7aCHJ.png",
+  "OKK Ivanjica": "https://api-playerbase.dscore.live/storage/club/691/logos/GdPj3Y3BU4pOwKJc6feJ6xkPJ3NMgyjExm5gFsNX.png",
+  "OKK Junior": "https://api-playerbase.dscore.live/storage/club/423/logos/TsLnmKwz8K7IRlSVNtCEbdpMLQCmwZmjXi73CLNl.png",
+  "KK Sombor": "https://api-playerbase.dscore.live/storage/club/601/logos/xvvvRfpcu9QMdZB1s4YfjhWcwHJJWNw1Cdtke8QY.png",
+  "KK Železničar Indija": "https://upload.wikimedia.org/wikipedia/en/f/f1/Kkzeljeznicar-indjija.png"
 }
