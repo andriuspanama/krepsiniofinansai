@@ -646,7 +646,7 @@
       renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
       renderer.outputEncoding = THREE.sRGBEncoding;
-      renderer.domElement.style.cssText = 'display:block;width:100%;height:100%;cursor:pointer;touch-action:manipulation;';
+      renderer.domElement.style.cssText = 'display:block;width:100%;height:100%;cursor:pointer;touch-action:manipulation;' + (opts.passThrough ? 'pointer-events:none;' : '');
       wrap.appendChild(renderer.domElement);
       scene = new THREE.Scene();
       camera = new THREE.PerspectiveCamera(32, 1, 0.1, 60);
@@ -661,19 +661,22 @@
       st.ready = true;
       resize();
       var ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
-      renderer.domElement.addEventListener('click', function (e) {
+      var onFigure = function (e) {
         var cv = renderer.domElement, r = cv.getBoundingClientRect();
+        if (!cv.isConnected || e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) return false;
         ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
         scene.updateMatrixWorld(true);
         ray.setFromCamera(ndc, camera);
-        if (ray.intersectObject(ch.spin, true).length) { play(pick(RANDOM_CLICK)); return; }
-        if (opts.passThrough) {
-          cv.style.pointerEvents = 'none';
-          var under = document.elementFromPoint(e.clientX, e.clientY);
-          cv.style.pointerEvents = '';
-          if (under && under.click) under.click();
-        }
-      });
+        return ray.intersectObject(ch.spin, true).length > 0;
+      };
+      if (opts.passThrough) {
+        // drobė paspaudimų negaudo – viskas šalia figūros (kortelės, mygtukai) veikia kaip įprasta;
+        // paspaudus pačią figūrą – ji sureaguoja, o po ja esantis elementas nepaspaudžiamas
+        st.onClick = function (e) { if (!st.dead && onFigure(e)) { e.preventDefault(); e.stopPropagation(); play(pick(RANDOM_CLICK)); } };
+        window.addEventListener('click', st.onClick, true);
+      } else {
+        renderer.domElement.addEventListener('click', function (e) { if (onFigure(e)) play(pick(RANDOM_CLICK)); });
+      }
     }).catch(function () {});
 
     var ro = window.ResizeObserver ? new ResizeObserver(resize) : null;
@@ -683,7 +686,7 @@
       play: play,
       react: function (kind) { play(reactionFor(kind)); },
       destroy: function () {
-        st.dead = true; cancelAnimationFrame(st.raf);
+        st.dead = true; cancelAnimationFrame(st.raf); if (st.onClick) window.removeEventListener('click', st.onClick, true);
         if (ro) ro.disconnect(); else window.removeEventListener('resize', resize);
         if (renderer) { renderer.dispose(); if (renderer.forceContextLoss) renderer.forceContextLoss(); }
         wrap.remove();
@@ -696,7 +699,7 @@
     var s = document.createElement('style');
     s.id = 'brazys3d-css';
     s.textContent =
-      '.brazys3d-center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:5;width:min(260px,38vw);height:min(360px,60vw)}' +
+      '.brazys3d-center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:5;pointer-events:none;width:min(260px,38vw);height:min(360px,60vw)}' +
       '@media(max-width:720px){.brazys3d-center{left:auto;right:2px;transform:translateY(-50%);width:96px;height:140px}}' +
       '.b3-load{animation:b3pulse 1s ease-in-out infinite}@keyframes b3pulse{50%{opacity:.55}}' +
       '#sh.b3-nologo .cl .lw{visibility:hidden}';
