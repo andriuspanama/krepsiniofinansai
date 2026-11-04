@@ -1,6 +1,7 @@
 /*
  * arenamap.js – arenų žemėlapis, nupieštas pačios svetainės dizainu (D3, be plytelių ir API raktų).
  *   ArenaMap.mount(elementas, { D, T, esc, norm, same, logo, club, season, sheetId })
+ *   ArenaMap.game(elementas, { D, T, esc, norm, same, logo, season, sheetId, start }) – žaidimas „Kur arena?“
  * Klubai, arenos, miestai ir koordinatės imami tiesiai iš Google Sheets lapo „Arenas“:
  *   kiekvienas klubas – jo pagrindinėje arenoje („Main arena override“, jei įrašyta, kitaip „Main arena for“).
  *   Naujas klubas lape → naujas klubas žemėlapyje (nieko keisti nereikia).
@@ -695,6 +696,45 @@
     return { c: d3.geoCentroid(best), poly: best };
   }
 
+  // Klubai žemėlapyje: kiekvienas – jo pagrindinėje arenoje iš lapo „Arenas“ (naudoja ir žemėlapis, ir žaidimas)
+  function clubItems(D, sheet, deps, N, same, season) {
+    var bud26 = D.bud.filter(function (r) { return r.season === season && r.club; });
+    var findBud = function (n) { var k = N(n); return bud26.filter(function (r) { return N(r.club) === k; })[0] || bud26.filter(function (r) { return same(r.club, n); })[0]; };
+    var findAtt = function (n) {
+      return (D.att || []).filter(function (r) { return r.season === season && r.avg != null && same(r.club, n); })[0];
+    };
+    var seen = {}, items = [], missing = [], noCoord = [];
+    var add = function (name, e) {
+      var k = N(name); if (!k || seen[k]) return; seen[k] = 1;
+      var b = findBud(name), a = findAtt(name), oldA = b ? null : (D.att || []).filter(function (r) { return same(r.club, name); })[0];
+      var nation = b ? b.nation : a ? (a.country || a.nation) : oldA ? (oldA.country || oldA.nation) : '';
+      items.push({ name: b ? b.club : name, nation: nation, e: e, total: b && b.total != null ? +b.total : 0, bud: b || null, att: a || null, hasCard: !!(b || a || oldA),
+        logo: deps.logo ? (deps.logo(b ? b.club : name) || deps.logo(name)) : null });
+    };
+    if (sheet && sheet.length) {
+      // 1) „Main arena override“ (laimi), 2) „Main arena for“
+      var pickRow = {};
+      sheet.forEach(function (r) { r.main.forEach(function (c) { if (!pickRow[N(c)]) pickRow[N(c)] = { name: c, row: r }; }); });
+      sheet.forEach(function (r) { r.over.forEach(function (c) { pickRow[N(c)] = { name: c, row: r }; }); });
+      Object.keys(pickRow).forEach(function (k) {
+        var p = pickRow[k], r = p.row;
+        if (!r.ok) { noCoord.push(p.name + ' – ' + r.arena); return; }
+        add(p.name, { arena: r.arena, city: r.city, lat: r.lat, lon: r.lon, ok: true, cap: r.cap, league: r.league, aka: r.aka, inner: r.inner, side: r.side });
+      });
+      bud26.forEach(function (r) {
+        if (r.nation === 'Japonija' || r.nation === 'Japan') return;
+        if (!items.some(function (i) { return same(i.name, r.club); })) missing.push(r.club);
+      });
+    } else {
+      bud26.forEach(function (r) {
+        var e = findArena(r.club, N);
+        if (!e) { missing.push(r.club); return; }
+        add(r.club, e);
+      });
+    }
+    return { items: items, missing: missing, noCoord: noCoord };
+  }
+
   function mount(el, deps) {
     if (cur) { cur.destroy(); cur = null; }
     css();
@@ -711,41 +751,7 @@
       var d3 = window.d3, topojson = window.topojson;
       var LT2EN_ = typeof LT2EN !== 'undefined' ? LT2EN : {}, NAT_ = typeof NAT !== 'undefined' ? NAT : {};
       var enName = function (n) { var e = LT2EN_[n] || n; return NAMEFIX[e] || e; };
-      // --- klubai ---
-      var bud26 = D.bud.filter(function (r) { return r.season === season && r.club; });
-      var findBud = function (n) { var k = N(n); return bud26.filter(function (r) { return N(r.club) === k; })[0] || bud26.filter(function (r) { return same(r.club, n); })[0]; };
-      var findAtt = function (n) {
-        return (D.att || []).filter(function (r) { return r.season === season && r.avg != null && same(r.club, n); })[0];
-      };
-      var seen = {}, items = [], missing = [], noCoord = [];
-      var add = function (name, e) {
-        var k = N(name); if (!k || seen[k]) return; seen[k] = 1;
-        var b = findBud(name), a = findAtt(name), oldA = b ? null : (D.att || []).filter(function (r) { return same(r.club, name); })[0];
-        var nation = b ? b.nation : a ? (a.country || a.nation) : oldA ? (oldA.country || oldA.nation) : '';
-        items.push({ name: b ? b.club : name, nation: nation, e: e, total: b && b.total != null ? +b.total : 0, bud: b || null, att: a || null, hasCard: !!(b || a || oldA),
-          logo: deps.logo ? (deps.logo(b ? b.club : name) || deps.logo(name)) : null });
-      };
-      if (sheet && sheet.length) {
-        // 1) „Main arena override“ (laimi), 2) „Main arena for“
-        var pickRow = {};
-        sheet.forEach(function (r) { r.main.forEach(function (c) { if (!pickRow[N(c)]) pickRow[N(c)] = { name: c, row: r }; }); });
-        sheet.forEach(function (r) { r.over.forEach(function (c) { pickRow[N(c)] = { name: c, row: r }; }); });
-        Object.keys(pickRow).forEach(function (k) {
-          var p = pickRow[k], r = p.row;
-          if (!r.ok) { noCoord.push(p.name + ' – ' + r.arena); return; }
-          add(p.name, { arena: r.arena, city: r.city, lat: r.lat, lon: r.lon, ok: true, cap: r.cap, league: r.league, aka: r.aka, inner: r.inner, side: r.side });
-        });
-        bud26.forEach(function (r) {
-          if (r.nation === 'Japonija' || r.nation === 'Japan') return;
-          if (!items.some(function (i) { return same(i.name, r.club); })) missing.push(r.club);
-        });
-      } else {
-        bud26.forEach(function (r) {
-          var e = findArena(r.club, N);
-          if (!e) { missing.push(r.club); return; }
-          add(r.club, e);
-        });
-      }
+      var CL = clubItems(D, sheet, deps, N, same, season), items = CL.items, missing = CL.missing, noCoord = CL.noCoord;
       items.sort(function (a, b) { return b.total - a.total; });
       var maxT = Math.max.apply(null, items.map(function (i) { return i.total; }).concat([1]));
       items.forEach(function (it) { it.s = Math.round(28 + 18 * Math.sqrt(it.total / maxT)); });
@@ -1263,4 +1269,341 @@
   }
 
   API.mount = mount;
+
+  // ===================== Žaidimas „Kur arena?“ =====================
+  // Parodomas klubas – žaidėjas paliečia žemėlapį ten, kur, jo manymu, yra klubo namų arena, ir patvirtina.
+  // Taškai: ≤10 km – 1000, toliau 1000·e^(−km/300) (100 km ≈ 717, 300 km ≈ 368, 1000 km ≈ 36). 10 klubų – iki 10 000.
+  // Dienos iššūkis: tie patys 10 klubų visiems tą dieną (Vilniaus laiku), vienas bandymas, rezultatą galima pasidalinti.
+  var MG_N = 10, MG_EPOCH = Date.UTC(2026, 10, 4), MG = { free: null }, gcur = null;
+  function mgPts(d) { return d <= 10 ? 1000 : Math.round(1000 * Math.exp(-d / 300)); }
+  function mgSq(d) { return d <= 50 ? '🟩' : d <= 200 ? '🟨' : d <= 500 ? '🟧' : '🟥'; }
+  function mgToday() { try { return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Vilnius' }).format(new Date()); } catch (x) { return new Date().toISOString().slice(0, 10); } }
+  function mgNo(day) { return Math.round((Date.UTC(+day.slice(0, 4), +day.slice(5, 7) - 1, +day.slice(8, 10)) - MG_EPOCH) / 864e5) + 1; }
+  function mgRng(s) {
+    var a = 2166136261; for (var i = 0; i < s.length; i++) { a ^= s.charCodeAt(i); a = Math.imul(a, 16777619); }
+    return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  }
+  // 10 skirtingų arenų klubai; tvarka priklauso tik nuo sėklos ir klubų sąrašo (ne nuo įkėlimo tvarkos)
+  function mgPick(items, N, rnd) {
+    var pool = items.slice().sort(function (a, b) { return N(a.name) < N(b.name) ? -1 : 1; });
+    for (var i = pool.length - 1; i > 0; i--) { var j = Math.floor(rnd() * (i + 1)), t = pool[i]; pool[i] = pool[j]; pool[j] = t; }
+    var out = [], ar = {};
+    pool.forEach(function (it) { var k = it.e.arena + '|' + it.e.city; if (out.length < MG_N && !ar[k]) { ar[k] = 1; out.push(it.name); } });
+    return out;
+  }
+  function mgLoad(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (x) { return null; } }
+  function mgStore(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (x) {} }
+  function mgCss() {
+    if (document.getElementById('mg-css')) return;
+    var s = document.createElement('style'); s.id = 'mg-css';
+    s.textContent = [
+      '.mg .am-wrap{height:clamp(460px,72vh,760px);margin-top:10px;cursor:crosshair}',
+      '.mg .am-ui{top:76px}.mg .am-wrap.am-fs{height:auto;margin:0}.am-fs .mg-bar{top:calc(10px + env(safe-area-inset-top,0px))}',
+      '.mg-bar{position:absolute;left:10px;right:10px;top:10px;z-index:6;display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:14px;background:color-mix(in srgb,var(--card) 94%,transparent);border:1px solid var(--line);box-shadow:0 8px 24px rgba(0,0,0,.35);pointer-events:none}',
+      '.mg-bar[hidden],.mg-act[hidden]{display:none}',
+      '.mg-lg{flex:none;width:44px;height:44px;border-radius:50%;background:#fff;display:grid;place-items:center;overflow:hidden}',
+      '.mg-lg img{width:80%;height:80%;object-fit:contain}.mg-lg b{font:700 13px var(--hd,sans-serif);color:#111}',
+      '.mg-q{min-width:0;flex:1}.mg-q small{display:block;color:var(--mute);font:600 11px var(--mono,monospace);letter-spacing:.06em;text-transform:uppercase}',
+      '.mg-q b{display:block;font:700 18px/1.15 var(--hd,sans-serif);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+      '.mg-sc{flex:none;text-align:right}.mg-sc small{display:block;color:var(--mute);font-size:11px}.mg-sc b{font:700 18px var(--mono,monospace);color:var(--a)}',
+      '.mg-act{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:6;display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;max-width:calc(100% - 20px);padding:8px 10px 8px 16px;border-radius:99px;background:color-mix(in srgb,var(--card) 94%,transparent);border:1px solid var(--line);box-shadow:0 8px 24px rgba(0,0,0,.35);color:var(--ink);font-size:14px;cursor:default}',
+      '.mg-act.only{padding:10px 16px}',
+      '.mg-btn{border:0;border-radius:99px;padding:10px 18px;font:700 14px var(--tx,inherit);background:var(--a);color:#1a1200;cursor:pointer;white-space:nowrap}',
+      '.mg-btn.sec{background:none;border:1px solid var(--line);color:var(--ink)}.mg-btn:disabled{opacity:.45;cursor:default}',
+      '.mg-pins{position:absolute;inset:0;pointer-events:none;z-index:3}',
+      '.mg-g,.mg-a{position:absolute;left:0;top:0;will-change:transform}',
+      '.mg-g{width:22px;height:22px;margin:-22px 0 0 -11px}',
+      '.mg-g::before{content:"";position:absolute;inset:0;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--b,#4DA3FF);border:2px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,.5)}',
+      '.mg-a{width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;background:#fff;border:3px solid var(--a);display:grid;place-items:center;overflow:hidden;box-shadow:0 0 0 6px color-mix(in srgb,var(--a) 30%,transparent),0 6px 18px rgba(0,0,0,.5);animation:mg-in .45s cubic-bezier(.2,1.4,.4,1)}',
+      '.mg-a img{width:78%;height:78%;object-fit:contain}.mg-a b{font:700 11px var(--hd,sans-serif);color:#111}',
+      '@keyframes mg-in{from{transform:var(--t) scale(.2);opacity:0}}',
+      '.mg-line{fill:none;stroke:var(--a);stroke-width:2.5;stroke-dasharray:7 6;vector-effect:non-scaling-stroke}',
+      '.mg-res b{color:var(--a);font-family:var(--mono,monospace)}',
+      '.mg-pan{position:absolute;inset:0;z-index:7;display:grid;place-items:center;padding:16px;background:color-mix(in srgb,var(--bg) 55%,transparent);cursor:default}',
+      '.mg-pan[hidden]{display:none}',
+      '.mg-box{width:min(460px,100%);max-height:100%;overflow:auto;overscroll-behavior:contain;padding:20px;border-radius:18px;background:var(--card);border:1px solid var(--line);box-shadow:0 18px 50px rgba(0,0,0,.5);color:var(--ink);text-align:center}',
+      '.mg-box h3{margin:0 0 6px;font:700 24px var(--hd,sans-serif)}',
+      '.mg-box p{margin:0 0 12px;color:var(--mute);font-size:14px;line-height:1.45}',
+      '.mg-box .mg-btn{display:block;width:100%;margin-top:10px;padding:13px 18px;font-size:15px}',
+      '.mg-big{font:700 40px var(--mono,monospace);color:var(--a);line-height:1.1}.mg-big small{font-size:16px;color:var(--mute)}',
+      '.mg-sq{font-size:18px;letter-spacing:1px;margin:6px 0 10px;white-space:nowrap}',
+      '@media(max-width:720px){.mg .am-wrap{height:calc(100vh - 92px);height:calc(100dvh - 92px);min-height:420px}}',
+      '.mg-list{list-style:none;margin:8px 0 4px;padding:0;text-align:left;font-size:13.5px}',
+      '.mg-list li{display:flex;align-items:center;gap:8px;padding:6px 2px;border-top:1px solid var(--line)}',
+      '.mg-list li span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mg-list li i{font-style:normal;color:var(--mute);font-family:var(--mono,monospace);font-size:12.5px}',
+      '.mg-list li b{min-width:46px;text-align:right;font-family:var(--mono,monospace)}',
+      '.mg-note{font-size:12px!important;margin-top:10px!important}'
+    ].join('\n');
+    document.head.appendChild(s);
+  }
+
+  function game(el, deps) {
+    if (gcur) { gcur.destroy(); gcur = null; }
+    css(); mgCss();
+    var D = deps.D, T = deps.T || function (a) { return a; }, esc = deps.esc || String, N = deps.norm || baseNorm;
+    var same = deps.same || function (a, b) { return N(a) === N(b); }, season = deps.season || '26/27';
+    el.innerHTML = '<div class="am-load">' + esc(T('Kraunamas žemėlapis…', 'Loading map…')) + '</div>';
+    var sid = deps.sheetId || (typeof SHEET_ID !== 'undefined' ? SHEET_ID : SHEET_FALLBACK);
+    var sheetP = loadSheet(sid).catch(function () { return null; });
+    Promise.all([ensureLibs(), sheetP]).then(function (r) { if (el.isConnected) build(r[0], r[1]); }).catch(function () {
+      el.innerHTML = '<div class="am-load">' + esc(T('Nepavyko įkelti žemėlapio. Patikrinkite ryšį.', 'Could not load the map. Check your connection.')) + '</div>';
+    });
+
+    function build(topo, sheet) {
+      var d3 = window.d3, topojson = window.topojson;
+      var LT2EN_ = typeof LT2EN !== 'undefined' ? LT2EN : {}, NAT_ = typeof NAT !== 'undefined' ? NAT : {};
+      var enName = function (n) { var e = LT2EN_[n] || n; return NAMEFIX[e] || e; };
+      var items = clubItems(D, sheet, deps, N, same, season).items.filter(function (it) { return it.e && isFinite(it.e.lat) && isFinite(it.e.lon); });
+      if (items.length < MG_N) { el.innerHTML = '<p class="sum">' + esc(T('Per mažai klubų žaidimui.', 'Not enough clubs to play.')) + '</p>'; return; }
+      var byName = {}; items.forEach(function (it) { byName[N(it.name)] = it; });
+      var bx = [-30, 18, 70, 72];
+      items.forEach(function (it) { bx[0] = Math.min(bx[0], it.e.lon - 8); bx[1] = Math.min(bx[1], it.e.lat - 8); bx[2] = Math.max(bx[2], it.e.lon + 8); bx[3] = Math.max(bx[3], it.e.lat + 8); });
+      bx[0] = Math.max(bx[0], -180); bx[2] = Math.min(bx[2], 180); bx[1] = Math.max(bx[1], -60); bx[3] = Math.min(bx[3], 78);
+
+      // --- būsena: dienos iššūkis (localStorage) arba laisvas žaidimas (atmintyje, išlieka perpiešiant) ---
+      var day = mgToday(), dKey = 'mg-day-' + day;
+      function newDaily() { return { kind: 'day', day: day, ids: mgPick(items, N, mgRng('kur-arena|' + day)), g: [], i: 0 }; }
+      function newFree() { return { kind: 'free', ids: mgPick(items, N, Math.random), g: [], i: 0 }; }
+      var st = null;   // dabartinis žaidimas
+      var valid = function (s) { return s && s.ids && s.ids.length === MG_N && s.ids.every(function (n) { return byName[N(n)]; }); };
+      function save() { if (st && st.kind === 'day') mgStore(dKey, st); }
+      function clubOf(i) { return byName[N(st.ids[i])]; }
+      function total() { return st.g.reduce(function (t, x) { return t + x.p; }, 0); }
+      function kmSum() { return st.g.reduce(function (t, x) { return t + x.d; }, 0); }
+      var fmt = function (v) { return Math.round(v).toLocaleString('lt-LT'); };
+      var ini = function (n) { return String(n).split(/\s+/).slice(0, 2).map(function (w) { return w[0]; }).join('').toUpperCase(); };
+      var logoHtml = function (it) { return it.logo ? '<img src="' + esc(it.logo) + '" alt="" draggable="false">' : '<b>' + esc(ini(it.name)) + '</b>'; };
+
+      // --- DOM ---
+      var root = document.createElement('div'); root.className = 'mg';
+      var wrap = document.createElement('div'); wrap.className = 'am-wrap';
+      wrap.innerHTML = '<svg class="am-svg"><g class="am-g"><path class="am-grat"></path><g class="am-lands"></g><g class="am-labs"></g><path class="mg-line" style="display:none"></path></g></svg>' +
+        '<div class="mg-pins"><div class="mg-g" hidden></div><div class="mg-a" hidden></div></div>' +
+        '<div class="mg-bar" hidden><div class="mg-lg"></div><div class="mg-q"><small></small><b></b></div><div class="mg-sc"><small>' + esc(T('Taškai', 'Points')) + '</small><b>0</b></div></div>' +
+        '<div class="am-ui"><div class="am-zoom"><button type="button" data-z="in" aria-label="+">+</button><button type="button" data-z="out" aria-label="−">−</button><button type="button" data-z="home" aria-label="' + esc(T('Visas žemėlapis', 'Whole map')) + '">⌂</button></div>' +
+        '<button type="button" class="am-fsb" aria-pressed="false" aria-label="' + esc(T('Žemėlapis per visą ekraną', 'Full-screen map')) + '" title="' + esc(T('Per visą ekraną', 'Full screen')) + '"></button></div>' +
+        '<div class="mg-act" hidden></div><div class="mg-pan"><div class="mg-box"></div></div>';
+      root.appendChild(wrap);
+      el.innerHTML = ''; el.appendChild(root);
+      var bar = wrap.querySelector('.mg-bar'), act = wrap.querySelector('.mg-act'), pan = wrap.querySelector('.mg-pan'), box = wrap.querySelector('.mg-box');
+      var gEl = wrap.querySelector('.mg-g'), aEl = wrap.querySelector('.mg-a'), line = d3.select(wrap.querySelector('.mg-line'));
+
+      // --- žemėlapis ---
+      var W = function () { return wrap.clientWidth || 800; }, H = function () { return wrap.clientHeight || 520; };
+      var svg = d3.select(wrap.querySelector('.am-svg')), g = svg.select('.am-g');
+      var features = topojson.feature(topo, topo.objects.countries).features.filter(function (f) {
+        if (f.properties.name === 'Russia') return true;
+        var b = d3.geoBounds(f); return b[1][0] > bx[0] - 5 && b[0][0] < bx[2] + 5 && b[1][1] > bx[1] - 8 && b[0][1] < bx[3] + 3;
+      });
+      var nations = {}; items.forEach(function (i) { if (i.nation) nations[enName(i.nation)] = 1; });
+      var unfix = { Czechia: 'Czech Republic', 'Bosnia and Herz.': 'Bosnia and Herzegovina', Macedonia: 'North Macedonia' };
+      var labName = function (n) { var e = unfix[n] || n; return T(NAT_[e] || e, e); };
+      var labels = features.filter(function (f) { return nations[f.properties.name]; }).map(function (f) { var m = mainCentroid(d3, f); return { c: m.c, poly: m.poly, n: f.properties.name }; });
+      var lands = g.select('.am-lands').selectAll('path').data(features).join('path').attr('class', function (f) { return 'am-land' + (nations[f.properties.name] ? ' has' : ''); });
+      var labSel = g.select('.am-labs').selectAll('text').data(labels).join('text').attr('class', 'am-cl').text(function (d) { return labName(d.n); });
+      var proj, path, ext, kMin = 1, cT = d3.zoomIdentity, ZMAX = 48;
+      function project() {
+        var w = W(), h = H();
+        proj = d3.geoMercator().fitExtent([[12, 70], [w - 12, h - 12]], { type: 'MultiPoint', coordinates: [[-11, 31], [40, 31], [40, 62], [-11, 62]] });
+        path = d3.geoPath(proj);
+        var a = proj([bx[0], bx[3]]), b = proj([bx[2], bx[1]]); ext = [[Math.min(a[0], 0), Math.min(a[1], 0)], [Math.max(b[0], w), Math.max(b[1], h)]];
+        kMin = Math.min(1, w / (ext[1][0] - ext[0][0]), h / (ext[1][1] - ext[0][1]));
+        g.select('.am-grat').datum(d3.geoGraticule10()).attr('d', path);
+        lands.attr('d', path);
+        labels.forEach(function (l) { var p = proj(l.c), bb = path.bounds(l.poly); l.x = p[0]; l.y = p[1]; l.w = bb[1][0] - bb[0][0]; });
+        drawLine();
+      }
+      function drawLine() {
+        var r = st && st.g[st.i];
+        if (r) line.style('display', null).attr('d', path({ type: 'LineString', coordinates: [r.ll, [clubOf(st.i).e.lon, clubOf(st.i).e.lat]] }));
+        else line.style('display', 'none');
+      }
+      var raf = 0;
+      function place(elm, ll) {
+        if (!ll || elm.hidden) return;
+        var p = cT.apply(proj(ll)), t = 'translate(' + p[0].toFixed(1) + 'px,' + p[1].toFixed(1) + 'px)';
+        elm.style.transform = t; elm.style.setProperty('--t', t);
+      }
+      function layout() {
+        raf = 0;
+        labSel.attr('x', function (d) { return d.x; }).attr('y', function (d) { return d.y; })
+          .attr('opacity', function (d) { return d.w * cT.k > 40 ? 0.85 : 0; }).attr('font-size', (11 / cT.k) + 'px').attr('stroke-width', (3 / cT.k) + 'px');
+        place(gEl, guess); if (st && st.g[st.i]) place(aEl, [clubOf(st.i).e.lon, clubOf(st.i).e.lat]);
+      }
+      function apply(t) { cT = t; g.attr('transform', t.toString()); if (!raf) raf = requestAnimationFrame(layout); }
+      var reduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var zoom = d3.zoom().scaleExtent([kMin, ZMAX]).clickDistance(8)
+        .extent(function () { return [[0, 0], [W(), H()]]; })
+        .filter(function (ev) { return !(ev.target.closest && ev.target.closest('.am-ui,.mg-act,.mg-pan')) && (!ev.ctrlKey || ev.type === 'wheel') && !ev.button; })
+        .on('zoom', function (ev) { apply(ev.transform); });
+      var wsel = d3.select(wrap);
+      project(); zoom.translateExtent(ext).scaleExtent([kMin, ZMAX]);
+      wsel.call(zoom); wsel.call(zoom.transform, d3.zoomIdentity);
+      function home(ms) { wsel.transition().duration(reduced ? 0 : ms).ease(d3.easeCubicInOut).call(zoom.transform, d3.zoomIdentity); }
+      wrap.querySelector('.am-zoom').addEventListener('click', function (ev) {
+        var b = ev.target.closest('button'); if (!b) return;
+        var tr = wsel.transition().duration(reduced ? 0 : 400);
+        if (b.dataset.z === 'in') tr.call(zoom.scaleBy, 1.8); else if (b.dataset.z === 'out') tr.call(zoom.scaleBy, 1 / 1.8); else home(700);
+      });
+
+      // --- žaidimo eiga ---
+      var guess = null;
+      function showBar() {
+        var it = clubOf(st.i);
+        bar.hidden = false;
+        bar.querySelector('.mg-lg').innerHTML = logoHtml(it);
+        bar.querySelector('small').textContent = (st.kind === 'day' ? T('Dienos iššūkis', 'Daily challenge') + ' #' + mgNo(st.day) + ' · ' : '') + (st.i + 1) + ' / ' + MG_N;
+        bar.querySelector('.mg-q b').textContent = it.name;
+        bar.querySelector('.mg-sc b').textContent = fmt(total());
+      }
+      function round() {
+        pan.hidden = true; aEl.hidden = true;
+        var r = st.g[st.i];
+        guess = r ? r.ll : null; gEl.hidden = !guess;
+        showBar(); drawLine();
+        if (r) return reveal(false);
+        act.hidden = false; act.className = 'mg-act only';
+        act.innerHTML = '<span>' + esc(T('Palieskite žemėlapį – kur šio klubo arena?', 'Tap the map – where is this club\'s arena?')) + '</span>';
+        home(700); layout();
+      }
+      function setGuess(ll) {
+        guess = ll; gEl.hidden = false; layout();
+        act.className = 'mg-act';
+        act.innerHTML = '<span>' + esc(T('Galite pataisyti – palieskite kitur', 'Tap elsewhere to adjust')) + '</span><button type="button" class="mg-btn" data-mg="ok">' + esc(T('Patvirtinti', 'Confirm')) + '</button>';
+      }
+      function reveal(fresh) {
+        var it = clubOf(st.i), r = st.g[st.i], a = [it.e.lon, it.e.lat];
+        aEl.innerHTML = logoHtml(it); aEl.hidden = false; gEl.hidden = false;
+        drawLine(); layout(); showBar();
+        var last = st.i === MG_N - 1;
+        act.hidden = false; act.className = 'mg-act';
+        act.innerHTML = '<span class="mg-res">' + esc(it.e.arena) + ' · ' + esc(it.e.city) + '<br><b>' + fmt(r.d) + ' km</b> · <b>+' + fmt(r.p) + '</b> ' + esc(T('tšk.', 'pts')) + '</span>' +
+          '<button type="button" class="mg-btn" data-mg="next">' + esc(last ? T('Rezultatas', 'Results') : T('Toliau', 'Next')) + ' ›</button>';
+        // parodyti abu taškus
+        var w = W(), h = H(), p1 = proj(r.ll), p2 = proj(a);
+        var dx = Math.abs(p1[0] - p2[0]) + 140, dy = Math.abs(p1[1] - p2[1]) + 260;
+        var k = Math.max(kMin, Math.min(16, w / dx, h / dy)), cx = (p1[0] + p2[0]) / 2, cy = (p1[1] + p2[1]) / 2;
+        wsel.transition().duration(reduced || !fresh ? 0 : 900).ease(d3.easeCubicInOut).call(zoom.transform, d3.zoomIdentity.translate(w / 2 - cx * k, h / 2 + 10 - cy * k).scale(k));
+      }
+      function confirmGuess() {
+        if (!guess || st.g[st.i]) return;
+        var it = clubOf(st.i), d = km([guess[1], guess[0]], [it.e.lat, it.e.lon]);
+        st.g[st.i] = { ll: [+guess[0].toFixed(4), +guess[1].toFixed(4)], d: Math.round(d), p: mgPts(d) };
+        save(); reveal(true);
+      }
+      function next() {
+        if (!st.g[st.i]) return;
+        st.i++; save();
+        if (st.i >= MG_N) return results();
+        round();
+      }
+      function shareText() {
+        var head = st.kind === 'day' ? T('Kur arena? Dienos iššūkis #', 'Where\'s the arena? Daily challenge #') + mgNo(st.day) + ' (' + st.day + ')' : T('Kur arena? Laisvas žaidimas', 'Where\'s the arena? Free play');
+        return '🏀 ' + head + '\n' + fmt(total()) + ' / ' + fmt(MG_N * 1000) + ' ' + T('tšk.', 'pts') + ' · ' + fmt(kmSum()) + ' km\n' +
+          st.g.map(function (x) { return mgSq(x.d); }).join('') + '\n' + location.href.split('#')[0] + '#kur-arena';
+      }
+      function results() {
+        aEl.hidden = true; gEl.hidden = true; bar.hidden = true; act.hidden = true; guess = null; drawLine();
+        var tot = total(), best = +(mgLoad('mg-best') || 0), rec = false;
+        if (st.kind === 'free' && !st.counted) { st.counted = true; if (tot > best) { mgStore('mg-best', tot); rec = best > 0; best = tot; } }
+        var rows = st.g.map(function (x, i) { return '<li>' + mgSq(x.d) + '<span>' + esc(clubOf(i).name) + '</span><i>' + fmt(x.d) + ' km</i><b>' + fmt(x.p) + '</b></li>'; }).join('');
+        box.innerHTML = '<h3>' + (rec ? '🏆 ' : '') + esc(st.kind === 'day' ? T('Dienos iššūkis #', 'Daily challenge #') + mgNo(st.day) : T('Rezultatas', 'Result')) + '</h3>' +
+          '<div class="mg-big">' + fmt(tot) + ' <small>/ ' + fmt(MG_N * 1000) + '</small></div>' +
+          '<p>' + esc(T('Iš viso nuklysta', 'Total distance off')) + ': ' + fmt(kmSum()) + ' km' + (st.kind === 'free' ? ' · ' + esc(T('Rekordas', 'Best')) + ': ' + fmt(best) : '') + '</p>' +
+          '<div class="mg-sq">' + st.g.map(function (x) { return mgSq(x.d); }).join('') + '</div>' +
+          '<ul class="mg-list">' + rows + '</ul>' +
+          '<button type="button" class="mg-btn" data-mg="share">' + esc(T('Dalintis rezultatu', 'Share score')) + '</button>' +
+          (st.kind === 'free' ? '<button type="button" class="mg-btn sec" data-mg="free">' + esc(T('Žaisti dar kartą', 'Play again')) + '</button>' : '') +
+          '<button type="button" class="mg-btn sec" data-mg="menu">' + esc(T('Į pradžią', 'Back to start')) + '</button>' +
+          (st.kind === 'day' ? '<p class="mg-note">' + esc(T('Naujas iššūkis – rytoj.', 'A new challenge tomorrow.')) + '</p>' : '');
+        pan.hidden = false; box.scrollTop = 0;
+      }
+      function menu() {
+        st = null; MG.on = null; guess = null; aEl.hidden = true; gEl.hidden = true; bar.hidden = true; act.hidden = true; drawLine();
+        var dd = mgLoad(dKey), done = valid(dd) && dd.i >= MG_N, started = valid(dd) && dd.g.length > 0 && !done;
+        var best = +(mgLoad('mg-best') || 0), fr = MG.free && valid(MG.free) && MG.free.i < MG_N && MG.free.g.length;
+        box.innerHTML = '<h3>📍 ' + esc(T('Kur arena?', 'Where\'s the arena?')) + '</h3>' +
+          '<p>' + esc(T('Rodomas klubas – palieskite žemėlapį ten, kur, jūsų manymu, yra jo namų arena, ir patvirtinkite. Kuo arčiau, tuo daugiau taškų: iki 1000 už klubą (10 km ir arčiau – visi 1000). Žaidimas – 10 klubų, daugiausia 10 000 taškų.',
+            'You get a club – tap the map where you think its home arena is and confirm. The closer, the more points: up to 1000 per club (within 10 km = full 1000). A game is 10 clubs, 10,000 points max.')) + '</p>' +
+          '<button type="button" class="mg-btn" data-mg="day">📅 ' + esc(done ? T('Dienos iššūkis #', 'Daily challenge #') + mgNo(day) + ' – ' + T('rezultatas', 'result') + ': ' + fmt(dd.g.reduce(function (t, x) { return t + x.p; }, 0)) :
+            (started ? T('Tęsti dienos iššūkį #', 'Continue daily challenge #') : T('Dienos iššūkis #', 'Daily challenge #')) + mgNo(day)) + '</button>' +
+          (fr ? '<button type="button" class="mg-btn sec" data-mg="resume">▶ ' + esc(T('Tęsti laisvą žaidimą', 'Continue free play')) + ' (' + MG.free.i + '/' + MG_N + ')</button>' : '') +
+          '<button type="button" class="mg-btn sec" data-mg="free">🎲 ' + esc(T('Laisvas žaidimas', 'Free play')) + '</button>' +
+          '<p class="mg-note">' + esc(T('Dienos iššūkis – tie patys 10 klubų visiems, vienas bandymas per dieną.', 'Daily challenge – the same 10 clubs for everyone, one try per day.')) +
+          (best ? ' ' + esc(T('Laisvo žaidimo rekordas', 'Free play best')) + ': ' + fmt(best) + '.' : '') + ' ' + esc(T('Klubų žemėlapyje', 'Clubs on the map')) + ': ' + items.length + '.</p>';
+        pan.hidden = false; home(0);
+      }
+      // žaidimo pradžioje žemėlapis atslenka, kad tilptų ekrane (telefone – virš apatinio meniu)
+      function view() {
+        var r = wrap.getBoundingClientRect();
+        if (!fs && (r.top < 0 || r.bottom > innerHeight)) window.scrollTo({ top: Math.max(0, r.top + scrollY - 8), behavior: reduced ? 'auto' : 'smooth' });
+      }
+      function startDaily() {
+        view();
+        var dd = mgLoad(dKey);
+        st = valid(dd) ? dd : newDaily(); save(); MG.on = 'day';
+        if (st.i >= MG_N) return results();
+        round();
+      }
+      function startFree(again) {
+        view();
+        if (again || !valid(MG.free)) MG.free = newFree();
+        st = MG.free; MG.on = 'free';
+        if (st.i >= MG_N) return results();
+        round();
+      }
+      wrap.addEventListener('click', function (ev) {
+        var b = ev.target.closest && ev.target.closest('[data-mg]');
+        if (b) {
+          var a = b.dataset.mg;
+          if (a === 'ok') confirmGuess(); else if (a === 'next') next();
+          else if (a === 'day') startDaily(); else if (a === 'free') startFree(true); else if (a === 'resume') startFree(false);
+          else if (a === 'menu') menu();
+          else if (a === 'share') {
+            var txt = shareText();
+            if (navigator.share) navigator.share({ text: txt }).catch(function () {});
+            else if (navigator.clipboard) navigator.clipboard.writeText(txt).then(function () { b.textContent = T('Nukopijuota ✓', 'Copied ✓'); }).catch(function () {});
+          }
+          return;
+        }
+        if (!st || st.g[st.i] || st.i >= MG_N || !pan.hidden) return;
+        if (ev.target.closest && ev.target.closest('.am-ui,.mg-act,.mg-bar')) return;
+        var rc = wrap.getBoundingClientRect(), ll = proj.invert(cT.invert([ev.clientX - rc.left, ev.clientY - rc.top]));
+        if (ll && isFinite(ll[0]) && isFinite(ll[1])) setGuess(ll);
+      });
+
+      // --- per visą ekraną (telefone), atgal / Esc – grįžta ---
+      var fs = false, fsb = wrap.querySelector('.am-fsb');
+      function setFs(on, fromPop) {
+        if (on === fs) return;
+        fs = on; wrap.classList.toggle('am-fs', on); fsb.setAttribute('aria-pressed', on);
+        if (on) history.pushState({ mgfs: 1 }, '');
+        else if (!fromPop && history.state && history.state.mgfs) history.back();
+      }
+      fsb.addEventListener('click', function () { setFs(!fs); });
+      function onKey(ev) { if (ev.key === 'Escape' && !ev.defaultPrevented && fs && wrap.isConnected) setFs(false); }
+      function onPop() { if (fs && !(history.state && history.state.mgfs)) setFs(false, true); }
+      window.addEventListener('popstate', onPop);
+      document.addEventListener('keydown', onKey);
+      var lastW = W(), lastH = H();
+      var ro = window.ResizeObserver ? new ResizeObserver(function () {
+        if (Math.abs(W() - lastW) < 8 && Math.abs(H() - lastH) < 8) return;
+        var c0 = proj.invert(cT.invert([lastW / 2, lastH / 2])), s0 = proj.scale() * cT.k, whole = cT.k <= kMin + 1e-6;
+        lastW = W(); lastH = H(); project(); zoom.translateExtent(ext).scaleExtent([kMin, ZMAX]);
+        var k = Math.max(kMin, Math.min(ZMAX, s0 / proj.scale())), p = proj(c0);
+        wsel.call(zoom.transform, whole ? d3.zoomIdentity : d3.zoomIdentity.translate(lastW / 2 - p[0] * k, lastH / 2 - p[1] * k).scale(k)); layout();
+      }) : null;
+      if (ro) ro.observe(wrap);
+
+      gcur = { destroy: function () {
+        document.removeEventListener('keydown', onKey); window.removeEventListener('popstate', onPop);
+        if (fs && history.state && history.state.mgfs) history.back();
+        if (ro) ro.disconnect(); if (raf) cancelAnimationFrame(raf);
+      } };
+      // atidarius iš bendrinamos nuorodos – iškart dienos iššūkis
+      // perpiešus (pvz. pakeitus kalbą) tęsiamas tas pats žaidimas
+      if (deps.start === 'day' || MG.on === 'day') startDaily(); else if (MG.on === 'free') startFree(false); else menu();
+    }
+  }
+  API.game = game;
 })();

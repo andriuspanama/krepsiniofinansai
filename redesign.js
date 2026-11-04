@@ -374,10 +374,13 @@
     const inner=`${lgo(c.team||c.club)}<div class="gm-n">${flag(c.nation)}${esc(c.club)}</div>${c.sub?`<small class="gm-s">${esc(c.sub)}</small>`:""}<div class="gm-v">${show?gv(GS.mode,c.v):"?"}</div>`;
     return side?`<button class="gm-card gm-pick ${cls||""}" data-gp="${side}" ${ask?"":"disabled"}>${inner}</button>`:`<div class="gm-card ${cls||""}">${inner}</div>`}
   function gmView(){
+    if(GS.mode==="map"){   // „Kur arena?“ – žemėlapio žaidimas (arenamap.js)
+      const mc=(k,a,b)=>`<button class="chip" data-gm="${k}" aria-pressed="${GS.mode===k}">${T(a,b)}</button>`;
+      return`<div class="gm-root"><div class="gm-top">${mc("bud","Biudžetas","Budget")}${mc("att","Lankomumas","Attendance")}${mc("sal","Algos","Salaries")}${mc("map","📍 Kur arena?","📍 Where's the arena?")}</div><div class="mg-host"></div></div>`}
     if(!GS.left&&!GS.pool.length)gStart();
     const m=GS.mode,sal=m==="sal",lbl=m==="bud"?T("biudžetas","budget"):T("vid. lankomumas","avg. attendance"),best=GBEST[m]||0;
     const mc=(k,a,b)=>`<button class="chip" data-gm="${k}" aria-pressed="${m===k}">${T(a,b)}</button>`;
-    const chips=`<div class="gm-top">${mc("bud","Biudžetas","Budget")}${mc("att","Lankomumas","Attendance")}${mc("sal","Algos","Salaries")}<span class="gm-score">${T("Serija","Streak")} <b class="led">${String(GS.streak).padStart(2,"0")}</b> · ${T("Rekordas","Best")} <b class="led">${String(best).padStart(2,"0")}</b></span></div>`;
+    const chips=`<div class="gm-top">${mc("bud","Biudžetas","Budget")}${mc("att","Lankomumas","Attendance")}${mc("sal","Algos","Salaries")}${mc("map","📍 Kur arena?","📍 Where's the arena?")}<span class="gm-score">${T("Serija","Streak")} <b class="led">${String(GS.streak).padStart(2,"0")}</b> · ${T("Rekordas","Best")} <b class="led">${String(best).padStart(2,"0")}</b></span></div>`;
     if(!GS.left)return`<div class="gm-root">${chips}<p class="sum">${T("Per mažai duomenų žaidimui.","Not enough data to play.")}</p></div>`;
     const ph=GS.phase,L=GS.left,R=GS.right,ask=ph==="ask";let cards;
     if(sal){const cl=s=>ask?"":(GS.pick===s?(ph==="ok"?"ok":"bad"):"");cards=gCard(L,!ask,cl("L"),"L",ask)+gCard(R,!ask,cl("R"),"R",ask)}
@@ -399,9 +402,13 @@
       else{cs.style.position="relative";cs.appendChild(B3.el)}
     }catch(e){}
   }
-  function renderGm(){const o=document.getElementById("out");if(o&&ok()){o.innerHTML=gmView();annPreload();b3Game()}}
+  let MGSTART=null;
+  function mgMount(){const h=document.querySelector("#out .mg-host");if(!h)return;
+    if(window.ArenaMap&&ArenaMap.game){ArenaMap.game(h,{D,T,esc,norm,same,season:"26/27",logo:n=>LOGOS[norm(n)],sheetId:SHEET_ID,start:MGSTART});MGSTART=null}
+    else setTimeout(()=>{if(GM&&GS.mode==="map"&&document.querySelector("#out .mg-host:empty"))mgMount()},300)}
+  function renderGm(){const o=document.getElementById("out");if(o&&ok()){o.innerHTML=gmView();if(GS.mode==="map")return mgMount();annPreload();b3Game()}}
   function gAct(t){const d=t.dataset;
-    if(d.gm!==undefined){GS.mode=d.gm;gStart();renderGm();return}
+    if(d.gm!==undefined){GS.mode=d.gm;if(d.gm!=="map")gStart();renderGm();return}
     if(d.gr!==undefined){gStart();renderGm();return}
     if(d.gs!==undefined){
       const txt=T("Aukščiau ar žemiau: ","Higher or lower: ")+GS.streak+T(" iš eilės (",", streak (")+(GS.mode==="bud"?T("biudžetai","budgets"):GS.mode==="sal"?T("algos","salaries"):T("lankomumas","attendance"))+") – "+location.href.split("#")[0];
@@ -718,7 +725,9 @@
     else if(t.dataset.mbn!==undefined){MBN=t.dataset.mbn;MBD="";renderMb()}
     else if(t.dataset.mbd!==undefined){MBD=t.dataset.mbd;renderMb()}
   },true);
-  const mbCheck=()=>{if(!ok())return;if(MB&&!document.querySelector("#out .mb-root"))renderMb();else if(GM&&!document.querySelector("#out .gm-root"))renderGm();else if(MAP&&!document.querySelector("#out .map-root"))renderMap()};
+  let MGHASH=location.hash==="#kur-arena";
+  const mbCheck=()=>{if(!ok())return;
+    if(MGHASH){const b=document.querySelector("#tabs .gmt");if(b){MGHASH=false;GS.mode="map";MGSTART="day";b.click();try{history.replaceState(history.state,"",location.pathname+location.search)}catch(x){}return}}if(MB&&!document.querySelector("#out .mb-root"))renderMb();else if(GM&&!document.querySelector("#out .gm-root"))renderGm();else if(MAP&&!document.querySelector("#out .map-root"))renderMap()};
   [["tabs",()=>{fixTabs();mbCheck()}],["out",mbCheck]].forEach(([id,f])=>{const el=document.getElementById(id);if(el)new MutationObserver(f).observe(el,{childList:true})});
   // MB-END
 
