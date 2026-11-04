@@ -700,16 +700,23 @@
   // Klubai žemėlapyje: kiekvienas – jo pagrindinėje arenoje iš lapo „Arenas“ (naudoja ir žemėlapis, ir žaidimas)
   function clubItems(D, sheet, deps, N, same, season) {
     var bud26 = D.bud.filter(function (r) { return r.season === season && r.club; });
-    var findBud = function (n) { var k = N(n); return bud26.filter(function (r) { return N(r.club) === k; })[0] || bud26.filter(function (r) { return same(r.club, n); })[0]; };
-    var findAtt = function (n) {
-      return (D.att || []).filter(function (r) { return r.season === season && r.avg != null && same(r.club, n); })[0];
+    // jei šio sezono skaičiaus nėra – imamas ankstesnio sezono (pvz. 26/27 → 25/26); kortelėje rodomas to sezono pavadinimas
+    var prevS = season.replace(/^(\d\d)\/(\d\d)$/, function (m, a, b) { var p = function (x) { return ('0' + ((+x + 99) % 100)).slice(-2); }; return p(a) + '/' + p(b); });
+    var budPrev = prevS !== season ? D.bud.filter(function (r) { return r.season === prevS && r.club && r.total != null; }) : [];
+    var findIn = function (L, n) { var k = N(n); return L.filter(function (r) { return N(r.club) === k; })[0] || L.filter(function (r) { return same(r.club, n); })[0]; };
+    var findBud = function (n) { return findIn(bud26, n); };
+    var findAtt = function (n, s) {
+      return (D.att || []).filter(function (r) { return r.season === (s || season) && r.avg != null && same(r.club, n); })[0];
     };
     var seen = {}, items = [], missing = [], noCoord = [];
     var add = function (name, e) {
       var k = N(name); if (!k || seen[k]) return; seen[k] = 1;
       var b = findBud(name), a = findAtt(name), oldA = b ? null : (D.att || []).filter(function (r) { return same(r.club, name); })[0];
-      var nation = b ? b.nation : a ? (a.country || a.nation) : oldA ? (oldA.country || oldA.nation) : '';
-      items.push({ name: b ? b.club : name, nation: nation, e: e, total: b && b.total != null ? +b.total : 0, bud: b || null, att: a || null, hasCard: !!(b || a || oldA),
+      var bs = season, as = season, bb = b && b.total != null ? b : null;
+      if (!bb && budPrev.length) { bb = findIn(budPrev, b ? b.club : name) || null; if (bb) bs = prevS; }
+      if (!a && prevS !== season) { a = findAtt(name, prevS); if (a) as = prevS; }
+      var nation = b ? b.nation : bb ? bb.nation : a ? (a.country || a.nation) : oldA ? (oldA.country || oldA.nation) : '';
+      items.push({ name: b ? b.club : bb ? bb.club : name, nation: nation, e: e, total: bb ? +bb.total : 0, bud: b || null, budV: bb, budS: bs, att: a || null, attS: as, hasCard: !!(b || bb || a || oldA),
         logo: deps.logo ? (deps.logo(b ? b.club : name) || deps.logo(name)) : null });
     };
     if (sheet && sheet.length) {
@@ -995,8 +1002,8 @@
           '<small class="am-cr"></small></div>' +
           '<div class="am-body"><div class="am-head">' + (it.logo ? '<img src="' + esc(it.logo) + '" alt="">' : '') +
           '<div><h3>' + esc(it.name) + '</h3><p>' + esc(e.arena) + ' · ' + esc(cityLabel(e.city)) + '</p>' + capTxt + '</div></div>' +
-          '<div class="am-kpis"><div><small>' + esc(T('Biudžetas', 'Budget')) + ' ' + season + '</small><b>' + (bud && bud.total != null ? fmtM(bud.total) : '—') + '</b></div>' +
-          '<div><small>' + esc(T('Vid. lankomumas', 'Avg. attendance')) + ' ' + season + '</small><b>' + attTxt + '</b></div></div>' +
+          '<div class="am-kpis"><div><small>' + esc(T('Biudžetas', 'Budget')) + ' ' + (it.budV ? it.budS : season) + '</small><b>' + (it.budV ? fmtM(it.budV.total) : '—') + '</b></div>' +
+          '<div><small>' + esc(T('Vid. lankomumas', 'Avg. attendance')) + ' ' + (att ? it.attS || season : season) + '</small><b>' + attTxt + '</b></div></div>' +
           '<div class="am-trv" hidden></div>' +
           '<div class="am-act">' +
           (it.hasCard ? '<button type="button" class="am-pri" data-a="card">' + esc(T('Atidaryti klubo kortelę', 'Open club card')) + '</button>' : '') +
@@ -1173,9 +1180,17 @@
       card.addEventListener('click', function (ev) {
         if (ev.target.closest('.am-x')) return closeCard();
         var b = ev.target.closest('[data-a]');
-        // kortelė atidaroma visada: su 26/27 biudžetu – Biudžetai; be jo, bet su 26/27 lankomumu – Lankomumas;
-        // be abiejų – naujausias sezonas, kuriam kortelėje yra duomenų
-        if (b && sel && typeof deps.club === 'function') deps.club(sel.name, sel.nation, season, 0, !sel.bud && sel.att ? 'att' : undefined);
+        // kurį kortelės sezoną ir skirtuką atidaryti: naujausias biudžeto sezonas (Biudžetai), nebent lankomumas naujesnis
+        // ir yra iš šio ar praėjusio sezono (pvz. biudžetas 25/26, lankomumas 26/27 → Lankomumas 26/27); be biudžeto – Lankomumas
+        if (b && sel && typeof deps.club === 'function') {
+          var D0 = deps.D, sm = deps.same || function (x, y) { return N(x) === N(y); }, nat = sel.nation;
+          var mine = function (r) { return (!nat || r.nation === nat || r.country === nat) && sm(r.club, sel.name); };
+          var last = function (L, has) { return L.filter(function (r) { return has(r) && mine(r); }).map(function (r) { return r.season; }).sort().pop() || ''; };
+          var bS = last(D0.bud || [], function (r) { return r.total != null; }), aS = last(D0.att || [], function (r) { return r.avg != null; });
+          var prevS = season.replace(/^(\d\d)\/(\d\d)$/, function (m, x, y) { var p = function (v) { return ('0' + ((+v + 99) % 100)).slice(-2); }; return p(x) + '/' + p(y); });
+          var toAtt = aS && (!bS || (aS > bS && (aS === season || aS === prevS)));
+          if (toAtt) deps.club(sel.name, nat, bS || season, 0, 'att', aS); else deps.club(sel.name, nat, bS || season, 0);
+        }
       });
       wrap.querySelector('.am-zoom').addEventListener('click', function (ev) {
         var b = ev.target.closest('button'); if (!b) return;

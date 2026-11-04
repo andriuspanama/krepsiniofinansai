@@ -395,13 +395,14 @@ function setLang(l){LANG=l;try{localStorage.setItem("lang",l)}catch(e){}
 const RL='<img class="rl" src="https://rytasvilnius.lt/en/wp-content/uploads/sites/3/2024/07/rytas.png" alt="Rytas" onerror="this.remove()">';
 const cmp=v=>v>=1e6?(v/1e6).toFixed(1)+"M":Math.round(v/1000)+"k";
 // sezonų stulpeliai: pastovus stulpelio plotis; kiek jų matosi – priklauso nuo ekrano (--chk mastelis CSS), kiti – slenkant į šonus
-function chart(it,sel,aria){const n=it.length,st=46,bw=28,f=10,base=92,mb=56,mx=Math.max(...it.map(x=>x.v||0),1),W=n*st+14,Hh=122,si=Math.max(0,it.findIndex(p=>p.l===sel));
- return`<div class="tw ch"><button class="chn l" aria-label="◀" tabindex="-1">‹</button><div class="chs" data-sel="${sel?si:n-1}"><svg viewBox="0 0 ${W} ${Hh}" style="width:calc(${W}px * var(--chk));height:auto" role="img" aria-label="${aria}"><defs><linearGradient id="gy" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd84d"/><stop offset="1" stop-color="#ff8a00"/></linearGradient></defs>${it.map((p,i)=>{const x=7+i*st+(st-bw)/2,c=x+bw/2,bh=p.v?p.v/mx*mb:0,s=p.l===sel,val=p.v?cmp(p.v):"–",fw=s?800:500;
+function chart(it,sel,aria){const n=it.length,st=46,bw=28,f=10,base=92,mb=56,mx=Math.max(...it.map(x=>x.v||0),1),W=n*st+14,Hh=122,si=it.findIndex(p=>p.l===sel);
+ return`<div class="tw ch"><button class="chn l" aria-label="◀" tabindex="-1">‹</button><div class="chs" data-sel="${si<0?n-1:si}"><svg viewBox="0 0 ${W} ${Hh}" style="width:calc(${W}px * var(--chk));height:auto" role="img" aria-label="${aria}"><defs><linearGradient id="gy" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd84d"/><stop offset="1" stop-color="#ff8a00"/></linearGradient></defs>${it.map((p,i)=>{const x=7+i*st+(st-bw)/2,c=x+bw/2,bh=p.v?p.v/mx*mb:0,s=p.l===sel,val=p.v?cmp(p.v):"–",fw=s?800:500;
   return`<g ${p.a||""} ${p.a?'style="cursor:pointer"':""}><title>${esc(p.t)}</title>${p.a?`<rect x="${x-5}" y="0" width="${bw+10}" height="${Hh}" fill="transparent"/>`:""}<rect x="${x}" y="${base-bh}" width="${bw}" height="${Math.max(bh,2)}" rx="4" fill="url(#gy)" ${s?'stroke="var(--ink)" stroke-width="2"':'opacity=".92"'}/>${s?`<text x="${c}" y="${base-bh-19}" text-anchor="middle" font-size="9" fill="var(--ink)">▼</text>`:""}<text x="${c}" y="${base-bh-5}" text-anchor="middle" font-size="${f}" font-weight="${fw}" fill="var(--ink)">${val}</text><text x="${c}" y="${base+15}" text-anchor="middle" font-size="${f}" font-weight="${s?800:400}" fill="${s?"var(--ink)":"var(--mute)"}">${esc(p.l)}</text>${p.s?`<text x="${c}" y="${base+28}" text-anchor="middle" font-size="8" fill="var(--mute)">${esc(p.s)}</text>`:""}</g>`}).join("")}</svg></div><button class="chn r" aria-label="▶" tabindex="-1">›</button></div>`}
 // po atvaizdavimo: parodyti pasirinktą (ar paskutinį) sezoną, rodyklės ir blyškūs kraštai, kai yra daugiau stulpelių
 function chInit(root){root.querySelectorAll(".tw.ch").forEach(w=>{const s=w.querySelector(".chs");if(!s)return;
  const up=()=>{const m=s.scrollWidth-s.clientWidth;w.classList.toggle("ml",m>2&&s.scrollLeft>2);w.classList.toggle("mr",m>2&&s.scrollLeft<m-2)};
- const g=s.querySelectorAll("svg > g")[+s.dataset.sel||0];if(g&&s.scrollWidth>s.clientWidth){const r=g.getBoundingClientRect(),b=s.getBoundingClientRect();s.scrollLeft+=r.left+r.width/2-(b.left+b.width/2)}
+ // pradžioje matosi naujausi sezonai; atgal slenkama tik tada, kai pasirinktas senesnis sezonas kitaip nesimatytų
+ if(s.scrollWidth>s.clientWidth){s.scrollLeft=s.scrollWidth;const g=s.querySelectorAll("svg > g")[+s.dataset.sel],b=s.getBoundingClientRect(),r=g&&g.getBoundingClientRect();if(r&&(r.left<b.left+40||r.right>b.right-40))s.scrollLeft+=r.left+r.width/2-(b.left+b.width/2)}
  s.addEventListener("scroll",up,{passive:true});w.querySelectorAll(".chn").forEach(bt=>bt.onclick=e=>{e.stopPropagation();s.scrollBy({left:(bt.classList.contains("l")?-1:1)*s.clientWidth*.7,behavior:"smooth"})});up()})}
 addEventListener("resize",()=>{const sh=$("sh");if(sh)sh.querySelectorAll(".tw.ch").forEach(w=>{const s=w.querySelector(".chs"),m=s.scrollWidth-s.clientWidth;w.classList.toggle("ml",m>2&&s.scrollLeft>2);w.classList.toggle("mr",m>2&&s.scrollLeft<m-2)})});
 const sx=(cur,list,mk)=>list.length>1?`<div class="sx"><button class="chip cur" aria-pressed="true">${cur} ▾</button><div class="opts">${list.map(mk).join("")}</div></div>`:`<button class="chip" aria-pressed="true">${cur}</button>`;
@@ -727,9 +728,9 @@ if(TH)document.documentElement.setAttribute("data-t",TH);$("th").textContent=isD
 setLang(LANG);
 start();
 </script>
- <script src="redesign.js?v=20261105a" defer></script>
-<script src="brazys3d.js?v=20261105a" defer></script>
-<script src="arenamap.js?v=20261105a" defer></script>
+ <script src="redesign.js?v=20261105c" defer></script>
+<script src="brazys3d.js?v=20261105c" defer></script>
+<script src="arenamap.js?v=20261105c" defer></script>
 </body>
 </html>
 </body>
