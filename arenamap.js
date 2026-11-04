@@ -1512,23 +1512,44 @@
           '<p>' + esc(T('Iš viso nuklysta', 'Total distance off')) + ': ' + fmt(kmSum()) + ' km' + (st.kind === 'free' ? ' · ' + esc(T('Rekordas', 'Best')) + ': ' + fmt(best) : '') + '</p>' +
           '<div class="mg-sq">' + st.g.map(function (x) { return mgSq(x.d); }).join('') + '</div>' +
           '<ul class="mg-list">' + rows + '</ul>' +
+          lbBlock() +
           '<button type="button" class="mg-btn" data-mg="share">' + esc(T('Dalintis rezultatu', 'Share score')) + '</button>' +
           (st.kind === 'free' ? '<button type="button" class="mg-btn sec" data-mg="free">' + esc(T('Žaisti dar kartą', 'Play again')) + '</button>' : '') +
           '<button type="button" class="mg-btn sec" data-mg="menu">' + esc(T('Į pradžią', 'Back to start')) + '</button>' +
           (st.kind === 'day' ? '<p class="mg-note">' + esc(T('Naujas iššūkis – rytoj.', 'A new challenge tomorrow.')) + '</p>' : '');
         pan.hidden = false; box.scrollTop = 0;
       }
+      // lyderių lentelė: dienos iššūkis – vienas įrašas per dieną šioje naršyklėje, laisvas žaidimas – po kiekvieno žaidimo
+      var LB = deps.lb && deps.lb.on && deps.lb.on() ? deps.lb : null;
+      var lbGame = function () { return st.kind === 'day' ? 'mapday' : 'mapfree'; };
+      var lbDone = function () { return st.kind === 'day' ? !!mgLoad('mg-lb-' + st.day) : !!st.saved; };
+      function lbBlock() {
+        if (!LB) return '';
+        return LB.form(lbDone()) + '<button type="button" class="mg-btn sec" data-mg="lb">' + esc(T('Lyderių lentelė', 'Leaderboard')) + '</button>';
+      }
+      function lbSubmit(btn) {
+        var bx = btn.closest('.lb-save'), inp = bx && bx.querySelector('.lbn'), err = bx && bx.querySelector('.lb-err');
+        btn.disabled = true; btn.textContent = T('Saugoma…', 'Saving…');
+        LB.save(lbGame(), inp ? inp.value : '', total(), { km: kmSum(), day: st.day || mgToday() }).then(function () {
+          if (st.kind === 'day') mgStore('mg-lb-' + st.day, 1); else st.saved = true;
+          results();
+        }).catch(function (e) {
+          btn.disabled = false; btn.textContent = T('Išsaugoti', 'Save');
+          if (err) { err.hidden = false; err.textContent = e && e.message === 'name' ? T('Įrašykite vardą.', 'Enter a name.') : e && e.message === 'day' ? T('Diena jau pasikeitė – šio iššūkio įrašyti nebegalima.', 'The day has changed – this challenge can no longer be saved.') : T('Nepavyko išsaugoti. Bandykite dar kartą.', 'Could not save. Try again.'); }
+        });
+      }
       function menu() {
         st = null; MG.on = null; guess = null; aEl.hidden = true; gEl.hidden = true; bar.hidden = true; act.hidden = true; drawLine();
         var dd = mgLoad(dKey), done = valid(dd) && dd.i >= MG_N, started = valid(dd) && dd.g.length > 0 && !done;
         var best = +(mgLoad('mg-best') || 0), fr = MG.free && valid(MG.free) && MG.free.i < MG_N && MG.free.g.length;
-        box.innerHTML = '<h3>📍 ' + esc(T('Kur arena?', 'Where\'s the arena?')) + '</h3>' +
+        box.innerHTML = '<h3>' + esc(T('Kur arena?', 'Where\'s the arena?')) + '</h3>' +
           '<p>' + esc(T('Rodomas klubo logotipas – palieskite žemėlapį ten, kur, jūsų manymu, yra jo namų arena, ir patvirtinkite. Kuo arčiau, tuo daugiau taškų: iki 1000 už klubą (10 km ir arčiau – visi 1000). Žaidimas – 10 klubų, daugiausia 10 000 taškų.',
             'You see a club logo – tap the map where you think its home arena is and confirm. The closer, the more points: up to 1000 per club (within 10 km = full 1000). A game is 10 clubs, 10,000 points max.')) + '</p>' +
           '<button type="button" class="mg-btn" data-mg="day">📅 ' + esc(done ? T('Dienos iššūkis #', 'Daily challenge #') + mgNo(day) + ' – ' + T('rezultatas', 'result') + ': ' + fmt(dd.g.reduce(function (t, x) { return t + x.p; }, 0)) :
             (started ? T('Tęsti dienos iššūkį #', 'Continue daily challenge #') : T('Dienos iššūkis #', 'Daily challenge #')) + mgNo(day)) + '</button>' +
           (fr ? '<button type="button" class="mg-btn sec" data-mg="resume">▶ ' + esc(T('Tęsti laisvą žaidimą', 'Continue free play')) + ' (' + MG.free.i + '/' + MG_N + ')</button>' : '') +
           '<button type="button" class="mg-btn sec" data-mg="free">🎲 ' + esc(T('Laisvas žaidimas', 'Free play')) + '</button>' +
+          (LB ? '<button type="button" class="mg-btn sec" data-mg="lb">🏆 ' + esc(T('Lyderių lentelė', 'Leaderboard')) + '</button>' : '') +
           '<p class="mg-note">' + esc(T('Dienos iššūkis – tie patys 10 klubų visiems, vienas bandymas per dieną.', 'Daily challenge – the same 10 clubs for everyone, one try per day.')) +
           (best ? ' ' + esc(T('Laisvo žaidimo rekordas', 'Free play best')) + ': ' + fmt(best) + '.' : '') + ' ' + esc(T('Klubų žemėlapyje', 'Clubs on the map')) + ': ' + items.length + '.</p>';
         pan.hidden = false; home(0);
@@ -1553,12 +1574,15 @@
         round();
       }
       wrap.addEventListener('click', function (ev) {
+        var sb = ev.target.closest && ev.target.closest('[data-lbs]');
+        if (sb) { if (LB && !sb.disabled) lbSubmit(sb); return; }
         var b = ev.target.closest && ev.target.closest('[data-mg]');
         if (b) {
           var a = b.dataset.mg;
           if (a === 'ok') confirmGuess(); else if (a === 'next') next();
           else if (a === 'day') startDaily(); else if (a === 'free') startFree(true); else if (a === 'resume') startFree(false);
           else if (a === 'menu') menu();
+          else if (a === 'lb' && LB) LB.show(st ? lbGame() : 'mapday');
           else if (a === 'share') {
             var txt = shareText();
             if (navigator.share) navigator.share({ text: txt }).catch(function () {});

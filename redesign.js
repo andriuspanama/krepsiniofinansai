@@ -365,6 +365,7 @@
     const r=c[Math.floor(Math.random()*c.length)];GS.used.add(gk(r));return r;
   }
   function gStart(){
+    GS.saved=false;
     const P=gPool(GS.mode);GS.pool=P.items;GS.se=P.se;GS.used=new Set();GS.streak=0;GS.phase="ask";GS.rec=false;clearTimeout(GS.tm);
     if(GS.pool.length<6){GS.left=null;GS.right=null;return}
     GS.left=gRand();GS.right=gDraw(GS.left);
@@ -373,14 +374,43 @@
   function gCard(c,show,cls,side,ask){
     const inner=`${lgo(c.team||c.club)}<div class="gm-n">${flag(c.nation)}${esc(c.club)}</div>${c.sub?`<small class="gm-s">${esc(c.sub)}</small>`:""}<div class="gm-v">${show?gv(GS.mode,c.v):"?"}</div>`;
     return side?`<button class="gm-card gm-pick ${cls||""}" data-gp="${side}" ${ask?"":"disabled"}>${inner}</button>`:`<div class="gm-card ${cls||""}">${inner}</div>`}
+  // ---- Lyderių lentelė: Google Apps Script (žr. leaderboard.gs), rezultatai – atskiroje Google lentelėje ----
+  const LB_URL="";   // Apps Script žiniatinklio programos nuoroda (…/exec); tuščia – lentelė nerodoma
+  const LBG=[["mapday","Kur arena? – dienos","Where's the arena? – daily"],["mapfree","Kur arena? – laisvas","Where's the arena? – free play"],["bud","Biudžetas","Budget"],["att","Lankomumas","Attendance"],["sal","Algos","Salaries"]];
+  let LBSEL="mapday",LBDATA=null,LBT=0,LBERR=false,LBBUSY=false;
+  const lbName=()=>{try{return localStorage.getItem("kf_name")||""}catch(e){return""}};
+  function lbLoad(force){
+    if(!LB_URL)return Promise.resolve(null);
+    if(!force&&LBDATA&&Date.now()-LBT<30000)return Promise.resolve(LBDATA);
+    return fetch(LB_URL+"?a=top&t="+Date.now()).then(r=>r.json()).then(j=>{if(!j||!j.boards)throw 0;LBDATA=j;LBT=Date.now();LBERR=false;return j}).catch(()=>{LBERR=true;return null})}
+  function lbSave(game,name,score,extra){
+    name=String(name||"").replace(/[<>"]/g,"").replace(/\s+/g," ").trim().slice(0,20);
+    if(!name)return Promise.reject(new Error("name"));
+    try{localStorage.setItem("kf_name",name)}catch(e){}
+    return fetch(LB_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(Object.assign({game,name,score},extra||{}))})
+      .then(r=>r.json()).then(j=>{if(!j||!j.ok)throw new Error(j&&j.error||"err");LBDATA=null;return j})}
+  // pasiūlymas įrašyti rezultatą (bendras visiems žaidimams)
+  const lbForm=saved=>!LB_URL?"":saved?`<p class="lb-ok">✓ ${T("Rezultatas įrašytas į lyderių lentelę","Score saved to the leaderboard")}</p>`
+    :`<div class="lb-save"><p>${T("Įrašyti rezultatą į lyderių lentelę?","Save your score to the leaderboard?")}</p><div class="lb-row"><input class="lbn" type="text" maxlength="20" autocomplete="nickname" placeholder="${T("Jūsų vardas","Your name")}" value="${esc(lbName())}"><button type="button" class="lb-btn" data-lbs="1">${T("Išsaugoti","Save")}</button></div><small class="lb-err" hidden></small></div>`;
+  window.KFLB={on:()=>!!LB_URL,save:lbSave,form:lbForm,show:k=>{LBSEL=k;GS.mode="lb";LBDATA=null;renderGm()}};
+  function lbView(){
+    const ch=LBG.map(([k,a,b])=>`<button class="chip" data-lbg="${k}" aria-pressed="${LBSEL===k}">${T(a,b)}</button>`).join("");
+    let body;
+    if(!LBDATA)body=`<p class="sum">${LBERR?T("Nepavyko įkelti lyderių lentelės.","Could not load the leaderboard."):T("Kraunama…","Loading…")}</p>`;
+    else{
+      const L=(LBDATA.boards||{})[LBSEL]||[],pts=LBSEL.startsWith("map"),me=lbName().toLowerCase();
+      body=(LBSEL==="mapday"?`<p class="lb-day">${T("Šiandienos iššūkis","Today's challenge")} · ${esc(LBDATA.day||"")}</p>`:"")+
+        (L.length?`<ol class="lb-l">${L.map((r,i)=>`<li class="${me&&String(r.name).toLowerCase()===me?"me":""}"><span class="lb-r">${i<3?["🥇","🥈","🥉"][i]:i+1}</span><span class="lb-n">${esc(r.name)}</span>${pts&&r.km!=null?`<small>${nf.format(r.km)} km</small>`:""}<b>${nf.format(r.score)}</b></li>`).join("")}</ol>`
+        :`<p class="sum">${T("Kol kas rezultatų nėra – būkite pirmas!","No scores yet – be the first!")}</p>`)}
+    return`<div class="lb-root"><div class="lb-g">${ch}</div>${body}<p class="sum lb-note">${LBSEL==="mapday"?T("Dienos iššūkio lentelė prasideda iš naujo kiekvieną dieną (Vilniaus laiku).","The daily table starts over every day (Vilnius time)."):T("Visų laikų rezultatai.","All-time scores.")} ${T("Rodomas geriausias kiekvieno vardo rezultatas.","Best score per name.")}${LBSEL.startsWith("map")?"":" "+T("Rezultatas – teisingų atsakymų serija.","Score = streak of correct answers.")}</p></div>`}
+  const gmChips=()=>{const mc=(k,a,b)=>`<button class="chip" data-gm="${k}" aria-pressed="${GS.mode===k}">${T(a,b)}</button>`;
+    return mc("bud","Biudžetas","Budget")+mc("att","Lankomumas","Attendance")+mc("sal","Algos","Salaries")+mc("map","Kur arena?","Where's the arena?")+(LB_URL?mc("lb","Lyderių lentelė","Leaderboard"):"")};
   function gmView(){
-    if(GS.mode==="map"){   // „Kur arena?“ – žemėlapio žaidimas (arenamap.js)
-      const mc=(k,a,b)=>`<button class="chip" data-gm="${k}" aria-pressed="${GS.mode===k}">${T(a,b)}</button>`;
-      return`<div class="gm-root"><div class="gm-top">${mc("bud","Biudžetas","Budget")}${mc("att","Lankomumas","Attendance")}${mc("sal","Algos","Salaries")}${mc("map","📍 Kur arena?","📍 Where's the arena?")}</div><div class="mg-host"></div></div>`}
+    if(GS.mode==="map")return`<div class="gm-root"><div class="gm-top">${gmChips()}</div><div class="mg-host"></div></div>`;   // „Kur arena?“ – žemėlapio žaidimas (arenamap.js)
+    if(GS.mode==="lb")return`<div class="gm-root"><div class="gm-top">${gmChips()}</div>${lbView()}</div>`;
     if(!GS.left&&!GS.pool.length)gStart();
     const m=GS.mode,sal=m==="sal",lbl=m==="bud"?T("biudžetas","budget"):T("vid. lankomumas","avg. attendance"),best=GBEST[m]||0;
-    const mc=(k,a,b)=>`<button class="chip" data-gm="${k}" aria-pressed="${m===k}">${T(a,b)}</button>`;
-    const chips=`<div class="gm-top">${mc("bud","Biudžetas","Budget")}${mc("att","Lankomumas","Attendance")}${mc("sal","Algos","Salaries")}${mc("map","📍 Kur arena?","📍 Where's the arena?")}<span class="gm-score">${T("Serija","Streak")} <b class="led">${String(GS.streak).padStart(2,"0")}</b> · ${T("Rekordas","Best")} <b class="led">${String(best).padStart(2,"0")}</b></span></div>`;
+    const chips=`<div class="gm-top">${gmChips()}<span class="gm-score">${T("Serija","Streak")} <b class="led">${String(GS.streak).padStart(2,"0")}</b> · ${T("Rekordas","Best")} <b class="led">${String(best).padStart(2,"0")}</b></span></div>`;
     if(!GS.left)return`<div class="gm-root">${chips}<p class="sum">${T("Per mažai duomenų žaidimui.","Not enough data to play.")}</p></div>`;
     const ph=GS.phase,L=GS.left,R=GS.right,ask=ph==="ask";let cards;
     if(sal){const cl=s=>ask?"":(GS.pick===s?(ph==="ok"?"ok":"bad"):"");cards=gCard(L,!ask,cl("L"),"L",ask)+gCard(R,!ask,cl("R"),"R",ask)}
@@ -390,7 +420,8 @@
       :`<p class="gm-q">${T("Ar „"+esc(R.club)+"“ "+lbl+" didesnis, ar mažesnis nei „"+esc(L.club)+"“?","Is the "+lbl+" of "+esc(R.club)+" higher or lower than "+esc(L.club)+"?")}</p>`;
     const btns=ph==="over"?`<div class="gm-btns"><button class="gm-b" data-gr="1">${T("Žaisti dar kartą","Play again")}</button><button class="gm-b" data-gs="1">${T("Dalintis rezultatu","Share score")}</button></div>`
       :sal?"":`<div class="gm-btns"><button class="gm-b" data-gp="hi" ${!ask?"disabled":""}>▲ ${T("Didesnis","Higher")}</button><button class="gm-b" data-gp="lo" ${!ask?"disabled":""}>▼ ${T("Mažesnis","Lower")}</button></div>`;
-    return`<div class="gm-root">${chips}${q}<div class="gm-cards">${cards}</div>${btns}<p class="sum" style="margin-top:12px">${sal?T("Duomenys: visi sezonai","Data: all seasons"):T("Duomenys: sezonas","Data: season")+" "+GS.se}</p></div>`;
+    const save=ph==="over"&&GS.streak>0?lbForm(GS.saved):"";
+    return`<div class="gm-root">${chips}${q}<div class="gm-cards">${cards}</div>${btns}${save}<p class="sum" style="margin-top:12px">${sal?T("Duomenys: visi sezonai","Data: all seasons"):T("Duomenys: sezonas","Data: season")+" "+GS.se}</p></div>`;
   }
   let B3=null;
   // 3D modelis per vidurį tarp dviejų žaidimo kortelių (vienas egzempliorius, perkeliamas po kiekvieno perpiešimo)
@@ -404,11 +435,22 @@
   }
   let MGSTART=null;
   function mgMount(){const h=document.querySelector("#out .mg-host");if(!h)return;
-    if(window.ArenaMap&&ArenaMap.game){ArenaMap.game(h,{D,T,esc,norm,same,season:"26/27",logo:n=>LOGOS[norm(n)],sheetId:SHEET_ID,start:MGSTART});MGSTART=null}
+    if(window.ArenaMap&&ArenaMap.game){ArenaMap.game(h,{D,T,esc,norm,same,season:"26/27",logo:n=>LOGOS[norm(n)],sheetId:SHEET_ID,start:MGSTART,lb:window.KFLB});MGSTART=null}
     else setTimeout(()=>{if(GM&&GS.mode==="map"&&document.querySelector("#out .mg-host:empty"))mgMount()},300)}
-  function renderGm(){const o=document.getElementById("out");if(o&&ok()){o.innerHTML=gmView();if(GS.mode==="map")return mgMount();annPreload();b3Game()}}
+  function renderGm(){const o=document.getElementById("out");if(o&&ok()){o.innerHTML=gmView();if(GS.mode==="map")return mgMount();
+    if(GS.mode==="lb"){if(!LBDATA&&!LBBUSY){LBBUSY=true;lbLoad(true).then(()=>{LBBUSY=false;if(GM&&GS.mode==="lb")o.innerHTML=gmView()})}return}
+    annPreload();b3Game()}}
+  // rezultato įrašymas (aukščiau / žemiau)
+  function lbSubmit(btn){
+    const box=btn.closest(".lb-save"),inp=box&&box.querySelector(".lbn"),err=box&&box.querySelector(".lb-err");
+    btn.disabled=true;btn.textContent=T("Saugoma…","Saving…");
+    lbSave(GS.mode,inp?inp.value:"",GS.streak).then(()=>{GS.saved=true;renderGm()}).catch(e=>{btn.disabled=false;btn.textContent=T("Išsaugoti","Save");
+      if(err){err.hidden=false;err.textContent=e&&e.message==="name"?T("Įrašykite vardą.","Enter a name."):T("Nepavyko išsaugoti. Bandykite dar kartą.","Could not save. Try again.")}})}
+  document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.classList&&e.target.classList.contains("lbn")){const b=e.target.closest(".lb-save").querySelector("[data-lbs]");if(b&&!b.disabled)b.click()}});
   function gAct(t){const d=t.dataset;
-    if(d.gm!==undefined){GS.mode=d.gm;if(d.gm!=="map")gStart();renderGm();return}
+    if(d.gm!==undefined){GS.mode=d.gm;if(d.gm==="lb")LBDATA=null;else if(d.gm!=="map")gStart();renderGm();return}
+    if(d.lbg!==undefined){LBSEL=d.lbg;renderGm();return}
+    if(d.lbs!==undefined){if(!t.closest(".mg"))lbSubmit(t);return}
     if(d.gr!==undefined){gStart();renderGm();return}
     if(d.gs!==undefined){
       const txt=T("Aukščiau ar žemiau: ","Higher or lower: ")+GS.streak+T(" iš eilės (",", streak (")+(GS.mode==="bud"?T("biudžetai","budgets"):GS.mode==="sal"?T("algos","salaries"):T("lankomumas","attendance"))+") – "+location.href.split("#")[0];
@@ -711,7 +753,7 @@
 
   document.addEventListener("click",e=>{
     if(MB&&MBQ&&e.target.closest&&e.target.closest("#out .mb-chart")&&!e.target.closest(".mbd")){mbClear();return}
-    const t=e.target.closest(".mbt,.gmt,.mapt,.shb,[data-tab],[data-mc],[data-mbs],[data-mbn],[data-mbd],[data-mbx],[data-gp],[data-gm],[data-gr],[data-gs]");if(!t)return;
+    const t=e.target.closest(".mbt,.gmt,.mapt,.shb,[data-tab],[data-mc],[data-mbs],[data-mbn],[data-mbd],[data-mbx],[data-gp],[data-gm],[data-gr],[data-gs],[data-lbg],[data-lbs]");if(!t)return;
     if(t.dataset.mbx!==undefined){mbClear();const i=document.getElementById("mbq");if(i)i.focus();return}
     if(t.classList.contains("mapt")){MAP=true;MB=false;GM=false;fixTabs();renderMap();return}
     if(t.classList.contains("mbt")){MAP=false;MB=true;GM=false;fixTabs();renderMb();return}
