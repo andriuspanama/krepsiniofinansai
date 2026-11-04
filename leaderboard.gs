@@ -66,7 +66,18 @@ function doPost(e) {
       day = d.day;
     }
     var km = d.km == null || !isFinite(Number(d.km)) ? '' : Math.round(Number(d.km));
-    sheet_().appendRow([new Date(), g, day, name, score, km]);
+    // tas pats vardas toje pačioje lentelėje (dienos iššūkyje – tą pačią dieną) – tik viena eilutė:
+    // geresnis rezultatas perrašo senąjį, prastesnis neįrašomas
+    var sh = sheet_(), rows = sh.getDataRange().getValues(), key = name.toLowerCase();
+    for (var i = rows.length - 1; i >= 1; i--) {
+      var r = rows[i];
+      if (r[1] !== g || String(r[3]).toLowerCase() !== key || (g === 'mapday' && dayOf_(r[2]) !== day)) continue;
+      var old = Number(r[4]);
+      if (isFinite(old) && old >= score) return out_({ ok: true, kept: true, best: old });
+      sh.getRange(i + 1, 1, 1, 6).setValues([[new Date(), g, day, name, score, km]]);
+      return out_({ ok: true, updated: true, prev: old });
+    }
+    sh.appendRow([new Date(), g, day, name, score, km]);
     return out_({ ok: true });
   } finally {
     lock.releaseLock();

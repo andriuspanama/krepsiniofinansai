@@ -4,7 +4,7 @@
   if(window.__rd)return;window.__rd=1; // apsauga, jei skriptas įkeltas du kartus
   // 1) CSS visada įkeliamas paskutinis, todėl perrašo senus stilius
   const cs=document.currentScript,base=cs?cs.src.replace(/[^/]*$/,""):"";
-  const l=document.createElement("link");l.rel="stylesheet";l.href=base+"redesign.css";document.head.appendChild(l);
+  const l=document.createElement("link");l.rel="stylesheet";l.href=base+"redesign.css"+(cs&&cs.src.indexOf("?v=")>0?"?v="+cs.src.split("?v=")[1]:"");document.head.appendChild(l);
   // Ryto kortelės foninė foto: išblukinta (beveik be raudonos), tamsi, neutrali
   // Klubo kortelė (PC): didesnis logotipas per dvi eilutes, „vėliava šalis · sezonas“ – lygiai su klubo pavadinimu
   {const st=document.createElement("style");st.id="rd-mblogo";st.textContent=".ps-p.a{background:rgba(255,176,32,.16);color:#ffc46b}.mb-div{margin-top:-2px}.mb-row .lw{margin:0}.mb-row .lg{width:34px;height:34px}.mb-chart .mbd.lgm.on .dot{transform:none}.mb-chart .mbd.lgm image{transition:opacity .35s ease}";document.head.appendChild(st)}
@@ -389,10 +389,70 @@
     try{localStorage.setItem("kf_name",name)}catch(e){}
     return fetch(LB_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(Object.assign({game,name,score},extra||{}))})
       .then(r=>r.json()).then(j=>{if(!j||!j.ok)throw new Error(j&&j.error||"err");LBDATA=null;return j})}
-  // pasiūlymas įrašyti rezultatą (bendras visiems žaidimams)
-  const lbForm=saved=>!LB_URL?"":saved?`<p class="lb-ok">✓ ${T("Rezultatas įrašytas į lyderių lentelę","Score saved to the leaderboard")}</p>`
-    :`<div class="lb-save"><p>${T("Įrašyti rezultatą į lyderių lentelę?","Save your score to the leaderboard?")}</p><div class="lb-row"><input class="lbn" type="text" maxlength="20" autocomplete="nickname" placeholder="${T("Jūsų vardas","Your name")}" value="${esc(lbName())}"><button type="button" class="lb-btn" data-lbs="1">${T("Išsaugoti","Save")}</button></div><small class="lb-err" hidden></small></div>`;
-  window.KFLB={on:()=>!!LB_URL,save:lbSave,form:lbForm,show:k=>{LBSEL=k;GS.mode="lb";LBDATA=null;renderGm()},shareImg:d=>mgShare(d).catch(()=>{})};
+  // rezultato įrašymas: atskiras langas su vardo laukeliu (atgal / Esc – uždaro)
+  const lbBtnHtml=(saved,cls)=>!LB_URL?"":saved?`<button type="button" class="${cls}" disabled>✓ ${T("Įrašyta","Saved")}</button>`:`<button type="button" class="${cls}" data-lbo="1">${T("Išsaugoti","Save")}</button>`;
+  function lbAsk(game,score,extra,label){return new Promise(done=>{
+    const o=document.createElement("div");o.className="lbm";
+    o.innerHTML=`<div class="lbm-box" role="dialog" aria-modal="true"><h3>${T("Įrašyti į lyderių lentelę","Save to the leaderboard")}</h3><div class="lbm-sc"><small>${esc(label)}</small><b class="led">${nf.format(score)}</b></div><input class="lbn" type="text" maxlength="20" autocomplete="nickname" placeholder="${T("Jūsų vardas","Your name")}" value="${esc(lbName())}"><small class="lb-err" hidden></small><div class="lbm-row"><button type="button" class="lbm-b sec" data-x="1">${T("Atšaukti","Cancel")}</button><button type="button" class="lbm-b" data-ok="1">${T("Išsaugoti","Save")}</button></div></div>`;
+    const inp=o.querySelector(".lbn"),err=o.querySelector(".lb-err"),ok=o.querySelector("[data-ok]");let saved=false;
+    const shut=()=>{o.remove();done(saved)};
+    const go=()=>{if(ok.disabled)return;ok.disabled=true;ok.textContent=T("Saugoma…","Saving…");
+      lbSave(game,inp.value,score,extra).then(j=>{saved=true;ovlClose(shut);
+        pkToast(j&&j.kept?T("Jūsų geresnis rezultatas ("+nf.format(j.best)+") lieka lentelėje","Your better score ("+nf.format(j.best)+") stays on the board"):j&&j.updated?T("Rezultatas pagerintas!","Score improved!"):T("Įrašyta į lyderių lentelę","Saved to the leaderboard"))}).catch(e=>{ok.disabled=false;ok.textContent=T("Išsaugoti","Save");err.hidden=false;
+        err.textContent=e&&e.message==="name"?T("Įrašykite vardą.","Enter a name."):e&&e.message==="day"?T("Diena jau pasikeitė – šio iššūkio įrašyti nebegalima.","The day has changed – this challenge can no longer be saved."):T("Nepavyko išsaugoti. Bandykite dar kartą.","Could not save. Try again.")})};
+    o.addEventListener("click",e=>{if(e.target===o||e.target.closest("[data-x]"))ovlClose(shut);else if(e.target.closest("[data-ok]"))go()});
+    inp.addEventListener("keydown",e=>{if(e.key==="Enter")go()});
+    document.body.appendChild(o);ovlOpen(shut);setTimeout(()=>{inp.focus();inp.select()},50);
+  })}
+  window.KFLB={on:()=>!!LB_URL,save:lbSave,ask:lbAsk,btn:lbBtnHtml,show:k=>{LBSEL=k;GS.mode="lb";LBDATA=null;renderGm()},shareImg:d=>mgShare(d).catch(()=>{})};
+  const gName=m=>m==="bud"?T("Biudžetas","Budget"):m==="att"?T("Lankomumas","Attendance"):T("Algos","Salaries");
+  const ldImg=u=>u?new Promise(res=>{const i=new Image();i.crossOrigin="anonymous";i.onload=()=>res(i);i.onerror=()=>res(null);setTimeout(()=>res(null),4000);i.src=u}):Promise.resolve(null);
+  async function shFonts(){try{await document.fonts.load("700 100px 'Barlow Condensed'");await document.fonts.load("600 40px 'JetBrains Mono'");await document.fonts.load("800 100px Doto")}catch(e){}}
+  // bendras paveikslėlio pagrindas: fonas, antraštė, LED švieslentė
+  function shBase(x,W,H2,title,sub){
+    const BG="#07090F",INK="#E8ECF4",MU="#7A869E",AM="#FFB020",HD="'Barlow Condensed','Arial Narrow',sans-serif",MO="'JetBrains Mono',ui-monospace,monospace";
+    x.fillStyle=BG;x.fillRect(0,0,W,H2);
+    const g=x.createRadialGradient(W/2,-80,0,W/2,-80,760);g.addColorStop(0,"rgba(255,176,32,.20)");g.addColorStop(1,"rgba(255,176,32,0)");x.fillStyle=g;x.fillRect(0,0,W,H2);
+    x.textBaseline="alphabetic";x.textAlign="left";x.fillStyle=AM;x.fillRect(72,72,96,6);
+    x.fillStyle=MU;x.font="500 34px "+HD;x.fillText(T("Krepšinio klubų finansai","Basketball Club Finances"),72,128);
+    let s=112;do{x.font="700 "+s+"px "+HD;s-=2}while(x.measureText(title).width>W-144&&s>56);x.fillStyle=INK;x.fillText(title,72,238);
+    x.fillStyle=MU;x.font="400 34px "+MO;x.fillText(sub,72,294);
+    x.fillStyle=MU;x.font="400 28px system-ui,sans-serif";x.fillText((location.host+location.pathname).replace(/\/$/,""),72,H2-56);
+  }
+  function shRR(x,a,b,w,h,r){x.beginPath();x.moveTo(a+r,b);x.arcTo(a+w,b,a+w,b+h,r);x.arcTo(a+w,b+h,a,b+h,r);x.arcTo(a,b+h,a,b,r);x.arcTo(a,b,a+w,b,r);x.closePath()}
+  function shLed(x,bx,by,bw,bh){shRR(x,bx,by,bw,bh,22);x.fillStyle="#05070b";x.fill();x.save();shRR(x,bx,by,bw,bh,22);x.clip();x.fillStyle="rgba(255,176,32,.13)";for(let yy=by+4;yy<by+bh;yy+=10)for(let xx=bx+4;xx<bx+bw;xx+=10){x.beginPath();x.arc(xx,yy,1.6,0,Math.PI*2);x.fill()}x.restore();shRR(x,bx,by,bw,bh,22);x.strokeStyle="rgba(255,176,32,.32)";x.lineWidth=3;x.stroke()}
+  const LEDF="Doto,'JetBrains Mono',monospace",AMB="#FFB020";
+  const toBlob=c=>new Promise((res,rej)=>c.toBlob(b=>b?res(b):rej(new Error("blob")),"image/png"));
+  // „Aukščiau ar žemiau“ rezultatas: serija, rekordas, paskutinė pora
+  async function hlShare(){
+    const m=GS.mode,L=GS.left,R=GS.right;await shFonts();
+    const im=await Promise.all([L,R].map(c=>c?ldImg(typeof LOGOS!=="undefined"&&LOGOS[norm(c.team||c.club)]):null));
+    const W=1080,H2=1350,c=document.createElement("canvas");c.width=W;c.height=H2;const x=c.getContext("2d");
+    shBase(x,W,H2,T("Aukščiau ar žemiau","Higher or lower"),gName(m)+(m==="sal"?"":" · "+T("sezonas","season")+" "+GS.se));
+    shLed(x,72,340,936,250);x.fillStyle="#8a93a8";x.font="600 28px 'JetBrains Mono',monospace";x.fillText(T("SERIJA","STREAK"),110,396);x.textAlign="right";x.fillText(T("REKORDAS","BEST"),970,396);
+    x.font="800 150px "+LEDF;x.fillStyle=AMB;x.shadowColor="rgba(255,176,32,.75)";x.shadowBlur=28;x.textAlign="left";x.fillText(String(GS.streak),104,548);
+    x.textAlign="right";x.font="800 90px "+LEDF;x.fillText(String(GBEST[m]||GS.streak),970,540);x.shadowBlur=0;x.textAlign="left";
+    x.fillStyle="#7A869E";x.font="500 32px 'Barlow Condensed',sans-serif";x.fillText(T("Paskutinis klausimas","Last question"),72,668);
+    [L,R].forEach((cd,i)=>{if(!cd)return;const y=700+i*190;shRR(x,72,y,936,166,20);x.fillStyle="#0F1420";x.fill();x.strokeStyle="#1E2638";x.lineWidth=2;x.stroke();
+      let nx=110;if(im[i]){x.save();x.beginPath();x.arc(150,y+83,46,0,Math.PI*2);x.fillStyle="#fff";x.fill();x.clip();const k=Math.min(72/im[i].width,72/im[i].height);x.drawImage(im[i],150-im[i].width*k/2,y+83-im[i].height*k/2,im[i].width*k,im[i].height*k);x.restore();nx=220}
+      const v=gv(m,cd.v);x.textAlign="right";x.font="800 54px "+LEDF;x.fillStyle=AMB;x.shadowColor="rgba(255,176,32,.6)";x.shadowBlur=14;x.fillText(v,980,y+100);const vw=x.measureText(v).width;x.shadowBlur=0;x.textAlign="left";
+      let s=46;do{x.font="700 "+s+"px 'Barlow Condensed',sans-serif";s-=2}while(x.measureText(cd.club).width>980-vw-30-nx&&s>22);x.fillStyle="#E8ECF4";x.fillText(cd.club,nx,y+(cd.sub?82:98));
+      if(cd.sub){x.fillStyle="#7A869E";x.font="400 26px system-ui,sans-serif";x.fillText(String(cd.sub).slice(0,48),nx,y+122)}});
+    showShare(await toBlob(c),T("Aukščiau ar žemiau","Higher or lower")+" "+gName(m));
+  }
+  // lyderių lentelė paveikslėliu (LED švieslentė)
+  async function lbShare(){
+    const L=((LBDATA&&LBDATA.boards)||{})[LBSEL]||[];if(!L.length)return;await shFonts();
+    const cur=LBG.find(g=>g[0]===LBSEL)||LBG[0],pts=LBSEL.startsWith("map"),n=L.length,rh=70,top=350,W=1080,H2=Math.max(1100,top+n*rh+190),c=document.createElement("canvas");c.width=W;c.height=H2;const x=c.getContext("2d");
+    shBase(x,W,H2,T("Lyderių lentelė","Leaderboard"),T(cur[1],cur[2])+(LBSEL==="mapday"?" · "+(LBDATA.day||""):""));
+    shLed(x,72,top-20,936,n*rh+70);
+    x.fillStyle="#8a93a8";x.font="600 22px 'JetBrains Mono',monospace";x.fillText(T("VIETA","RANK"),106,top+22);x.fillText(T("VARDAS","NAME"),210,top+22);x.textAlign="right";x.fillText(pts?T("TAŠKAI","SCORE"):T("SERIJA","STREAK"),974,top+22);x.textAlign="left";
+    L.forEach((r,i)=>{const y=top+44+i*rh+44;x.shadowColor="rgba(255,176,32,.7)";x.shadowBlur=16;x.fillStyle=i===0?"#ffe08a":AMB;
+      x.font="800 40px "+LEDF;x.fillText(String(i+1).padStart(2,"0"),106,y);
+      const nm=String(r.name).toUpperCase();let s=40;do{x.font="800 "+s+"px "+LEDF;s-=2}while(x.measureText(nm).width>560&&s>20);x.fillText(nm,210,y);
+      x.textAlign="right";x.font="800 "+(i===0?50:44)+"px "+LEDF;x.fillText(nf.format(r.score),974,y);x.textAlign="left";x.shadowBlur=0});
+    showShare(await toBlob(c),T("Lyderių lentelė","Leaderboard")+" "+T(cur[1],cur[2]));
+  }
   // „Kur arena?“ rezultatų paveikslėlis dalinimuisi (tas pats stilius kaip klubų sąrašų kortelėse; taškai – LED švieslentėje)
   async function mgShare(d){
     const imgs=await Promise.all(d.rows.map(r=>r.logo?new Promise(res=>{const i=new Image();i.crossOrigin="anonymous";i.onload=()=>res(i);i.onerror=()=>res(null);setTimeout(()=>res(null),4000);i.src=r.logo}):null));
@@ -440,7 +500,9 @@
     c.toBlob(b=>b?res(b):rej(new Error("blob")),"image/png");
   })}
   function lbView(){
-    const ch=LBG.map(([k,a,b])=>`<button class="chip" data-lbg="${k}" aria-pressed="${LBSEL===k}">${T(a,b)}</button>`).join("");
+    const cur=LBG.find(g=>g[0]===LBSEL)||LBG[0];
+    const ch=`<div class="sx sxr lb-sx"><button class="chip cur" aria-pressed="true">${T(cur[1],cur[2])} ▾</button><div class="opts">${LBG.map(([k,a,b])=>`<button class="chip" data-lbg="${k}" aria-pressed="${LBSEL===k}">${T(a,b)}</button>`).join("")}</div></div>`+
+      (LBDATA&&((LBDATA.boards||{})[LBSEL]||[]).length?`<button type="button" class="chip lb-shb" data-lbsh="1">${T("Dalintis lentele","Share table")}</button>`:"");
     let body;
     if(!LBDATA)body=`<p class="sum">${LBERR?T("Nepavyko įkelti lyderių lentelės.","Could not load the leaderboard."):T("Kraunama…","Loading…")}</p>`;
     else{
@@ -464,10 +526,9 @@
     const q=ph==="over"?`<p class="gm-q"><b>${GS.rec?"🏆 ":""}${T("Neteisingai! ","Wrong! ")}</b>${T("Serija: ","Streak: ")}${GS.streak}</p>`
       :sal?`<p class="gm-q">${T("Kuris krepšininkas uždirba daugiau per mėnesį? Palieskite kortelę.","Who earns more per month? Tap a card.")}</p>`
       :`<p class="gm-q">${T("Ar „"+esc(R.club)+"“ "+lbl+" didesnis, ar mažesnis nei „"+esc(L.club)+"“?","Is the "+lbl+" of "+esc(R.club)+" higher or lower than "+esc(L.club)+"?")}</p>`;
-    const btns=ph==="over"?`<div class="gm-btns"><button class="gm-b" data-gr="1">${T("Žaisti dar kartą","Play again")}</button><button class="gm-b" data-gs="1">${T("Dalintis rezultatu","Share score")}</button></div>`
+    const btns=ph==="over"?`<div class="gm-btns over"><button class="gm-b" data-gr="1">${T("Žaisti dar kartą","Play again")}</button><button class="gm-b" data-gs="1">${T("Dalintis","Share")}</button>${GS.streak>0?lbBtnHtml(GS.saved,"gm-b"):""}</div>`
       :sal?"":`<div class="gm-btns"><button class="gm-b" data-gp="hi" ${!ask?"disabled":""}>▲ ${T("Didesnis","Higher")}</button><button class="gm-b" data-gp="lo" ${!ask?"disabled":""}>▼ ${T("Mažesnis","Lower")}</button></div>`;
-    const save=ph==="over"&&GS.streak>0?lbForm(GS.saved):"";
-    return`<div class="gm-root">${chips}${q}<div class="gm-cards">${cards}</div>${btns}${save}<p class="sum" style="margin-top:12px">${sal?T("Duomenys: visi sezonai","Data: all seasons"):T("Duomenys: sezonas","Data: season")+" "+GS.se}</p></div>`;
+    return`<div class="gm-root">${chips}${q}<div class="gm-cards">${cards}</div>${btns}<p class="sum" style="margin-top:12px">${sal?T("Duomenys: visi sezonai","Data: all seasons"):T("Duomenys: sezonas","Data: season")+" "+GS.se}</p></div>`;
   }
   let B3=null;
   // 3D modelis per vidurį tarp dviejų žaidimo kortelių (vienas egzempliorius, perkeliamas po kiekvieno perpiešimo)
@@ -486,22 +547,13 @@
   function renderGm(){const o=document.getElementById("out");if(o&&ok()){o.innerHTML=gmView();if(GS.mode==="map")return mgMount();
     if(GS.mode==="lb"){if(!LBDATA&&!LBBUSY){LBBUSY=true;lbLoad(true).then(()=>{LBBUSY=false;if(GM&&GS.mode==="lb")o.innerHTML=gmView()})}return}
     annPreload();b3Game()}}
-  // rezultato įrašymas (aukščiau / žemiau)
-  function lbSubmit(btn){
-    const box=btn.closest(".lb-save"),inp=box&&box.querySelector(".lbn"),err=box&&box.querySelector(".lb-err");
-    btn.disabled=true;btn.textContent=T("Saugoma…","Saving…");
-    lbSave(GS.mode,inp?inp.value:"",GS.streak).then(()=>{GS.saved=true;renderGm()}).catch(e=>{btn.disabled=false;btn.textContent=T("Išsaugoti","Save");
-      if(err){err.hidden=false;err.textContent=e&&e.message==="name"?T("Įrašykite vardą.","Enter a name."):T("Nepavyko išsaugoti. Bandykite dar kartą.","Could not save. Try again.")}})}
-  document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.classList&&e.target.classList.contains("lbn")){const b=e.target.closest(".lb-save").querySelector("[data-lbs]");if(b&&!b.disabled)b.click()}});
   function gAct(t){const d=t.dataset;
     if(d.gm!==undefined){GS.mode=d.gm;if(d.gm==="lb")LBDATA=null;else if(d.gm!=="map")gStart();renderGm();return}
     if(d.lbg!==undefined){LBSEL=d.lbg;renderGm();return}
-    if(d.lbs!==undefined){if(!t.closest(".mg"))lbSubmit(t);return}
+    if(d.lbo!==undefined){if(!t.closest(".mg"))lbAsk(GS.mode,GS.streak,null,gName(GS.mode)+" · "+T("serija","streak")).then(ok=>{if(ok){GS.saved=true;renderGm()}});return}
+    if(d.lbsh!==undefined){lbShare();return}
     if(d.gr!==undefined){gStart();renderGm();return}
-    if(d.gs!==undefined){
-      const txt=T("Aukščiau ar žemiau: ","Higher or lower: ")+GS.streak+T(" iš eilės (",", streak (")+(GS.mode==="bud"?T("biudžetai","budgets"):GS.mode==="sal"?T("algos","salaries"):T("lankomumas","attendance"))+") – "+location.href.split("#")[0];
-      if(navigator.share)navigator.share({text:txt}).catch(()=>{});else if(navigator.clipboard)navigator.clipboard.writeText(txt).then(()=>{t.textContent=T("Nukopijuota","Copied")}).catch(()=>{});
-      return}
+    if(d.gs!==undefined){hlShare().catch(()=>{});return}
     if(d.gp!==undefined&&GS.phase==="ask"){
       const good=GS.mode==="sal"?((d.gp==="L")===(GS.left.v>GS.right.v)):(d.gp==="hi"?GS.right.v>GS.left.v:GS.right.v<GS.left.v);GS.pick=d.gp;
       if(good){const prev=GBEST[GS.mode]||0;GS.streak++;GS.phase="ok";let cel=0;if(GS.streak>prev){GBEST[GS.mode]=GS.streak;gSave();if(!GS.rec&&GS.streak>=3){GS.rec=true;cel=1}}if(cel)celebrate(GS.streak);else if(GS.streak%10===0)celebrate(GS.streak,1);
@@ -648,13 +700,20 @@
    '.shov .bzo img{height:44px!important;width:auto!important;max-width:56px!important;max-height:44px!important;object-fit:contain;flex:none;border-radius:8px}'+
    '.shov .bzo span{flex:1;line-height:1.25}.shov .bzo button{flex:none}';
    document.head.appendChild(st)}
+  // Iššokantys langai (paveikslėlis dalinimuisi, vardo įvedimas): telefono „atgal“ ir Esc uždaro viršutinį
+  const OVL=[];let OSKIP=0;
+  function ovlOpen(close){OVL.push(close);history.pushState({ovl:1},"")}
+  function ovlClose(close){const i=OVL.lastIndexOf(close);if(i<0)return;OVL.splice(i,1);close();if(history.state&&history.state.ovl){OSKIP++;history.back()}}
+  window.KFPOP=()=>{if(OSKIP>0){OSKIP--;return true}if(OVL.length){OVL.pop()();return true}return false};
+  addEventListener("keydown",e=>{if(e.key==="Escape"&&OVL.length){e.preventDefault();e.stopImmediatePropagation();ovlClose(OVL[OVL.length-1])}},true);
   function showShare(blob,name,re){
     const fn=norm(name)+".png",o=document.createElement("div");o.className="shov";let url,file,on=false,busy=false;
     const set=b=>{if(url)URL.revokeObjectURL(url);url=URL.createObjectURL(b);file=new File([b],fn,{type:"image/png"});const im=o.querySelector(":scope>img"),dl=o.querySelector("a.chip");if(im)im.src=url;if(dl)dl.href=url};
     o.innerHTML=`<img alt=""><div class="row"><button class="chip" data-a="s">${T("Dalintis","Share")}</button><a class="chip" download="${fn}">${T("Atsisiųsti","Download")}</a><button class="chip" data-a="x">${T("Uždaryti","Close")}</button></div>`;
     set(blob);
+    const shut=()=>{URL.revokeObjectURL(url);o.remove()};ovlOpen(shut);
     o.addEventListener("click",async e=>{const a=e.target.closest("[data-a]");if(!a)return;
-      if(a.dataset.a==="x"){URL.revokeObjectURL(url);o.remove()}
+      if(a.dataset.a==="x")ovlClose(shut)
       else if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:name})}catch(x){}}
       else a.textContent=T("Naudokite „Atsisiųsti“","Use “Download”")});
     document.body.appendChild(o);
@@ -799,7 +858,7 @@
 
   document.addEventListener("click",e=>{
     if(MB&&MBQ&&e.target.closest&&e.target.closest("#out .mb-chart")&&!e.target.closest(".mbd")){mbClear();return}
-    const t=e.target.closest(".mbt,.gmt,.mapt,.shb,[data-tab],[data-mc],[data-mbs],[data-mbn],[data-mbd],[data-mbx],[data-gp],[data-gm],[data-gr],[data-gs],[data-lbg],[data-lbs]");if(!t)return;
+    const t=e.target.closest(".mbt,.gmt,.mapt,.shb,[data-tab],[data-mc],[data-mbs],[data-mbn],[data-mbd],[data-mbx],[data-gp],[data-gm],[data-gr],[data-gs],[data-lbg],[data-lbo],[data-lbsh]");if(!t)return;
     if(t.dataset.mbx!==undefined){mbClear();const i=document.getElementById("mbq");if(i)i.focus();return}
     if(t.classList.contains("mapt")){MAP=true;MB=false;GM=false;fixTabs();renderMap();return}
     if(t.classList.contains("mbt")){MAP=false;MB=true;GM=false;fixTabs();renderMb();return}

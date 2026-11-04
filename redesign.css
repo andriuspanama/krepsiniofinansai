@@ -399,3 +399,25 @@ p.sum .srcs.sg{vertical-align:middle;margin-left:4px}
 .lb-btn:disabled{opacity:.6;cursor:default}
 .lb-err{display:block;margin-top:6px;color:var(--neg);font-size:12.5px}.lb-err[hidden]{display:none}
 .lb-ok{margin:12px 0 0;color:var(--pos);font-weight:600;font-size:14px;text-align:center}
+/* įrašymo langas, dalinimosi langas virš visko (ir virš žemėlapio per visą ekraną) */
+.shov{z-index:1100}
+.lbm{position:fixed;inset:0;z-index:1100;display:grid;place-items:center;padding:16px;background:#000b}
+.lbm-box{width:min(380px,100%);padding:20px;border-radius:18px;background:var(--card);border:1px solid var(--line);box-shadow:0 18px 50px rgba(0,0,0,.5);text-align:center}
+.lbm-box h3{margin:0 0 12px;font:700 22px var(--hd)}
+.lbm-sc{margin:0 0 14px;padding:10px 12px;border-radius:12px;background:#05070b radial-gradient(color-mix(in srgb,var(--a) 13%,transparent) 1px,transparent 1.5px) 0 0/5px 5px;border:1px solid color-mix(in srgb,var(--a) 28%,#1a1a1a)}
+.lbm-sc small{display:block;color:#8a93a8;font:600 11px var(--mo,ui-monospace,monospace);letter-spacing:.08em;text-transform:uppercase}
+.lbm-sc b{font-size:38px}
+.lbm .lbn{width:100%;box-sizing:border-box;text-align:center;font-size:17px}
+.lbm-row{display:flex;gap:8px;margin-top:14px}
+.lbm-b{flex:1;border:0;border-radius:12px;padding:12px;font:700 15px var(--tx,inherit);background:var(--a);color:#1a1200;cursor:pointer}
+.lbm-b.sec{background:none;border:1px solid var(--line);color:var(--ink)}.lbm-b:disabled{opacity:.6}
+/* „Aukščiau ar žemiau“ pabaiga: trys mygtukai vienoje eilėje */
+.gm-btns.over .gm-b{font-size:17px;padding:12px 6px;min-width:0}
+.gm-btns.over .gm-b:disabled{opacity:.6;cursor:default}
+@media(max-width:720px){.gm-btns.over{gap:6px}.gm-btns.over .gm-b{font-size:15px;padding:12px 4px}}
+/* lyderių lentelės pasirinkimas – išskleidžiamas kaip sezonai */
+.lb-g{align-items:flex-start}
+.lb-g .sx{margin-bottom:0}
+.lb-shb{border-color:color-mix(in srgb,var(--a) 45%,var(--line))}
+.lb-sx .opts .chip{white-space:nowrap}
+#pktoast{z-index:1200}

@@ -1283,12 +1283,28 @@
     var a = 2166136261; for (var i = 0; i < s.length; i++) { a ^= s.charCodeAt(i); a = Math.imul(a, 16777619); }
     return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
   }
-  // 10 skirtingų arenų klubai; tvarka priklauso tik nuo sėklos ir klubų sąrašo (ne nuo įkėlimo tvarkos)
+  // 10 klubų žaidimui: po vieną iš šalies, skirtingos arenos ir įvairūs biudžetai (3 dideli, 3 vidutiniai, 4 maži –
+  // kad nebūtų žaidimų vien su Eurolygos klubais). Tvarka priklauso tik nuo sėklos ir klubų sąrašo (ne nuo įkėlimo tvarkos).
+  var MG_MIX = [3, 3, 4];
   function mgPick(items, N, rnd) {
     var pool = items.slice().sort(function (a, b) { return N(a.name) < N(b.name) ? -1 : 1; });
     for (var i = pool.length - 1; i > 0; i--) { var j = Math.floor(rnd() * (i + 1)), t = pool[i]; pool[i] = pool[j]; pool[j] = t; }
-    var out = [], ar = {};
-    pool.forEach(function (it) { var k = it.e.arena + '|' + it.e.city; if (out.length < MG_N && !ar[k]) { ar[k] = 1; out.push(it.name); } });
+    var tot = items.map(function (it) { return it.total || 0; }).filter(function (v) { return v > 0; }).sort(function (a, b) { return b - a; });
+    var t1 = tot[Math.floor(tot.length / 3)] || Infinity, t2 = tot[Math.floor(tot.length * 2 / 3)] || Infinity;
+    var tier = function (it) { var v = it.total || 0; return v > 0 && v >= t1 ? 0 : v > 0 && v >= t2 ? 1 : 2; };
+    var out = [], ar = {}, na = {}, left = MG_MIX.slice();
+    var nat = function (it) { return it.nation ? N(it.nation) : 'x' + N(it.name); };
+    function take(useMix, useNat) {
+      pool.forEach(function (it) {
+        if (out.length >= MG_N || out.indexOf(it.name) >= 0) return;
+        var k = it.e.arena + '|' + it.e.city, tr = tier(it);
+        if (ar[k] || (useNat && na[nat(it)]) || (useMix && left[tr] <= 0)) return;
+        ar[k] = 1; na[nat(it)] = 1; left[tr]--; out.push(it.name);
+      });
+    }
+    take(true, true);            // pagal planą: po vieną iš šalies + biudžetų mišinys
+    take(false, true);           // jei kurio nors dydžio klubų pritrūko – bet kurio dydžio, vis dar po vieną iš šalies
+    take(false, false);          // kraštutiniu atveju – be šalies apribojimo
     return out;
   }
   function mgLoad(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (x) { return null; } }
@@ -1325,6 +1341,8 @@
       '.mg-box h3{margin:0 0 6px;font:700 24px var(--hd,sans-serif)}',
       '.mg-box p{margin:0 0 12px;color:var(--mute);font-size:14px;line-height:1.45}',
       '.mg-box .mg-btn{display:block;width:100%;margin-top:10px;padding:13px 18px;font-size:15px}',
+      '@media(max-width:720px){.mg-box{padding:16px 14px}}.mg-row{display:flex;gap:5px;margin-top:12px}.mg-sb{flex:1 1 0;min-width:0;border:1px solid var(--line);border-radius:12px;padding:10px 2px;font:700 12.5px var(--tx,inherit);background:none;color:var(--ink);cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+      '.mg-sb.pri{background:var(--a);border-color:var(--a);color:#1a1200}.mg-sb:disabled{opacity:.6;cursor:default}.mg-sb:not(:disabled):hover{border-color:var(--mute)}',
       '.mg-big{font:700 40px var(--mono,monospace);color:var(--a);line-height:1.1}.mg-big small{font-size:16px;color:var(--mute)}',
       '.mg-sq{font-size:18px;letter-spacing:1px;margin:6px 0 10px;white-space:nowrap}',
       '@media(max-width:720px){.mg .am-wrap{height:calc(100vh - 92px);height:calc(100dvh - 92px);min-height:420px}}',
@@ -1457,6 +1475,7 @@
         bar.querySelector('.mg-sc b').textContent = fmt(total());
       }
       function round() {
+        resClose();
         pan.hidden = true; wrap.classList.remove('mg-idle'); aEl.hidden = true;
         var r = st.g[st.i];
         guess = r ? r.ll : null; gEl.hidden = !guess;
@@ -1512,33 +1531,28 @@
           '<p>' + esc(T('Iš viso nuklysta', 'Total distance off')) + ': ' + fmt(kmSum()) + ' km' + (st.kind === 'free' ? ' · ' + esc(T('Rekordas', 'Best')) + ': ' + fmt(best) : '') + '</p>' +
           '<div class="mg-sq">' + st.g.map(function (x) { return mgSq(x.d); }).join('') + '</div>' +
           '<ul class="mg-list">' + rows + '</ul>' +
-          lbBlock() +
-          '<button type="button" class="mg-btn" data-mg="share">' + esc(T('Dalintis rezultatu', 'Share score')) + '</button>' +
-          (st.kind === 'free' ? '<button type="button" class="mg-btn sec" data-mg="free">' + esc(T('Žaisti dar kartą', 'Play again')) + '</button>' : '') +
-          '<button type="button" class="mg-btn sec" data-mg="menu">' + esc(T('Į pradžią', 'Back to start')) + '</button>' +
+          (st.kind === 'free' ? '<button type="button" class="mg-btn" data-mg="free">' + esc(T('Žaisti dar kartą', 'Play again')) + '</button>' : '') +
+          '<div class="mg-row"><button type="button" class="mg-sb pri" data-mg="share">' + esc(T('Dalintis', 'Share')) + '</button>' +
+          (LB ? (lbDone() ? '<button type="button" class="mg-sb" disabled>✓ ' + esc(T('Įrašyta', 'Saved')) + '</button>' : '<button type="button" class="mg-sb" data-mg="save">' + esc(T('Išsaugoti', 'Save')) + '</button>') +
+            '<button type="button" class="mg-sb" data-mg="lb">' + esc(T('Lyderiai', 'Leaders')) + '</button>' : '') +
+          '<button type="button" class="mg-sb" data-mg="menu">' + esc(T('Į pradžią', 'Start')) + '</button></div>' +
           (st.kind === 'day' ? '<p class="mg-note">' + esc(T('Naujas iššūkis – rytoj.', 'A new challenge tomorrow.')) + '</p>' : '');
         pan.hidden = false; wrap.classList.add('mg-idle'); box.scrollTop = 0;
+        // telefono „atgal“ / Esc uždaro rezultatus ir grąžina į žaidimo pradžią
+        if (!resOn) { resOn = true; if (!(history.state && history.state.mgres)) history.pushState({ mgres: 1 }, ''); }
       }
+      var resOn = false;
+      function resClose(fromPop) { if (!resOn) return; resOn = false; if (!fromPop && history.state && history.state.mgres) history.back(); }
       // lyderių lentelė: dienos iššūkis – vienas įrašas per dieną šioje naršyklėje, laisvas žaidimas – po kiekvieno žaidimo
       var LB = deps.lb && deps.lb.on && deps.lb.on() ? deps.lb : null;
       var lbGame = function () { return st.kind === 'day' ? 'mapday' : 'mapfree'; };
       var lbDone = function () { return st.kind === 'day' ? !!mgLoad('mg-lb-' + st.day) : !!st.saved; };
-      function lbBlock() {
-        if (!LB) return '';
-        return LB.form(lbDone()) + '<button type="button" class="mg-btn sec" data-mg="lb">' + esc(T('Lyderių lentelė', 'Leaderboard')) + '</button>';
+      function lbAskNow() {
+        LB.ask(lbGame(), total(), { km: kmSum(), day: st.day || mgToday() }, (st.kind === 'day' ? T('Dienos iššūkis #', 'Daily challenge #') + mgNo(st.day) : T('Laisvas žaidimas', 'Free play')) + ' · ' + T('taškai', 'points'))
+          .then(function (ok) { if (!ok) return; if (st.kind === 'day') mgStore('mg-lb-' + st.day, 1); else st.saved = true; results(); });
       }
-      function lbSubmit(btn) {
-        var bx = btn.closest('.lb-save'), inp = bx && bx.querySelector('.lbn'), err = bx && bx.querySelector('.lb-err');
-        btn.disabled = true; btn.textContent = T('Saugoma…', 'Saving…');
-        LB.save(lbGame(), inp ? inp.value : '', total(), { km: kmSum(), day: st.day || mgToday() }).then(function () {
-          if (st.kind === 'day') mgStore('mg-lb-' + st.day, 1); else st.saved = true;
-          results();
-        }).catch(function (e) {
-          btn.disabled = false; btn.textContent = T('Išsaugoti', 'Save');
-          if (err) { err.hidden = false; err.textContent = e && e.message === 'name' ? T('Įrašykite vardą.', 'Enter a name.') : e && e.message === 'day' ? T('Diena jau pasikeitė – šio iššūkio įrašyti nebegalima.', 'The day has changed – this challenge can no longer be saved.') : T('Nepavyko išsaugoti. Bandykite dar kartą.', 'Could not save. Try again.'); }
-        });
-      }
-      function menu() {
+      function menu(fromPop) {
+        resClose(fromPop);
         st = null; MG.on = null; guess = null; aEl.hidden = true; gEl.hidden = true; bar.hidden = true; act.hidden = true; drawLine();
         var dd = mgLoad(dKey), done = valid(dd) && dd.i >= MG_N, started = valid(dd) && dd.g.length > 0 && !done;
         var best = +(mgLoad('mg-best') || 0), fr = MG.free && valid(MG.free) && MG.free.i < MG_N && MG.free.g.length;
@@ -1574,15 +1588,14 @@
         round();
       }
       wrap.addEventListener('click', function (ev) {
-        var sb = ev.target.closest && ev.target.closest('[data-lbs]');
-        if (sb) { if (LB && !sb.disabled) lbSubmit(sb); return; }
         var b = ev.target.closest && ev.target.closest('[data-mg]');
         if (b) {
           var a = b.dataset.mg;
           if (a === 'ok') confirmGuess(); else if (a === 'next') next();
           else if (a === 'day') startDaily(); else if (a === 'free') startFree(true); else if (a === 'resume') startFree(false);
           else if (a === 'menu') menu();
-          else if (a === 'lb' && LB) LB.show(st ? lbGame() : 'mapday');
+          else if (a === 'save' && LB && st) lbAskNow();
+          else if (a === 'lb' && LB) { var k = st ? lbGame() : 'mapday'; resClose(); LB.show(k); }
           else if (a === 'share') {
             var txt = shareText();
             if (deps.lb && deps.lb.shareImg) {   // paveikslėlis su rezultatais (kaip klubų sąrašai)
@@ -1608,8 +1621,16 @@
         else if (!fromPop && history.state && history.state.mgfs) history.back();
       }
       fsb.addEventListener('click', function () { setFs(!fs); });
-      function onKey(ev) { if (ev.key === 'Escape' && !ev.defaultPrevented && fs && wrap.isConnected) setFs(false); }
-      function onPop() { if (fs && !(history.state && history.state.mgfs)) setFs(false, true); }
+      function onKey(ev) {
+        if (ev.key !== 'Escape' || ev.defaultPrevented || !wrap.isConnected) return;
+        if (resOn) menu(); else if (fs) setFs(false);
+      }
+      function onPop() {
+        var hs = history.state || {};
+        if (!wrap.isConnected) return;
+        if (resOn && !hs.mgres) menu(true);
+        if (fs && !hs.mgfs && !hs.mgres) setFs(false, true);
+      }
       window.addEventListener('popstate', onPop);
       document.addEventListener('keydown', onKey);
       var lastW = W(), lastH = H();
