@@ -380,7 +380,11 @@ const PAIRS=Object.entries(EN).sort((x,y)=>y[0].length-x[0].length).map(([k,v])=
 let LANG=(()=>{try{return localStorage.getItem("lang")||"lt"}catch(e){return"lt"}})(),stH="";
 // vienas praėjimas per tekstą su visais žodžiais vienoje išraiškoje (anksčiau – po vieną kiekvienam žodžiui, lėta dideliems puslapiams)
 const TRRE=new RegExp("(?<![\\p{L}])(?:"+Object.keys(EN).sort((x,y)=>y.length-x.length).map(k=>k.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("|")+")(?![\\p{L}])","gu");
-const tr=s=>LANG==="en"?String(s).replace(TRRE,m=>EN[m]??m):s;
+// klubų ir žaidėjų pavadinimai neverčiami (pvz. „KK Železničar Indija“ ≠ „India“): NTRE – tik tie pavadinimai, kuriuos vertimas pakeistų
+let NTRE=null;const tr0=s=>s.replace(TRRE,m=>EN[m]??m);
+const tr=s=>{if(LANG!=="en")return s;s=String(s);if(!NTRE)return tr0(s);return s.split(NTRE).map((p,i)=>i%2?p:tr0(p)).join("")};
+function buildNt(){const N=new Set();[D.bud,D.att,D.sal].forEach(A=>(A||[]).forEach(r=>[r.club,r.team,r.name].forEach(n=>{if(n){const e=esc(n);if(tr0(e)!==e)N.add(e)}})));
+ NTRE=N.size?new RegExp("("+[...N].sort((x,y)=>y.length-x.length).map(k=>k.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("|")+")","g"):null}
 const setSt=s=>{stH=s;$("st").innerHTML=tr(s)};
 function setLang(l){LANG=l;try{localStorage.setItem("lang",l)}catch(e){}
  nf=new Intl.NumberFormat(l==="en"?"en-GB":"lt-LT",{maximumFractionDigits:0});document.documentElement.lang=l;
@@ -701,7 +705,7 @@ async function start(){
   const lgP=fetch("logos.json").then(r=>r.json()).catch(()=>({})),phP=fetch("players_photos.json").then(r=>r.json()).catch(()=>({}));   // kartu su lentele, ne po jos
   DEF=raw("__nera_tokio_lapo__");DEF.catch(()=>{});   // neegzistuojančio lapo atsakymas (kaip atrodo „lapo nėra“) – lygiagrečiai, nelaukiant
   const[a,b,at,sa,hi,ha]=await Promise.all(Object.entries(SHEETS).map(([k,n],i)=>{const q=load(n,i===0,GID[k]);return/^Historical/.test(n[0])?q.catch(()=>[]):q}));
-  D.bud=dedupe([budgets(a,"26/27"),budgets(b,"25/26"),budgets(hi,"H")].flatMap((l,i)=>l.map(r=>(r._s=i,r))));D.att=dedupe([...attendance(at,"25/26"),...attendance(ha,"24/25")]);D.sal=salaries(sa);buildDist();
+  D.bud=dedupe([budgets(a,"26/27"),budgets(b,"25/26"),budgets(hi,"H")].flatMap((l,i)=>l.map(r=>(r._s=i,r))));D.att=dedupe([...attendance(at,"25/26"),...attendance(ha,"24/25")]);D.sal=salaries(sa);buildDist();buildNt();
   for(const a of D.att){a.country=a.nation;if(!FL[a.nation]){const b=D.bud.find(r=>FL[r.nation]&&norm(r.club)===norm(a.club))||D.bud.find(r=>FL[r.nation]&&same(r.club,a.club));if(b)a.country=b.nation}}
   await addLive();if(!D.att.some(r=>r.season===S.aseason))S.aseason=D.att.map(r=>r.season).sort().pop()||S.aseason;
   try{LOGOS=Object.fromEntries(Object.entries(await lgP).map(([k,v])=>[norm(k),v]))}catch(e){}
