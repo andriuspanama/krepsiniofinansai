@@ -375,7 +375,7 @@
     const inner=`${lgo(c.team||c.club)}<div class="gm-n">${flag(c.nation)}${esc(c.club)}</div>${c.sub?`<small class="gm-s">${esc(c.sub)}</small>`:""}<div class="gm-v">${show?gv(GS.mode,c.v):"?"}</div>`;
     return side?`<button class="gm-card gm-pick ${cls||""}" data-gp="${side}" ${ask?"":"disabled"}>${inner}</button>`:`<div class="gm-card ${cls||""}">${inner}</div>`}
   // ---- Lyderių lentelė: Google Apps Script (žr. leaderboard.gs), rezultatai – atskiroje Google lentelėje ----
-  const LB_URL="";   // Apps Script žiniatinklio programos nuoroda (…/exec); tuščia – lentelė nerodoma
+  const LB_URL="https://script.google.com/macros/s/AKfycbw3IbKP8rTlAk1q3Bvrr-vO59kdkNQREsLeM9KOHyHGzi-KPM0bHD2lDIx8CKzhMvKV/exec";   // Apps Script žiniatinklio programos nuoroda (…/exec); tuščia – lentelė nerodoma
   const LBG=[["mapday","Kur arena? – dienos","Where's the arena? – daily"],["mapfree","Kur arena? – laisvas","Where's the arena? – free play"],["bud","Biudžetas","Budget"],["att","Lankomumas","Attendance"],["sal","Algos","Salaries"]];
   let LBSEL="mapday",LBDATA=null,LBT=0,LBERR=false,LBBUSY=false;
   const lbName=()=>{try{return localStorage.getItem("kf_name")||""}catch(e){return""}};
