@@ -458,3 +458,18 @@ p.sum .srcs.sg{vertical-align:middle;margin-left:4px}
 .bar.n.mr{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 44px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 44px),transparent)}
 .bar.n.ml{-webkit-mask-image:linear-gradient(90deg,transparent,#000 44px);mask-image:linear-gradient(90deg,transparent,#000 44px)}
 .bar.n.ml.mr{-webkit-mask-image:linear-gradient(90deg,transparent,#000 44px,#000 calc(100% - 44px),transparent);mask-image:linear-gradient(90deg,transparent,#000 44px,#000 calc(100% - 44px),transparent)}
+
+/* Kortelių sezonų grafikai (biudžetas, alga): visi sezonai, slenkama į šonus; stulpelių dydis pagal ekraną */
+:root{--chk:1}
+@media(min-width:601px){:root{--chk:1.2}}
+@media(min-width:900px){:root{--chk:1.4}}
+.tw.ch{position:relative;padding:8px 10px;overflow:hidden}
+.tw.ch .chs{overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+.tw.ch .chs::-webkit-scrollbar{display:none}
+.tw.ch .chs svg{display:block;margin:0 auto;max-width:none}
+.tw.ch.mr .chs{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 48px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 48px),transparent)}
+.tw.ch.ml .chs{-webkit-mask-image:linear-gradient(90deg,transparent,#000 48px);mask-image:linear-gradient(90deg,transparent,#000 48px)}
+.tw.ch.ml.mr .chs{-webkit-mask-image:linear-gradient(90deg,transparent,#000 48px,#000 calc(100% - 48px),transparent);mask-image:linear-gradient(90deg,transparent,#000 48px,#000 calc(100% - 48px),transparent)}
+.tw.ch .chn{position:absolute;top:50%;z-index:2;width:30px;height:30px;margin-top:-15px;padding:0;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--ink);font:700 18px/1 var(--tx,inherit);cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,.35)}
+.tw.ch .chn.l{left:6px}.tw.ch .chn.r{right:6px}
+.tw.ch.ml .chn.l,.tw.ch.mr .chn.r{display:flex}
