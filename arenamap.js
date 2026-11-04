@@ -1534,7 +1534,7 @@
           (st.kind === 'free' ? '<button type="button" class="mg-btn" data-mg="free">' + esc(T('Žaisti dar kartą', 'Play again')) + '</button>' : '') +
           '<div class="mg-row"><button type="button" class="mg-sb pri" data-mg="share">' + esc(T('Dalintis', 'Share')) + '</button>' +
           (LB ? (lbDone() ? '<button type="button" class="mg-sb" disabled>✓ ' + esc(T('Įrašyta', 'Saved')) + '</button>' : '<button type="button" class="mg-sb" data-mg="save">' + esc(T('Išsaugoti', 'Save')) + '</button>') +
-            '<button type="button" class="mg-sb" data-mg="lb">' + esc(T('Lyderiai', 'Leaders')) + '</button>' : '') +
+            '<button type="button" class="mg-sb" data-mg="lb">' + esc(T('Lentelė', 'Leaderboard')) + '</button>' : '') +
           '<button type="button" class="mg-sb" data-mg="menu">' + esc(T('Į pradžią', 'Start')) + '</button></div>' +
           (st.kind === 'day' ? '<p class="mg-note">' + esc(T('Naujas iššūkis – rytoj.', 'A new challenge tomorrow.')) + '</p>' : '');
         pan.hidden = false; wrap.classList.add('mg-idle'); box.scrollTop = 0;
@@ -1563,7 +1563,7 @@
             (started ? T('Tęsti dienos iššūkį #', 'Continue daily challenge #') : T('Dienos iššūkis #', 'Daily challenge #')) + mgNo(day)) + '</button>' +
           (fr ? '<button type="button" class="mg-btn sec" data-mg="resume">▶ ' + esc(T('Tęsti laisvą žaidimą', 'Continue free play')) + ' (' + MG.free.i + '/' + MG_N + ')</button>' : '') +
           '<button type="button" class="mg-btn sec" data-mg="free">🎲 ' + esc(T('Laisvas žaidimas', 'Free play')) + '</button>' +
-          (LB ? '<button type="button" class="mg-btn sec" data-mg="lb">🏆 ' + esc(T('Lyderių lentelė', 'Leaderboard')) + '</button>' : '') +
+          (LB ? '<div class="mg-row"><button type="button" class="mg-sb" data-mg="lbd">' + esc(T('Dienos lentelė', 'Daily leaderboard')) + '</button><button type="button" class="mg-sb" data-mg="lbf">' + esc(T('Bendra lentelė', 'Total leaderboard')) + '</button></div>' : '') +
           '<p class="mg-note">' + esc(T('Dienos iššūkis – tie patys 10 klubų visiems, vienas bandymas per dieną.', 'Daily challenge – the same 10 clubs for everyone, one try per day.')) +
           (best ? ' ' + esc(T('Laisvo žaidimo rekordas', 'Free play best')) + ': ' + fmt(best) + '.' : '') + ' ' + esc(T('Klubų žemėlapyje', 'Clubs on the map')) + ': ' + items.length + '.</p>';
         pan.hidden = false; wrap.classList.add('mg-idle'); home(0);
@@ -1595,7 +1595,9 @@
           else if (a === 'day') startDaily(); else if (a === 'free') startFree(true); else if (a === 'resume') startFree(false);
           else if (a === 'menu') menu();
           else if (a === 'save' && LB && st) lbAskNow();
-          else if (a === 'lb' && LB) { var k = st ? lbGame() : 'mapday'; resClose(); LB.show(k); }
+          else if (a === 'lb' && LB) LB.show(st ? lbGame() : 'mapday');   // lentelė atsidaro kaip langas virš rezultatų
+          else if (a === 'lbd' && LB) LB.show('mapday');
+          else if (a === 'lbf' && LB) LB.show('mapfree');
           else if (a === 'share') {
             var txt = shareText();
             if (deps.lb && deps.lb.shareImg) {   // paveikslėlis su rezultatais (kaip klubų sąrašai)

@@ -1014,7 +1014,7 @@
     }
     function vFind(kind) {
       if (kind === 'lbtop' || kind === 'lblast') {   // lyderių lentelė: pirmos / paskutinės vietos rezultatas
-        var rows = document.querySelectorAll('#out .lb-l li');
+        var rows = sheetOpen() ? document.querySelectorAll('#sh .lb-l li') : [];
         var row = rows.length ? rows[kind === 'lbtop' ? 0 : rows.length - 1] : null, sc = row && row.querySelector('b');
         if (!sc || (kind === 'lblast' && rows.length < 2)) return null;
         var rr = row.getBoundingClientRect(), br = sc.getBoundingClientRect();
@@ -1108,10 +1108,10 @@
     }
     function visitPoll() {
       if (s.script) {
-        if (!s.script.length) { leave(); return; }
+        if (!s.script.length || !sheetOpen() || !document.querySelector('#sh .lb-board')) { leave(); return; }   // lentelė uždaryta – išeina
         var sk = s.script[0], st = vFind(sk);
         if (st && st.r.bottom > 0 && st.r.top < H) { s.script.shift(); s.scMiss = 0; startVisit(sk); }
-        else if (sk === 'lblast' && document.querySelectorAll('#out .lb-l li').length === 1) s.script.shift();   // tik vienas rezultatas
+        else if (sk === 'lblast' && document.querySelectorAll('#sh .lb-l li').length === 1) s.script.shift();   // tik vienas rezultatas
         else if (++s.scMiss > 12) leave();
         return;
       }
@@ -1147,7 +1147,8 @@
           if (logoGone) applyNologo(true);
           else if (!kickDone && !s.kt && stable >= 2 && (s.mode === 'idle' || s.mode === 'walk')) { kickDone = true; startKick(tg); }
         } else { stable = 0; lastSig = ''; if (++noTgt >= 4) { kickDone = false; logoGone = false; applyNologo(false); } }
-        if (!s.vt && !s.kt && (s.mode === 'idle' || s.mode === 'walk')) visitPoll();
+        if (s.script && s.mode !== 'leave' && s.mode !== 'fall' && !(sheetOpen() && document.querySelector('#sh .lb-board'))) leave();   // lentelės langas uždarytas
+        else if (!s.vt && !s.kt && (s.mode === 'idle' || s.mode === 'walk')) visitPoll();
       }
 
       // gravitacija (nusileidimas nuo „lentynos“)
@@ -1288,7 +1289,11 @@
     },
     start: startWalker,
     // lyderių lentelė: atsiranda, paploja pirmai vietai, parodo į paskutinę ir susiima už galvos, tada išeina
-    leaderboard: function () { if (!walker) startWalker(null, { script: ['lbtop', 'lblast'] }); },
+    leaderboard: function () {
+      if (!walker) { startWalker(null, { script: ['lbtop', 'lblast'] }); return; }
+      var st = walker._state();   // dar išeina iš ankstesnės lentelės – grįžta ir pradeda iš naujo
+      if (st.script && st.mode === 'leave') { st.script = ['lbtop', 'lblast']; st.scMiss = 0; st.mode = 'idle'; st.timer = 0.3; }
+    },
     active: function () { return !!walker; },
     stop: function () { if (walker) walker.leave(); }
   };

@@ -421,3 +421,17 @@ p.sum .srcs.sg{vertical-align:middle;margin-left:4px}
 .lb-shb{border-color:color-mix(in srgb,var(--a) 45%,var(--line))}
 .lb-sx .opts .chip{white-space:nowrap}
 #pktoast{z-index:1200}
+/* „Lentelė“ serijos eilutėje – tokio paties stiliaus kaip „Serija · Rekordas“ */
+.gm-lbb{background:none;border:0;padding:0;margin:0;font:inherit;color:inherit;cursor:pointer;text-decoration:underline dotted;text-underline-offset:4px;text-decoration-color:color-mix(in srgb,var(--a) 70%,transparent)}
+.gm-lbb:hover{color:var(--a)}
+/* lentelės langas */
+.lbw h2{margin:0 0 10px;font:700 26px/1.1 var(--hd)}
+.lb-acts{display:flex;justify-content:flex-end;margin:0 0 10px}
+.lbw .lb-board{max-width:none}
+/* siauri telefonai (≤380 px) */
+@media(max-width:380px){
+ .gm-score{font-size:13px}.gm-score .led{font-size:18px}
+ .mg-row{flex-wrap:wrap}.mg-sb{flex:1 1 40%!important;font-size:12.5px!important}
+ .mg-q b{white-space:normal!important;font-size:15px!important}
+ .mg-lg{width:56px!important;height:56px!important}
+}
