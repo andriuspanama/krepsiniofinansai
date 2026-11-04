@@ -389,6 +389,8 @@
     try{localStorage.setItem("kf_name",name)}catch(e){}
     return fetch(LB_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(Object.assign({game,name,score},extra||{}))})
       .then(r=>r.json()).then(j=>{if(!j||!j.ok)throw new Error(j&&j.error||"err");LBDATA=null;return j})}
+  // lyderių lentelėje atsiranda 3D Brazys: paploja 1 vietai, parodo į paskutinę ir susiima už galvos
+  function lbB3(){if(!document.querySelector("#out .lb-l li"))return;try{const w=window.Brazys3D&&Brazys3D.walker;if(w&&w.leaderboard)setTimeout(()=>{if(GM&&GS.mode==="lb")w.leaderboard()},400)}catch(e){}}
   // rezultato įrašymas: atskiras langas su vardo laukeliu (atgal / Esc – uždaro)
   const lbBtnHtml=(saved,cls)=>!LB_URL?"":saved?`<button type="button" class="${cls}" disabled>✓ ${T("Įrašyta","Saved")}</button>`:`<button type="button" class="${cls}" data-lbo="1">${T("Išsaugoti","Save")}</button>`;
   function lbAsk(game,score,extra,label){return new Promise(done=>{
@@ -545,7 +547,7 @@
     if(window.ArenaMap&&ArenaMap.game){ArenaMap.game(h,{D,T,esc,norm,same,season:"26/27",logo:n=>LOGOS[norm(n)],sheetId:SHEET_ID,start:MGSTART,lb:window.KFLB});MGSTART=null}
     else setTimeout(()=>{if(GM&&GS.mode==="map"&&document.querySelector("#out .mg-host:empty"))mgMount()},300)}
   function renderGm(){const o=document.getElementById("out");if(o&&ok()){o.innerHTML=gmView();if(GS.mode==="map")return mgMount();
-    if(GS.mode==="lb"){if(!LBDATA&&!LBBUSY){LBBUSY=true;lbLoad(true).then(()=>{LBBUSY=false;if(GM&&GS.mode==="lb")o.innerHTML=gmView()})}return}
+    if(GS.mode==="lb"){if(!LBDATA&&!LBBUSY){LBBUSY=true;lbLoad(true).then(()=>{LBBUSY=false;if(GM&&GS.mode==="lb"){o.innerHTML=gmView();lbB3()}})}else lbB3();return}
     annPreload();b3Game()}}
   function gAct(t){const d=t.dataset;
     if(d.gm!==undefined){GS.mode=d.gm;if(d.gm==="lb")LBDATA=null;else if(d.gm!=="map")gStart();renderGm();return}

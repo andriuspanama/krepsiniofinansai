@@ -368,6 +368,23 @@
       P.pt = ex; P.ps = near; P.mo = talk(t, 0.55, 2.3);
       P.leg('R', 0.05 * e, 0.08 * e, 0.03); P.leg('L', -0.05 * e, 0.08 * e, 0.03);
     } },
+    // 👏 Plojimai: rankos priekyje, delnai susitinka ~5 kartus per sekundę, linksi galva, pašokinėja
+    applause: { d: 3.4, ev: [[0.5, 'clap', 3], [1.3, 'clap', 3], [2.1, 'clap', 3]], f: function (P, t, hop, side) {
+      var e = env(t, 3.4, 0.35, 0.45), c = 0.5 + 0.5 * Math.cos(t * Math.PI * 2 * 4.6), open = 0.3 * c - 0.12;
+      P.arm('R', open * e, 1.15 * e, 0.95 * e, -0.15 * e); P.arm('L', open * e, 1.15 * e, 0.95 * e, -0.15 * e);
+      P.head(-0.12 * e + 0.08 * Math.sin(t * 9) * e, 0.18 * (side || 0) * e, 0);
+      var j = Math.abs(Math.sin(t * 4.6)); P.y = 0.025 * j * e; P.sy = 1 - 0.01 * j * e;
+      P.leg('R', 0, 0.1 * e, 0.04); P.leg('L', 0, 0.1 * e, 0.04);
+      P.mo = 0.5 * smooth(0.4, 0.6, t) * smooth(3.2, 2.9, t);
+    } },
+    // 👉 Rodo į rezultatą: artimesnė ranka ištiesta į taikinį, galva pasukta į jį, kita ranka ant klubo
+    point: { d: 2.2, f: function (P, t, hop, side) {
+      var e = env(t, 2.2, 0.35, 0.4), near = side > 0 ? 'L' : 'R', far = side > 0 ? 'R' : 'L', jab = 0.06 * pulse(t, 0.9, 0.25) + 0.06 * pulse(t, 1.35, 0.25);
+      P.arm(near, 0.15 * e, (1.5 + jab) * e, 0.05 * e, 0);
+      P.arm(far, 0.45 * e, -0.25 * e, 1.5 * e, 0.6 * e);
+      P.head(0.12 * e, 0.35 * (side || 0) * e, 0);
+      P.fx = 0.05 * e; P.leg('R', 0, 0.06 * e, 0.03); P.leg('L', 0, 0.06 * e, 0.03);
+    } },
     breakdance: { d: 3.8, f: function (P, t) {
       var a = clamp01((t - 0.35) / 0.75), b = clamp01((t - 2.9) / 0.7), s = clamp01((t - 1.1) / 1.8);
       var y = 0, fx = 0;
@@ -726,17 +743,18 @@
   /* ------------------------------------------------------------------ */
   var walker = null;
 
-  function startWalker(srcEl) {
+  function startWalker(srcEl, wopts) {
     injectCss();
     if (srcEl) srcEl.classList.add('b3-load');
     ensureModel().then(function (parts) {
       if (srcEl) srcEl.classList.remove('b3-load');
       if (walker) return;
-      walker = createWalker(parts, srcEl);
+      walker = createWalker(parts, srcEl, wopts);
     }).catch(function () { if (srcEl) srcEl.classList.remove('b3-load'); });
   }
 
-  function createWalker(parts, srcEl) {
+  function createWalker(parts, srcEl, wopts) {
+    wopts = wopts || {};
     var W = window.innerWidth, H = window.innerHeight;
     var layer = document.createElement('div');
     layer.style.cssText = 'position:fixed;inset:0;z-index:100000;pointer-events:none;';
@@ -784,6 +802,8 @@
       fl.animate([{ transform: 'scale(.3)', opacity: 1 }, { transform: 'scale(1.9)', opacity: 0 }], { duration: 520, easing: 'ease-out' }).onfinish = function () { fl.remove(); };
     }
     s.fl = floor; s.kt = null; s.vt = null; s.chain = []; s.evd = 0; s.next = null; s.air = 0; s.lp = null;
+    // scenarijus (lyderių lentelė): aplankyti nurodytas vietas iš eilės, po to išeiti
+    s.script = wopts.script ? wopts.script.slice() : null; s.scMiss = 0;
 
     function setMove(name) { s.mode = 'act'; s.move = name; s.mt = 0; s.face = 0; s.evd = 0; }
     function leave() { if (s.mode !== 'leave' && !s.dead) { s.mode = 'leave'; s.kt = null; s.vt = null; s.chain = []; s.next = null; s.fl = floor; s.dir = s.x < W / 2 ? -1 : 1; [].forEach.call(document.querySelectorAll('[data-b3d].lit'), function (el) { el.classList.remove('lit'); }); } }
@@ -889,11 +909,11 @@
     }
 
     // ---- efektai: širdelės ir debesėlis su tekstu ----
-    function hearts(n, ox, oy) {
+    function hearts(n, ox, oy, ch) {
       var cols = ['#ff3b5c', '#ff6b8b', '#e4262f', '#ff8fab', '#ff2e63'];
       for (var i = 0; i < n; i++) {
         var h = document.createElement('div'), fs = 16 + Math.random() * 20, dx = (Math.random() - 0.5) * S * 1.4, up = S * (0.6 + Math.random() * 0.9);
-        h.textContent = '\u2665';
+        h.textContent = ch || '\u2665';
         h.style.cssText = 'position:fixed;left:' + (ox + (Math.random() - 0.5) * S * 0.3) + 'px;top:' + oy + 'px;z-index:100003;pointer-events:none;font:' + fs + 'px/1 system-ui,sans-serif;color:' + cols[i % cols.length] + ';text-shadow:0 2px 4px rgba(0,0,0,.35);opacity:0;';
         document.body.appendChild(h);
         if (!h.animate) { h.remove(); continue; }
@@ -961,6 +981,7 @@
     function fx(kind, arg) {
       var side = s.vt ? s.vt.dirTo : 0;
       if (kind === 'heart') hearts(arg || 3, s.x, H - s.y - (s.move === 'love' ? 2.1 : 1.7) * S);
+      else if (kind === 'clap') hearts(arg || 3, s.x, H - s.y - 1.35 * S, '\ud83d\udc4f');
       else if (kind === 'bubble') { if (s.move === 'hail') bubble(arg, s.face >= 0 ? -1 : 1, 0, { k: 0.15, up: 2.55, dark: true }); else bubble(arg, side ? -side : 0, 0); }
       else if (kind === 'bubble2') { if (s.vt && s.vt.t2) bubble(s.vt.t2, side ? -side : 0, 1); }
       else if (kind === 'dust') impact(s.x + (side || 1) * 0.55 * S, H - s.y - 0.08 * S, side || 1, '');
@@ -992,6 +1013,13 @@
       return h && !sh.querySelector('.cl') && re.test(nrm(h.textContent)) ? h : null;
     }
     function vFind(kind) {
+      if (kind === 'lbtop' || kind === 'lblast') {   // lyderių lentelė: pirmos / paskutinės vietos rezultatas
+        var rows = document.querySelectorAll('#out .lb-l li');
+        var row = rows.length ? rows[kind === 'lbtop' ? 0 : rows.length - 1] : null, sc = row && row.querySelector('b');
+        if (!sc || (kind === 'lblast' && rows.length < 2)) return null;
+        var rr = row.getBoundingClientRect(), br = sc.getBoundingClientRect();
+        return { el: sc, r: { left: rr.left, right: rr.right, top: br.top, bottom: br.bottom, width: rr.width, height: br.height, sl: br.left, sr: br.right }, neg: false, lit: false };
+      }
       var sh = sheetOpen(); if (!sh) return null;
       var el = null, neg = false, i, list, r, rect;
       if (kind === 'logo' || kind === 'fill' || kind === 'chg') {
@@ -1030,7 +1058,13 @@
     function vGeom(kind, r) {
       var margin = S * 0.55, roomR = W - r.right, roomL = r.left, side = roomR >= roomL ? 1 : -1, room = side > 0 ? roomR : roomL, xk, ledge, elev = 0;
       var px = r.left + r.width / 2, cy = r.top + r.height / 2, hi = Math.max(floor, H - 1.95 * S);
-      if (kind === 'chg' || kind === 'gud') {
+      if (kind === 'lbtop' || kind === 'lblast') {
+        // šalia lentelės (jei telpa), kitaip – tarp vardo ir rezultato, veidu į rezultatą (rezultato neuždengia)
+        if (W - r.right >= 0.8 * S) { xk = r.right + 0.5 * S; px = r.sr; }
+        else { xk = r.sl - 0.48 * S; px = r.sr; }
+        // 1 vieta – stovi ant eilutės (ploja); paskutinė – žemiau, kad ištiesta ranka būtų rezultato aukštyje
+        ledge = kind === 'lbtop' ? Math.max(floor, Math.min(hi, H - r.bottom - 2)) : Math.max(floor, Math.min(hi, H - cy - 1.42 * S));
+      } else if (kind === 'chg' || kind === 'gud') {
         xk = px + side * 0.55 * S;
         ledge = Math.max(floor, Math.min(hi, H - cy - 1.35 * S));
         elev = Math.max(-0.5, Math.min(1.0, Math.atan2((H - cy) - ledge - 1.45 * S, 0.6 * S)));
@@ -1058,7 +1092,7 @@
     function nextChain() {
       var n = s.chain.shift(), d = s.vt ? s.vt.dirTo : 1;
       setMove(n);
-      s.face = n === 'hail' ? (s.dir || 1) * 1.25 : n === 'love' ? 0 : n === 'touch' ? d * 1.0 : n === 'kickname' ? d * 1.35 : d * 0.7;
+      s.face = n === 'hail' ? (s.dir || 1) * 1.25 : n === 'love' || n === 'facepalm' ? 0 : n === 'touch' ? d * 1.0 : n === 'kickname' ? d * 1.35 : n === 'point' ? d * 1.2 : n === 'applause' ? d * 0.45 : d * 0.7;
     }
     function vAct() {
       var K = s.vt, tg = vFind(K.kind); if (!tg) { abortVisit(); return; }
@@ -1067,10 +1101,20 @@
       else if (K.kind === 'fill') seq = ['nolike'];
       else if (K.kind === 'chg') seq = tg.neg ? ['touch', 'nolike'] : ['touch', 'love'];
       else if (K.kind === 'gud') { seq = ['touch', 'nolike']; K.t2 = 'Per brangu'; }
+      else if (K.kind === 'lbtop') seq = ['applause'];
+      else if (K.kind === 'lblast') seq = ['point', 'facepalm'];
       else { seq = ['kickname']; K.t2 = 'Senas slunkius'; }
       s.chain = seq; nextChain();
     }
     function visitPoll() {
+      if (s.script) {
+        if (!s.script.length) { leave(); return; }
+        var sk = s.script[0], st = vFind(sk);
+        if (st && st.r.bottom > 0 && st.r.top < H) { s.script.shift(); s.scMiss = 0; startVisit(sk); }
+        else if (sk === 'lblast' && document.querySelectorAll('#out .lb-l li').length === 1) s.script.shift();   // tik vienas rezultatas
+        else if (++s.scMiss > 12) leave();
+        return;
+      }
       var sh = sheetOpen();
       if (!sh) { vSeen = {}; logoAt = -1e9; return; }
       var now = performance.now(), lg = vFind('logo');
@@ -1119,7 +1163,7 @@
         P.sy = 1 + Math.min(0.05, Math.abs(s.vy) / 40000); P.fx = 0;
         P.arm('L', 1.9 * fa, 0.1, 0.1, 0.25 * fa); P.arm('R', 1.9 * fa, 0.1, 0.1, 0.25 * fa);
         P.leg('L', 0.3 * fa, 0.5 * fa, 0.12 * fa); P.leg('R', -0.2 * fa, 0.7 * fa, 0.12 * fa);
-        if (s.y <= s.fl) { s.y = s.fl; s.vy = 0; setMove('land'); s.face = 0; s.chain = ['hail']; }
+        if (s.y <= s.fl) { s.y = s.fl; s.vy = 0; setMove('land'); s.face = 0; s.chain = s.script ? [] : ['hail']; }
       } else if (s.mode === 'leap') {
         var L = s.lp, tt = Math.min(L.t + dt, L.T); L.t += dt;
         var u = Math.min(1, L.t / L.T), e = easeInOut(u), mid = smooth(0.15, 0.4, u) * smooth(0.95, 0.7, u);
@@ -1243,6 +1287,8 @@
       else startWalker(srcEl);
     },
     start: startWalker,
+    // lyderių lentelė: atsiranda, paploja pirmai vietai, parodo į paskutinę ir susiima už galvos, tada išeina
+    leaderboard: function () { if (!walker) startWalker(null, { script: ['lbtop', 'lblast'] }); },
     active: function () { return !!walker; },
     stop: function () { if (walker) walker.leave(); }
   };
