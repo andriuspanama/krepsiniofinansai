@@ -1320,8 +1320,8 @@
       '.mg-line{fill:none;stroke:var(--a);stroke-width:2.5;stroke-dasharray:7 6;vector-effect:non-scaling-stroke}',
       '.mg-res b{color:var(--a);font-family:var(--mono,monospace)}',
       '.mg-pan{position:absolute;inset:0;z-index:7;display:grid;place-items:center;padding:16px;background:color-mix(in srgb,var(--bg) 55%,transparent);cursor:default}',
-      '.mg-pan[hidden]{display:none}',
-      '.mg-box{width:min(460px,100%);max-height:100%;overflow:auto;overscroll-behavior:contain;padding:20px;border-radius:18px;background:var(--card);border:1px solid var(--line);box-shadow:0 18px 50px rgba(0,0,0,.5);color:var(--ink);text-align:center}',
+      '.mg-pan[hidden]{display:none}.mg .am-wrap.mg-idle{touch-action:pan-y;cursor:default}.mg-idle .mg-pan{touch-action:pan-y}',
+      '.mg-box{width:min(460px,100%);max-height:100%;overflow:auto;padding:20px;border-radius:18px;background:var(--card);border:1px solid var(--line);box-shadow:0 18px 50px rgba(0,0,0,.5);color:var(--ink);text-align:center}',
       '.mg-box h3{margin:0 0 6px;font:700 24px var(--hd,sans-serif)}',
       '.mg-box p{margin:0 0 12px;color:var(--mute);font-size:14px;line-height:1.45}',
       '.mg-box .mg-btn{display:block;width:100%;margin-top:10px;padding:13px 18px;font-size:15px}',
@@ -1457,7 +1457,7 @@
         bar.querySelector('.mg-sc b').textContent = fmt(total());
       }
       function round() {
-        pan.hidden = true; aEl.hidden = true;
+        pan.hidden = true; wrap.classList.remove('mg-idle'); aEl.hidden = true;
         var r = st.g[st.i];
         guess = r ? r.ll : null; gEl.hidden = !guess;
         showBar(); drawLine();
@@ -1517,7 +1517,7 @@
           (st.kind === 'free' ? '<button type="button" class="mg-btn sec" data-mg="free">' + esc(T('Žaisti dar kartą', 'Play again')) + '</button>' : '') +
           '<button type="button" class="mg-btn sec" data-mg="menu">' + esc(T('Į pradžią', 'Back to start')) + '</button>' +
           (st.kind === 'day' ? '<p class="mg-note">' + esc(T('Naujas iššūkis – rytoj.', 'A new challenge tomorrow.')) + '</p>' : '');
-        pan.hidden = false; box.scrollTop = 0;
+        pan.hidden = false; wrap.classList.add('mg-idle'); box.scrollTop = 0;
       }
       // lyderių lentelė: dienos iššūkis – vienas įrašas per dieną šioje naršyklėje, laisvas žaidimas – po kiekvieno žaidimo
       var LB = deps.lb && deps.lb.on && deps.lb.on() ? deps.lb : null;
@@ -1552,7 +1552,7 @@
           (LB ? '<button type="button" class="mg-btn sec" data-mg="lb">🏆 ' + esc(T('Lyderių lentelė', 'Leaderboard')) + '</button>' : '') +
           '<p class="mg-note">' + esc(T('Dienos iššūkis – tie patys 10 klubų visiems, vienas bandymas per dieną.', 'Daily challenge – the same 10 clubs for everyone, one try per day.')) +
           (best ? ' ' + esc(T('Laisvo žaidimo rekordas', 'Free play best')) + ': ' + fmt(best) + '.' : '') + ' ' + esc(T('Klubų žemėlapyje', 'Clubs on the map')) + ': ' + items.length + '.</p>';
-        pan.hidden = false; home(0);
+        pan.hidden = false; wrap.classList.add('mg-idle'); home(0);
       }
       // žaidimo pradžioje žemėlapis atslenka, kad tilptų ekrane (telefone – virš apatinio meniu)
       function view() {
@@ -1585,7 +1585,10 @@
           else if (a === 'lb' && LB) LB.show(st ? lbGame() : 'mapday');
           else if (a === 'share') {
             var txt = shareText();
-            if (navigator.share) navigator.share({ text: txt }).catch(function () {});
+            if (deps.lb && deps.lb.shareImg) {   // paveikslėlis su rezultatais (kaip klubų sąrašai)
+              deps.lb.shareImg({ day: st.kind === 'day' ? st.day : null, no: st.kind === 'day' ? mgNo(st.day) : null, total: total(), max: MG_N * 1000, km: kmSum(),
+                rows: st.g.map(function (x, i) { var it = clubOf(i); return { name: it.name, logo: it.logo, km: x.d, p: x.p, sq: x.d <= 50 ? 0 : x.d <= 200 ? 1 : x.d <= 500 ? 2 : 3 }; }), text: txt });
+            } else if (navigator.share) navigator.share({ text: txt }).catch(function () {});
             else if (navigator.clipboard) navigator.clipboard.writeText(txt).then(function () { b.textContent = T('Nukopijuota ✓', 'Copied ✓'); }).catch(function () {});
           }
           return;

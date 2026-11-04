@@ -392,7 +392,53 @@
   // pasiūlymas įrašyti rezultatą (bendras visiems žaidimams)
   const lbForm=saved=>!LB_URL?"":saved?`<p class="lb-ok">✓ ${T("Rezultatas įrašytas į lyderių lentelę","Score saved to the leaderboard")}</p>`
     :`<div class="lb-save"><p>${T("Įrašyti rezultatą į lyderių lentelę?","Save your score to the leaderboard?")}</p><div class="lb-row"><input class="lbn" type="text" maxlength="20" autocomplete="nickname" placeholder="${T("Jūsų vardas","Your name")}" value="${esc(lbName())}"><button type="button" class="lb-btn" data-lbs="1">${T("Išsaugoti","Save")}</button></div><small class="lb-err" hidden></small></div>`;
-  window.KFLB={on:()=>!!LB_URL,save:lbSave,form:lbForm,show:k=>{LBSEL=k;GS.mode="lb";LBDATA=null;renderGm()}};
+  window.KFLB={on:()=>!!LB_URL,save:lbSave,form:lbForm,show:k=>{LBSEL=k;GS.mode="lb";LBDATA=null;renderGm()},shareImg:d=>mgShare(d).catch(()=>{})};
+  // „Kur arena?“ rezultatų paveikslėlis dalinimuisi (tas pats stilius kaip klubų sąrašų kortelėse; taškai – LED švieslentėje)
+  async function mgShare(d){
+    const imgs=await Promise.all(d.rows.map(r=>r.logo?new Promise(res=>{const i=new Image();i.crossOrigin="anonymous";i.onload=()=>res(i);i.onerror=()=>res(null);setTimeout(()=>res(null),4000);i.src=r.logo}):null));
+    try{await document.fonts.load("700 100px 'Barlow Condensed'");await document.fonts.load("600 40px 'JetBrains Mono'");await document.fonts.load("800 100px Doto")}catch(e){}
+    const name=d.day?T("Kur arena? Dienos iššūkis #","Where's the arena? Daily #")+d.no:T("Kur arena?","Where's the arena?");
+    let blob;try{blob=await mgDraw(d,imgs)}catch(e){blob=await mgDraw(d,d.rows.map(()=>null))}
+    showShare(blob,name);
+  }
+  function mgDraw(d,imgs){return new Promise((res,rej)=>{
+    const W=1080,n=d.rows.length,top=640,rh=84,H2=top+n*rh+130,c=document.createElement("canvas");c.width=W;c.height=H2;const x=c.getContext("2d");
+    const BG="#07090F",CARD="#0F1420",LINE="#1E2638",INK="#E8ECF4",MU="#7A869E",AM="#FFB020",HD="'Barlow Condensed','Arial Narrow',sans-serif",MO="'JetBrains Mono',ui-monospace,monospace",LED="Doto,'JetBrains Mono',monospace";
+    const SQ=["#3DF5B0","#FFD43B","#FF922B","#FF5C73"];
+    const rr=(a,b,w,h,r)=>{x.beginPath();x.moveTo(a+r,b);x.arcTo(a+w,b,a+w,b+h,r);x.arcTo(a+w,b+h,a,b+h,r);x.arcTo(a,b+h,a,b,r);x.arcTo(a,b,a+w,b,r);x.closePath()};
+    const fit=(txt,w,fam,wt,start,min)=>{let s=start;do{x.font=wt+" "+s+"px "+fam;s-=2}while(x.measureText(txt).width>w&&s>min);return s};
+    x.fillStyle=BG;x.fillRect(0,0,W,H2);
+    const g=x.createRadialGradient(W/2,-80,0,W/2,-80,760);g.addColorStop(0,"rgba(255,176,32,.20)");g.addColorStop(1,"rgba(255,176,32,0)");x.fillStyle=g;x.fillRect(0,0,W,H2);
+    x.textBaseline="alphabetic";x.textAlign="left";
+    x.fillStyle=AM;x.fillRect(72,72,96,6);
+    x.fillStyle=MU;x.font="500 34px "+HD;x.fillText(T("Krepšinio klubų finansai","Basketball Club Finances"),72,128);
+    const ttl=T("Kur arena?","Where's the arena?");fit(ttl,W-144,HD,"700",112,60);x.fillStyle=INK;x.fillText(ttl,72,238);
+    x.fillStyle=MU;x.font="400 34px "+MO;x.fillText(d.day?T("Dienos iššūkis #","Daily challenge #")+d.no+" · "+d.day:T("Laisvas žaidimas","Free play"),72,294);
+    // LED švieslentė
+    const bx=72,by=330,bw=936,bh=190;rr(bx,by,bw,bh,22);x.fillStyle="#05070b";x.fill();
+    x.save();rr(bx,by,bw,bh,22);x.clip();x.fillStyle="rgba(255,176,32,.13)";for(let yy=by+4;yy<by+bh;yy+=10)for(let xx=bx+4;xx<bx+bw;xx+=10){x.beginPath();x.arc(xx,yy,1.6,0,Math.PI*2);x.fill()}x.restore();
+    rr(bx,by,bw,bh,22);x.strokeStyle="rgba(255,176,32,.32)";x.lineWidth=3;x.stroke();
+    x.fillStyle="#8a93a8";x.font="600 26px "+MO;x.fillText(T("TAŠKAI","POINTS"),bx+34,by+50);
+    const sc=nf.format(d.total);x.font="800 118px "+LED;x.fillStyle=AM;x.shadowColor="rgba(255,176,32,.75)";x.shadowBlur=26;x.fillText(sc,bx+30,by+160);const sw=x.measureText(sc).width;x.shadowBlur=0;
+    x.font="800 44px "+LED;x.fillStyle="rgba(255,176,32,.55)";x.fillText("/ "+nf.format(d.max),bx+46+sw,by+160);
+    x.textAlign="right";x.fillStyle="#8a93a8";x.font="600 26px "+MO;x.fillText(T("NUKLYSTA","DISTANCE OFF"),bx+bw-34,by+50);
+    x.font="800 54px "+LED;x.fillStyle=AM;x.shadowColor="rgba(255,176,32,.6)";x.shadowBlur=18;x.fillText(nf.format(d.km)+" km",bx+bw-34,by+150);x.shadowBlur=0;x.textAlign="left";
+    // spalvoti kvadratėliai
+    const q=64,gap=14,qx=(W-(n*q+(n-1)*gap))/2;d.rows.forEach((r,i)=>{rr(qx+i*(q+gap),552,q,q,12);x.fillStyle=SQ[r.sq];x.fill()});
+    // klubai
+    d.rows.forEach((r,i)=>{
+      const y=top+i*rh,h=rh-12;rr(72,y,936,h,18);x.fillStyle=CARD;x.fill();rr(72,y,936,h,18);x.strokeStyle=LINE;x.lineWidth=2;x.stroke();
+      rr(92,y+h/2-14,28,28,7);x.fillStyle=SQ[r.sq];x.fill();
+      let nx=140;const im=imgs[i];
+      if(im){x.save();x.beginPath();x.arc(166,y+h/2,25,0,Math.PI*2);x.closePath();x.fillStyle="#fff";x.fill();x.clip();const k=Math.min(40/im.width,40/im.height);x.drawImage(im,166-im.width*k/2,y+h/2-im.height*k/2,im.width*k,im.height*k);x.restore();nx=206}
+      const pt=nf.format(r.p),kmT=nf.format(r.km)+" km";
+      x.textAlign="right";x.font="700 36px "+MO;x.fillStyle=r.p>=700?AM:INK;x.fillText(pt,986,y+h/2+13);const pw=x.measureText(pt).width;
+      x.font="400 26px "+MO;x.fillStyle=MU;x.fillText(kmT,986-pw-30,y+h/2+10);const kw=x.measureText(kmT).width;x.textAlign="left";
+      fit(r.name,986-pw-30-kw-24-nx,HD,"700",40,22);x.fillStyle=INK;x.fillText(r.name,nx,y+h/2+14);
+    });
+    x.fillStyle=MU;x.font="400 28px system-ui,sans-serif";x.fillText((location.host+location.pathname).replace(/\/$/,"")+"#kur-arena",72,H2-56);
+    c.toBlob(b=>b?res(b):rej(new Error("blob")),"image/png");
+  })}
   function lbView(){
     const ch=LBG.map(([k,a,b])=>`<button class="chip" data-lbg="${k}" aria-pressed="${LBSEL===k}">${T(a,b)}</button>`).join("");
     let body;
@@ -400,7 +446,7 @@
     else{
       const L=(LBDATA.boards||{})[LBSEL]||[],pts=LBSEL.startsWith("map"),me=lbName().toLowerCase();
       body=(LBSEL==="mapday"?`<p class="lb-day">${T("Šiandienos iššūkis","Today's challenge")} · ${esc(LBDATA.day||"")}</p>`:"")+
-        (L.length?`<ol class="lb-l">${L.map((r,i)=>`<li class="${me&&String(r.name).toLowerCase()===me?"me":""}"><span class="lb-r">${i<3?["🥇","🥈","🥉"][i]:i+1}</span><span class="lb-n">${esc(r.name)}</span>${pts&&r.km!=null?`<small>${nf.format(r.km)} km</small>`:""}<b>${nf.format(r.score)}</b></li>`).join("")}</ol>`
+        (L.length?`<div class="lb-board"><div class="lb-h"><span>${T("VIETA","RANK")}</span><span>${T("VARDAS","NAME")}</span><span>${pts?T("TAŠKAI","SCORE"):T("SERIJA","STREAK")}</span></div><ol class="lb-l">${L.map((r,i)=>`<li class="${(me&&String(r.name).toLowerCase()===me?"me ":"")+(i<3?"t"+(i+1):"")}"><span class="lb-r">${String(i+1).padStart(2,"0")}</span><span class="lb-n">${esc(r.name)}</span>${pts&&r.km!=null?`<small>${nf.format(r.km)} km</small>`:""}<b>${nf.format(r.score)}</b></li>`).join("")}</ol></div>`
         :`<p class="sum">${T("Kol kas rezultatų nėra – būkite pirmas!","No scores yet – be the first!")}</p>`)}
     return`<div class="lb-root"><div class="lb-g">${ch}</div>${body}<p class="sum lb-note">${LBSEL==="mapday"?T("Dienos iššūkio lentelė prasideda iš naujo kiekvieną dieną (Vilniaus laiku).","The daily table starts over every day (Vilnius time)."):T("Visų laikų rezultatai.","All-time scores.")} ${T("Rodomas geriausias kiekvieno vardo rezultatas.","Best score per name.")}${LBSEL.startsWith("map")?"":" "+T("Rezultatas – teisingų atsakymų serija.","Score = streak of correct answers.")}</p></div>`}
   const gmChips=()=>{const mc=(k,a,b)=>`<button class="chip" data-gm="${k}" aria-pressed="${GS.mode===k}">${T(a,b)}</button>`;
