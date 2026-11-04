@@ -391,6 +391,12 @@
       .then(r=>r.json()).then(j=>{if(!j||!j.ok)throw new Error(j&&j.error||"err");LBDATA=null;return j})}
   // lyderių lentelėje atsiranda 3D Brazys: paploja 1 vietai, parodo į paskutinę ir susiima už galvos
   function lbB3(){if(!document.querySelector("#md.o #sh .lb-l li"))return;try{const w=window.Brazys3D&&Brazys3D.walker;if(w&&w.leaderboard)setTimeout(()=>{if(document.querySelector("#md.o #sh .lb-l li"))w.leaderboard()},400)}catch(e){}}
+  /* slenkamos mygtukų eilės (.bar.n): klasės mr/ml rodo blyškėjantį kraštą, kai yra daugiau į šoną */
+  (function(){const up=b=>{const m=b.scrollWidth-b.clientWidth;b.classList.toggle("ml",m>4&&b.scrollLeft>4);b.classList.toggle("mr",m>4&&b.scrollLeft<m-4)};
+   let q=0;const all=()=>{q=0;document.querySelectorAll(".bar.n").forEach(up)},soon=()=>{if(!q)q=requestAnimationFrame(all)};
+   document.addEventListener("scroll",e=>{const t=e.target;if(t&&t.classList&&t.classList.contains("n")&&t.classList.contains("bar"))up(t)},true);
+   addEventListener("resize",soon);const st=()=>{const o=document.getElementById("out");if(o)new MutationObserver(soon).observe(o,{childList:true,subtree:true});soon()};
+   document.readyState==="loading"?document.addEventListener("DOMContentLoaded",st):st()})();
   // rezultato įrašymas: atskiras langas su vardo laukeliu (atgal / Esc – uždaro)
   const lbBtnHtml=(saved,cls)=>!LB_URL?"":saved?`<button type="button" class="${cls}" disabled>✓ ${T("Įrašyta","Saved")}</button>`:`<button type="button" class="${cls}" data-lbo="1">${T("Išsaugoti","Save")}</button>`;
   function lbAsk(game,score,extra,label){return new Promise(done=>{

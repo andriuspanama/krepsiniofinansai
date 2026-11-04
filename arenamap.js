@@ -674,6 +674,7 @@
       '@media(max-width:819px){.am-card{position:fixed;z-index:1001;top:50%;left:50%;right:auto;bottom:auto;translate:-50% -50%;width:min(520px,calc(100vw - 24px));max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);transform:translateY(18px) scale(.98)}.am-card.on{transform:none}.am-body{overscroll-behavior:contain;touch-action:pan-y}.am-media{height:clamp(170px,30vh,240px)}.am-search{width:min(200px,50vw)}'+
         '.am-bd{position:fixed;inset:0;z-index:1000;background:rgba(4,6,10,.62);touch-action:none;opacity:0;transition:opacity .3s;pointer-events:none}.am-card.on+.am-bd{opacity:1;pointer-events:auto}}',
       '@media(min-width:820px){.am-bd{display:none}}',
+      '@media(min-width:721px){.am-wrap{height:clamp(420px,calc(100vh - 232px),760px)}}@media(min-width:820px) and (max-height:820px){.am-media{height:160px}}',   /* žemėlapis ir kortelė telpa ekrane ir žemuose (gulsčiuose) ekranuose */
       'body.lk .am-card,body.lk .am-bd,body.lk .am-wrap.am-fs{visibility:hidden}',
       /* telefone: žemėlapis per visą ekraną (atgal / Esc – grįžta) */
       '.am-fsb{display:none;width:38px;height:38px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);cursor:pointer;padding:0;place-items:center}',

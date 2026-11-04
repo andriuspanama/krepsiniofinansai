@@ -216,7 +216,8 @@
   .split-bar,.cb-bar{border-radius:99px}
   .cb-bar i:first-child{border-radius:99px 0 0 99px}
   ol.qa .qn{font-family:var(--mono);font-size:20px}
-  @media (max-width:760px){body{padding-left:.9rem;padding-right:.9rem}h1{font-size:30px}}
+  @media (max-width:760px){body{padding-left:.9rem;padding-right:.9rem}h1{font-size:30px}.top{grid-template-columns:minmax(0,1fr)}.top>*{min-width:0}}
+  @media (max-width:420px){.conv{padding:1.1rem}.row select{flex:1 1 100%!important;width:100%;min-width:0}.row label{min-width:0}}
 </style>
 <script>
 /* Tema: seka pagrindinį puslapį (jei įdėta per iframe), arba ?t=light|dark */
