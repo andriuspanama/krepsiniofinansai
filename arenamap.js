@@ -1082,6 +1082,7 @@
           if (n >= 2 && !timer && !manual) timer = setInterval(function () {
             if (my !== mtoken) { clearInterval(timer); return; }
             if (lb && !lb.hidden) return;                                   // išdidintas vaizdas – nekeičiama
+            if (box.dataset.hold) return;                                   // Brazys rodo į vaizdą – sustabdyta
             var k = ORDER.indexOf(box.dataset.v);
             for (var s = 1; s <= ORDER.length; s++) { var v = ORDER[(k + s) % ORDER.length]; if (have[v]) { setView(v); break; } }
           }, 5000);
@@ -1118,7 +1119,8 @@
             refresh();
           });
         });
-        function setView(v) {
+        function setView(v, force) {
+          if (box.dataset.hold && !force && v !== box.dataset.v) return;   // Brazys rodo į vaizdą – keičia tik paspaudimas
           box.dataset.v = v;
           box.querySelector('.am-cr').textContent = cr[v] || '';
           [].forEach.call(box.querySelectorAll('.am-sw button'), function (b) { b.classList.toggle('on', b.dataset.v === v); });
@@ -1160,7 +1162,7 @@
         box.addEventListener('click', function (ev) {
           if (ev.target.closest && ev.target.closest('.am-exp')) { lbShow(box.dataset.v); return; }
           var b = ev.target.closest && ev.target.closest('.am-sw button'); if (!b) return;
-          manual = true; clearInterval(timer); timer = 0; setView(b.dataset.v);
+          manual = true; clearInterval(timer); timer = 0; setView(b.dataset.v, true);
         });
       }
       function closeCard(fromPop) {
