@@ -396,15 +396,24 @@ const RL='<img class="rl" src="https://rytasvilnius.lt/en/wp-content/uploads/sit
 const cmp=v=>v>=1e6?(v/1e6).toFixed(1)+"M":Math.round(v/1000)+"k";
 // sezonų stulpeliai: pastovus stulpelio plotis; kiek jų matosi – priklauso nuo ekrano (--chk mastelis CSS), kiti – slenkant į šonus
 function chart(it,sel,aria){const n=it.length,st=46,bw=28,f=10,base=92,mb=56,mx=Math.max(...it.map(x=>x.v||0),1),W=n*st+14,Hh=122,si=it.findIndex(p=>p.l===sel);
- return`<div class="tw ch"><button class="chn l" aria-label="◀" tabindex="-1">‹</button><div class="chs" data-sel="${si<0?n-1:si}"><svg viewBox="0 0 ${W} ${Hh}" style="width:calc(${W}px * var(--chk));height:auto" role="img" aria-label="${aria}"><defs><linearGradient id="gy" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd84d"/><stop offset="1" stop-color="#ff8a00"/></linearGradient></defs>${it.map((p,i)=>{const x=7+i*st+(st-bw)/2,c=x+bw/2,bh=p.v?p.v/mx*mb:0,s=p.l===sel,val=p.v?cmp(p.v):"–",fw=s?800:500;
-  return`<g ${p.a||""} ${p.a?'style="cursor:pointer"':""}><title>${esc(p.t)}</title>${p.a?`<rect x="${x-5}" y="0" width="${bw+10}" height="${Hh}" fill="transparent"/>`:""}<rect x="${x}" y="${base-bh}" width="${bw}" height="${Math.max(bh,2)}" rx="4" fill="url(#gy)" ${s?'stroke="var(--ink)" stroke-width="2"':'opacity=".92"'}/>${s?`<text x="${c}" y="${base-bh-19}" text-anchor="middle" font-size="9" fill="var(--ink)">▼</text>`:""}<text x="${c}" y="${base-bh-5}" text-anchor="middle" font-size="${f}" font-weight="${fw}" fill="var(--ink)">${val}</text><text x="${c}" y="${base+15}" text-anchor="middle" font-size="${f}" font-weight="${s?800:400}" fill="${s?"var(--ink)":"var(--mute)"}">${esc(p.l)}</text>${p.s?`<text x="${c}" y="${base+28}" text-anchor="middle" font-size="8" fill="var(--mute)">${esc(p.s)}</text>`:""}</g>`}).join("")}</svg></div><button class="chn r" aria-label="▶" tabindex="-1">›</button></div>`}
+ return`<div class="tw ch"><div class="chs" data-sel="${si<0?n-1:si}"><svg viewBox="0 0 ${W} ${Hh}" style="width:calc(${W}px * var(--chk));height:auto" role="img" aria-label="${aria}"><defs><linearGradient id="gy" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd84d"/><stop offset="1" stop-color="#ff8a00"/></linearGradient></defs>${it.map((p,i)=>{const x=7+i*st+(st-bw)/2,c=x+bw/2,bh=p.v?p.v/mx*mb:0,s=p.l===sel,val=p.v?cmp(p.v):"–",fw=s?800:500;
+  return`<g ${p.a||""} ${p.a?'style="cursor:pointer"':""}><title>${esc(p.t)}</title>${p.a?`<rect x="${x-5}" y="0" width="${bw+10}" height="${Hh}" fill="transparent"/>`:""}<rect x="${x}" y="${base-bh}" width="${bw}" height="${Math.max(bh,2)}" rx="4" fill="url(#gy)" ${s?'stroke="var(--ink)" stroke-width="2"':'opacity=".92"'}/>${s?`<text x="${c}" y="${base-bh-19}" text-anchor="middle" font-size="9" fill="var(--ink)">▼</text>`:""}<text x="${c}" y="${base-bh-5}" text-anchor="middle" font-size="${f}" font-weight="${fw}" fill="var(--ink)">${val}</text><text x="${c}" y="${base+15}" text-anchor="middle" font-size="${f}" font-weight="${s?800:400}" fill="${s?"var(--ink)":"var(--mute)"}">${esc(p.l)}</text>${p.s?`<text x="${c}" y="${base+28}" text-anchor="middle" font-size="8" fill="var(--mute)">${esc(p.s)}</text>`:""}</g>`}).join("")}</svg></div><div class="chsb" aria-hidden="true"><i></i></div></div>`}
 // po atvaizdavimo: parodyti pasirinktą (ar paskutinį) sezoną, rodyklės ir blyškūs kraštai, kai yra daugiau stulpelių
-function chInit(root){root.querySelectorAll(".tw.ch").forEach(w=>{const s=w.querySelector(".chs");if(!s)return;
- const up=()=>{const m=s.scrollWidth-s.clientWidth;w.classList.toggle("ml",m>2&&s.scrollLeft>2);w.classList.toggle("mr",m>2&&s.scrollLeft<m-2)};
+function chInit(root){root.querySelectorAll(".tw.ch").forEach(w=>{const s=w.querySelector(".chs"),bar=w.querySelector(".chsb"),th=bar&&bar.firstElementChild;if(!s)return;
+ // slankiklis (kaip telefono slinkties juosta): matomas slenkant, užvedus pelę ar ką tik atidarius, po to išnyksta; galima tempti
+ let tm=0,drag=null;const geo=()=>{const m=s.scrollWidth-s.clientWidth,tw=bar.clientWidth,tw2=Math.max(28,tw*s.clientWidth/s.scrollWidth);return{m,tw,tw2}};
+ const up=()=>{const{m,tw,tw2}=geo();w.classList.toggle("scr",m>2);w.classList.toggle("ml",m>2&&s.scrollLeft>2);w.classList.toggle("mr",m>2&&s.scrollLeft<m-2);
+  if(th&&m>2){th.style.width=tw2+"px";th.style.transform="translateX("+(m?s.scrollLeft/m*(tw-tw2):0)+"px)"}};
+ const flash=ms=>{if(!w.classList.contains("scr"))return;w.classList.add("sb-on");clearTimeout(tm);tm=setTimeout(()=>{if(!drag)w.classList.remove("sb-on")},ms||1200)};
  // naujausias (ar nežinomas) sezonas – matosi naujausi sezonai; senesnis – jis per vidurį, kad matytųsi ir ankstesni, ir vėlesni
  if(s.scrollWidth>s.clientWidth){const G=s.querySelectorAll("svg > g"),i=+s.dataset.sel;s.scrollLeft=s.scrollWidth;if(i<G.length-1){const r=G[i].getBoundingClientRect(),b=s.getBoundingClientRect();s.scrollLeft+=r.left+r.width/2-(b.left+b.width/2)}}
- s.addEventListener("scroll",up,{passive:true});w.querySelectorAll(".chn").forEach(bt=>bt.onclick=e=>{e.stopPropagation();s.scrollBy({left:(bt.classList.contains("l")?-1:1)*s.clientWidth*.7,behavior:"smooth"})});up()})}
-addEventListener("resize",()=>{const sh=$("sh");if(sh)sh.querySelectorAll(".tw.ch").forEach(w=>{const s=w.querySelector(".chs"),m=s.scrollWidth-s.clientWidth;w.classList.toggle("ml",m>2&&s.scrollLeft>2);w.classList.toggle("mr",m>2&&s.scrollLeft<m-2)})});
+ s.addEventListener("scroll",()=>{up();flash()},{passive:true});w._up=up;
+ if(bar){bar.addEventListener("pointerdown",e=>{e.preventDefault();e.stopPropagation();const{m,tw,tw2}=geo();if(m<=2)return;const r=bar.getBoundingClientRect(),x=e.clientX-r.left,t0=m?s.scrollLeft/m*(tw-tw2):0;
+   if(e.target!==th)s.scrollLeft=Math.max(0,Math.min(m,(x-tw2/2)/(tw-tw2)*m));drag={x:e.clientX,sl:s.scrollLeft};bar.setPointerCapture(e.pointerId);w.classList.add("sb-on","sb-drag")});
+  bar.addEventListener("pointermove",e=>{if(!drag)return;const{m,tw,tw2}=geo();s.scrollLeft=drag.sl+(e.clientX-drag.x)*m/Math.max(1,tw-tw2)});
+  const end=()=>{if(!drag)return;drag=null;w.classList.remove("sb-drag");flash()};bar.addEventListener("pointerup",end);bar.addEventListener("pointercancel",end);bar.addEventListener("click",e=>e.stopPropagation())}
+ up();flash(1600)})}
+addEventListener("resize",()=>{const sh=$("sh");if(sh)sh.querySelectorAll(".tw.ch").forEach(w=>w._up&&w._up())});
 const sx=(cur,list,mk)=>list.length>1?`<div class="sx"><button class="chip cur" aria-pressed="true">${cur} ▾</button><div class="opts">${list.map(mk).join("")}</div></div>`:`<button class="chip" aria-pressed="true">${cur}</button>`;
 let TH=(()=>{try{return localStorage.getItem("theme")||""}catch(e){return""}})();
 const isDark=()=>TH?TH==="dark":matchMedia("(prefers-color-scheme:dark)").matches;
@@ -728,9 +737,9 @@ if(TH)document.documentElement.setAttribute("data-t",TH);$("th").textContent=isD
 setLang(LANG);
 start();
 </script>
- <script src="redesign.js?v=20261105c" defer></script>
-<script src="brazys3d.js?v=20261105c" defer></script>
-<script src="arenamap.js?v=20261105c" defer></script>
+ <script src="redesign.js?v=20261105d" defer></script>
+<script src="brazys3d.js?v=20261105d" defer></script>
+<script src="arenamap.js?v=20261105d" defer></script>
 </body>
 </html>
 </body>
