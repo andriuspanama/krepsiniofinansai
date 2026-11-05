@@ -478,3 +478,16 @@ p.sum .srcs.sg{vertical-align:middle;margin-left:4px}
 .tw.ch .chsb i{position:absolute;left:0;top:4px;height:6px;border-radius:3px;background:color-mix(in srgb,var(--ink) 42%,transparent);transition:background .2s,height .15s,top .15s}
 .tw.ch.sb-on .chsb{opacity:1}
 @media(hover:hover){.tw.ch.scr:hover .chsb{opacity:1}.tw.ch .chsb:hover i,.tw.ch.sb-drag .chsb i{top:3px;height:8px;background:color-mix(in srgb,var(--ink) 60%,transparent)}}
+
+/* Plačios lentelės: toks pat slankiklis kaip grafikuose; juosta prilimpa prie ekrano apačios, kol lentelės apačia nesimato */
+.tw.tws{scrollbar-width:none}
+.tw.tws::-webkit-scrollbar{display:none}
+.tw.tws.mr{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 40px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 40px),transparent)}
+.tw.tws.ml{-webkit-mask-image:linear-gradient(90deg,transparent,#000 40px);mask-image:linear-gradient(90deg,transparent,#000 40px)}
+.tw.tws.ml.mr{-webkit-mask-image:linear-gradient(90deg,transparent,#000 40px,#000 calc(100% - 40px),transparent);mask-image:linear-gradient(90deg,transparent,#000 40px,#000 calc(100% - 40px),transparent)}
+.tsb{display:none;position:sticky;bottom:6px;z-index:3;height:14px;margin:2px 14px 0;opacity:0;transition:opacity .35s;touch-action:none;cursor:pointer;pointer-events:none}
+.tw.tws.scr+.tsb{display:block}
+.tsb::before{content:"";position:absolute;left:0;right:0;top:5px;height:4px;border-radius:2px;background:color-mix(in srgb,var(--ink) 12%,transparent)}
+.tsb i{position:absolute;left:0;top:4px;height:6px;border-radius:3px;background:color-mix(in srgb,var(--ink) 45%,transparent);transition:background .2s,height .15s,top .15s}
+.tw.tws.sb-on+.tsb{opacity:1;pointer-events:auto}   /* paslėpta juosta paspaudimų nepagauna */
+@media(hover:hover){.tsb:hover i,.tw.sb-drag+.tsb i{top:3px;height:8px;background:color-mix(in srgb,var(--ink) 62%,transparent)}}

@@ -393,7 +393,7 @@
   function lbB3(){if(!document.querySelector("#md.o #sh .lb-l li"))return;try{const w=window.Brazys3D&&Brazys3D.walker;if(w&&w.leaderboard)setTimeout(()=>{if(document.querySelector("#md.o #sh .lb-l li"))w.leaderboard()},400)}catch(e){}}
   /* slenkamos mygtukų eilės (.bar.n): klasės mr/ml rodo blyškėjantį kraštą, kai yra daugiau į šoną */
   (function(){const up=b=>{const m=b.scrollWidth-b.clientWidth;b.classList.toggle("ml",m>4&&b.scrollLeft>4);b.classList.toggle("mr",m>4&&b.scrollLeft<m-4)};
-   let q=0;const all=()=>{q=0;document.querySelectorAll(".bar.n").forEach(up)},soon=()=>{if(!q)q=requestAnimationFrame(all)};
+   let q=0;const all=()=>{q=0;document.querySelectorAll(".bar.n").forEach(up);const o=document.getElementById("out");if(o&&window.tblInit)tblInit(o)},soon=()=>{if(!q)q=requestAnimationFrame(all)};
    document.addEventListener("scroll",e=>{const t=e.target;if(t&&t.classList&&t.classList.contains("n")&&t.classList.contains("bar"))up(t)},true);
    addEventListener("resize",soon);const st=()=>{const o=document.getElementById("out");if(o)new MutationObserver(soon).observe(o,{childList:true,subtree:true});soon()};
    document.readyState==="loading"?document.addEventListener("DOMContentLoaded",st):st()})();
