@@ -391,6 +391,13 @@
       .then(r=>r.json()).then(j=>{if(!j||!j.ok)throw new Error(j&&j.error||"err");LBDATA=null;return j})}
   // lyderių lentelėje atsiranda 3D Brazys: paploja 1 vietai, parodo į paskutinę ir susiima už galvos
   function lbB3(){if(!document.querySelector("#md.o #sh .lb-l li"))return;try{const w=window.Brazys3D&&Brazys3D.walker;if(w&&w.leaderboard)setTimeout(()=>{if(document.querySelector("#md.o #sh .lb-l li"))w.leaderboard()},400)}catch(e){}}
+  /* kortelės lango vertikali juosta: matoma slenkant, pelei prie dešinio krašto ir ką tik atidarius, po to išnyksta */
+  (function(){const sh=document.getElementById("sh");if(!sh)return;let t=0;const can=()=>sh.scrollHeight>sh.clientHeight+2;
+   const on=ms=>{if(!can())return;sh.classList.add("sbv");clearTimeout(t);t=setTimeout(()=>sh.classList.remove("sbv"),ms||1200)};
+   sh.addEventListener("scroll",()=>on(),{passive:true});
+   sh.addEventListener("mousemove",e=>{const r=sh.getBoundingClientRect();if(r.right-e.clientX<30)on(1500)},{passive:true});
+   sh.addEventListener("mousedown",e=>{const r=sh.getBoundingClientRect();if(r.right-e.clientX<16)on(4000)});
+   new MutationObserver(()=>requestAnimationFrame(()=>on(1600))).observe(sh,{childList:true})})();
   /* slenkamos mygtukų eilės (.bar.n): klasės mr/ml rodo blyškėjantį kraštą, kai yra daugiau į šoną */
   (function(){const up=b=>{const m=b.scrollWidth-b.clientWidth;b.classList.toggle("ml",m>4&&b.scrollLeft>4);b.classList.toggle("mr",m>4&&b.scrollLeft<m-4)};
    let q=0;const all=()=>{q=0;document.querySelectorAll(".bar.n").forEach(up);const o=document.getElementById("out");if(o&&window.tblInit)tblInit(o)},soon=()=>{if(!q)q=requestAnimationFrame(all)};

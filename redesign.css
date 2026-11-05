@@ -491,3 +491,15 @@ p.sum .srcs.sg{vertical-align:middle;margin-left:4px}
 .tsb i{position:absolute;left:0;top:4px;height:6px;border-radius:3px;background:color-mix(in srgb,var(--ink) 45%,transparent);transition:background .2s,height .15s,top .15s}
 .tw.tws.sb-on+.tsb{opacity:1;pointer-events:auto}   /* paslėpta juosta paspaudimų nepagauna */
 @media(hover:hover){.tsb:hover i,.tw.sb-drag+.tsb i{top:3px;height:8px;background:color-mix(in srgb,var(--ink) 62%,transparent)}}
+
+/* Kortelės lango vertikali slinkties juosta: plona, apvali, be rodyklių; matoma slenkant / pelei prie dešinio krašto / ką tik atidarius */
+@media(hover:hover) and (pointer:fine){
+ #sh::-webkit-scrollbar{width:12px}
+ #sh::-webkit-scrollbar-track{background:transparent;margin:16px 0}
+ #sh::-webkit-scrollbar-button{display:none;width:0;height:0}
+ #sh::-webkit-scrollbar-corner{background:transparent}
+ #sh::-webkit-scrollbar-thumb{background-color:transparent;border:4px solid transparent;background-clip:content-box;border-radius:8px;min-height:40px}
+ #sh.sbv::-webkit-scrollbar-thumb{background-color:color-mix(in srgb,var(--ink) 42%,transparent)}
+ #sh.sbv::-webkit-scrollbar-thumb:hover,#sh.sbv::-webkit-scrollbar-thumb:active{background-color:color-mix(in srgb,var(--ink) 62%,transparent);border-width:3px}
+ @supports not selector(::-webkit-scrollbar){#sh{scrollbar-width:thin;scrollbar-color:transparent transparent}#sh.sbv{scrollbar-color:color-mix(in srgb,var(--ink) 42%,transparent) transparent}}
+}
