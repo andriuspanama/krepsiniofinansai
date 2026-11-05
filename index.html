@@ -401,8 +401,8 @@ function chart(it,sel,aria){const n=it.length,st=46,bw=28,f=10,base=92,mb=56,mx=
 // po atvaizdavimo: parodyti pasirinktą (ar paskutinį) sezoną, rodyklės ir blyškūs kraštai, kai yra daugiau stulpelių
 function chInit(root){root.querySelectorAll(".tw.ch").forEach(w=>{const s=w.querySelector(".chs");if(!s)return;
  const up=()=>{const m=s.scrollWidth-s.clientWidth;w.classList.toggle("ml",m>2&&s.scrollLeft>2);w.classList.toggle("mr",m>2&&s.scrollLeft<m-2)};
- // pradžioje matosi naujausi sezonai; atgal slenkama tik tada, kai pasirinktas senesnis sezonas kitaip nesimatytų
- if(s.scrollWidth>s.clientWidth){s.scrollLeft=s.scrollWidth;const g=s.querySelectorAll("svg > g")[+s.dataset.sel],b=s.getBoundingClientRect(),r=g&&g.getBoundingClientRect();if(r&&(r.left<b.left+40||r.right>b.right-40))s.scrollLeft+=r.left+r.width/2-(b.left+b.width/2)}
+ // naujausias (ar nežinomas) sezonas – matosi naujausi sezonai; senesnis – jis per vidurį, kad matytųsi ir ankstesni, ir vėlesni
+ if(s.scrollWidth>s.clientWidth){const G=s.querySelectorAll("svg > g"),i=+s.dataset.sel;s.scrollLeft=s.scrollWidth;if(i<G.length-1){const r=G[i].getBoundingClientRect(),b=s.getBoundingClientRect();s.scrollLeft+=r.left+r.width/2-(b.left+b.width/2)}}
  s.addEventListener("scroll",up,{passive:true});w.querySelectorAll(".chn").forEach(bt=>bt.onclick=e=>{e.stopPropagation();s.scrollBy({left:(bt.classList.contains("l")?-1:1)*s.clientWidth*.7,behavior:"smooth"})});up()})}
 addEventListener("resize",()=>{const sh=$("sh");if(sh)sh.querySelectorAll(".tw.ch").forEach(w=>{const s=w.querySelector(".chs"),m=s.scrollWidth-s.clientWidth;w.classList.toggle("ml",m>2&&s.scrollLeft>2);w.classList.toggle("mr",m>2&&s.scrollLeft<m-2)})});
 const sx=(cur,list,mk)=>list.length>1?`<div class="sx"><button class="chip cur" aria-pressed="true">${cur} ▾</button><div class="opts">${list.map(mk).join("")}</div></div>`:`<button class="chip" aria-pressed="true">${cur}</button>`;
