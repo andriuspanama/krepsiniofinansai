@@ -187,7 +187,7 @@ tr.c:hover td.l:first-child{box-shadow:inset 2px 0 var(--a)}
 .mb-x[hidden]{display:none}
 .mb-hit{font-size:14px;color:var(--ink)}
 /* Ryto kortelė: juoda · balta · raudona */
-#sh.is-ry{--a:#E4262F;--ryd:#C8102E;border-color:#5a1219;
+#sh.is-ry{--a:#E4262F;border-color:#5a1219;
  background:radial-gradient(640px 280px at 50% 0%,rgba(200,16,46,.30),transparent 72%),
   repeating-linear-gradient(135deg,rgba(200,16,46,.07) 0 14px,transparent 14px 28px),var(--card);
  box-shadow:0 -14px 70px rgba(200,16,46,.22)}
@@ -267,8 +267,6 @@ tr.c:hover td.l:first-child{box-shadow:inset 2px 0 var(--a)}
 .srow #q{flex:0 1 300px;min-width:140px}
 .srow .llg{height:60px;max-width:160px;padding:6px 10px;box-sizing:border-box;border-radius:12px;background:#fff;object-fit:contain;flex:none}
 .srow .llg:first-of-type{margin-left:auto}
-.rsel{display:flex;align-items:center;gap:8px;color:var(--mute);font-size:14px}
-.rsel select{height:36px;border-radius:99px;border:1px solid var(--a);background:var(--a);color:#1a1200;font:600 14px var(--tx,inherit);padding:0 12px;cursor:pointer}
 .tgl{position:relative;display:flex;align-items:center;gap:10px;height:36px;padding:0 14px 0 6px;border-radius:99px;border:1px solid var(--line);font-size:14px;cursor:pointer;user-select:none}
 .tgl input{position:absolute;opacity:0;width:1px;height:1px}
 .tgl i{width:38px;height:22px;border-radius:99px;background:var(--line);position:relative;flex:none}
@@ -370,7 +368,6 @@ p.sum .srcs.sg{vertical-align:middle;margin-left:4px}
 /* telefone: žemėlapio paaiškinimas suskleistas į 2 eilutes, paspaudus išsiskleidžia; „+“ mygtukas neužlipa ant teksto */
 @media(max-width:720px){.msum{position:relative;padding-right:26px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;cursor:pointer;-webkit-tap-highlight-color:transparent}.msum::after{content:"";position:absolute;right:6px;bottom:7px;width:8px;height:8px;border-right:2px solid var(--a);border-bottom:2px solid var(--a);transform:rotate(45deg);transition:transform .2s}.msum.op{display:block;-webkit-line-clamp:unset}.msum.op::after{transform:rotate(-135deg);bottom:3px}#out tr.c>td:first-child{min-height:38px}#out tr.c .pk{top:50%;translate:0 -50%}}
 /* lyderių lentelė ir rezultato įrašymas (Žaidimas) */
-.lb-g{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 12px}
 .lb-day{margin:0 0 8px;color:var(--mute);font:600 12px var(--mo,ui-monospace,monospace);letter-spacing:.05em;text-transform:uppercase}
 /* švieslentė „HIGH SCORES“ – kaip LED biudžeto langelis klubo kortelėje */
 .lb-board{max-width:600px;padding:16px 18px 10px;border-radius:16px;background:#05070b radial-gradient(color-mix(in srgb,var(--a) 13%,transparent) 1px,transparent 1.5px) 0 0/5px 5px;border:1px solid color-mix(in srgb,var(--a) 28%,#1a1a1a);box-shadow:inset 0 0 40px rgba(0,0,0,.6)}
@@ -391,14 +388,8 @@ p.sum .srcs.sg{vertical-align:middle;margin-left:4px}
 @keyframes lb-blink{50%{background:transparent}}
 @media(max-width:720px){.lb-board{padding:12px 12px 8px}.lb-n{font-size:17px}.lb-r{width:32px;font-size:17px}.lb-l b{font-size:20px;min-width:54px}.lb-l li.t1 b{font-size:23px}.lb-l small{display:none}}
 .lb-note{font-size:12px!important;margin-top:10px}
-.lb-save{margin:14px auto 0;max-width:460px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--card);text-align:left}
-.lb-save p{margin:0 0 8px!important;color:var(--ink)!important;font-size:14px;font-weight:600}
-.lb-row{display:flex;gap:8px}
 .lbn{flex:1;min-width:0;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:15px}
-.lb-btn{flex:none;border:0;border-radius:10px;padding:10px 16px;font:700 14px var(--tx,inherit);background:var(--a);color:#1a1200;cursor:pointer}
-.lb-btn:disabled{opacity:.6;cursor:default}
 .lb-err{display:block;margin-top:6px;color:var(--neg);font-size:12.5px}.lb-err[hidden]{display:none}
-.lb-ok{margin:12px 0 0;color:var(--pos);font-weight:600;font-size:14px;text-align:center}
 /* įrašymo langas, dalinimosi langas virš visko (ir virš žemėlapio per visą ekraną) */
 .shov{z-index:1100}
 .lbm{position:fixed;inset:0;z-index:1100;display:grid;place-items:center;padding:16px;background:#000b}
@@ -416,10 +407,7 @@ p.sum .srcs.sg{vertical-align:middle;margin-left:4px}
 .gm-btns.over .gm-b:disabled{opacity:.6;cursor:default}
 @media(max-width:720px){.gm-btns.over{gap:6px}.gm-btns.over .gm-b{font-size:15px;padding:12px 4px}}
 /* lyderių lentelės pasirinkimas – išskleidžiamas kaip sezonai */
-.lb-g{align-items:flex-start}
-.lb-g .sx{margin-bottom:0}
 .lb-shb{border-color:color-mix(in srgb,var(--a) 45%,var(--line))}
-.lb-sx .opts .chip{white-space:nowrap}
 #pktoast{z-index:1200}
 /* „Lentelė“ serijos eilutėje – tokio paties stiliaus kaip „Serija · Rekordas“ */
 .gm-lbb{background:none;border:0;padding:0;margin:0;font:inherit;color:inherit;cursor:pointer;text-decoration:underline dotted;text-underline-offset:4px;text-decoration-color:color-mix(in srgb,var(--a) 70%,transparent)}

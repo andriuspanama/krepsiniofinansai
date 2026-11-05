@@ -5,7 +5,7 @@
  *   Brazys3D.mountCenter(parentEl)    – stovi per vidurį (žaidimas); .play(name) / .react('ok'|'bad'|'record')
  *   Brazys3D.MOVES                    – judesių sąrašas
  *
- * Failai: model.obj, model.mtl, model_baseColor.png – šalia šio failo.
+ * Failai: model.obj, model.mtl, model_baseColor.jpg – šalia šio failo.
  */
 (function () {
   'use strict';
@@ -487,7 +487,7 @@
         return new Promise(function (res, rej) {
           var mtl = new THREE.MTLLoader();
           mtl.setPath(API.base);
-          mtl.load('model.mtl', function (materials) {
+          mtl.load('model.mtl?v=jpg1', function (materials) {
             materials.preload();
             var loader = new THREE.OBJLoader();
             loader.setMaterials(materials);
@@ -716,6 +716,13 @@
       scene.add(shadow);
       st.ready = true;
       resize();
+      // tekstūra gali atkeliauti vėliau nei modelis – kai ji įsikelia, figūra perpiešiama (kitaip liktų balta iki kito judesio)
+      (function waitTex(n) {
+        if (st.dead) return;
+        var ok = parts.every(function (p) { var im = p.mat.map && p.mat.map.image; return !p.mat.map || (im && im.complete && (im.naturalWidth || im.width)); });
+        if (ok) { render(); setTimeout(render, 150); return; }
+        if (n < 150) setTimeout(function () { waitTex(n + 1); }, 200);
+      })(0);
       var ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
       var onFigure = function (e) {
         var cv = renderer.domElement, r = cv.getBoundingClientRect();
