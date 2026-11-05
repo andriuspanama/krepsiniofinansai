@@ -218,11 +218,11 @@ body.lk{position:fixed;left:0;right:0;width:100%;overflow:hidden}#md,.sheet{over
 .skel .tb{display:grid;gap:10px;padding:14px;border:1px solid var(--line);border-radius:16px;background:var(--card)}
 .skel .ln{height:40px}.skel .ln:nth-child(3n+2){opacity:.8}.skel .ln:nth-child(3n){opacity:.65}
 #tabs:empty{min-height:42px}
-#out.in>*{animation:kfIn .4s ease both}
+#out.kfin>*{animation:kfIn .4s ease both}
 @keyframes kfShim{from{background-position:200% 0}to{background-position:-200% 0}}
 @keyframes kfIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @media(max-width:720px){.skel .ln{height:118px;border-radius:14px}}
-@media(prefers-reduced-motion:reduce){.skel i,.skel,#out.in>*{animation:none}}
+@media(prefers-reduced-motion:reduce){.skel i,.skel,#out.kfin>*{animation:none}}
 </style>
 </head>
 <body>
@@ -738,7 +738,7 @@ async function start(){
   try{PHOTOS=Object.fromEntries(Object.entries(await phP).filter(([k,v])=>v).map(([k,v])=>[norm(k),v]))}catch(e){}
   OWNPH={};D.sal.forEach(r=>{if(r.photo)OWNPH[norm(r.name)]=r.photo});
   setSt(`Atnaujinta ${new Date().toLocaleTimeString("lt-LT",{hour:"2-digit",minute:"2-digit"})}<button class="ic" id="reload" title="Perkrauti duomenis iš lentelės">Atnaujinti</button>`);
-  out.classList.add("in");render();setTimeout(()=>out.classList.remove("in"),700)
+  out.classList.add("kfin");render();setTimeout(()=>out.classList.remove("kfin"),700)
  }catch(err){
   setSt('<button class="ic" id="reload">Bandyti dar kartą</button>');
   out.innerHTML=`<div class="msg"><b>Nepavyko gauti duomenų iš Google Sheets.</b><br>${esc(err.message)}<br>Patikrinkite: 1) failas turi būti išsaugotas kaip Google Sheets (<i>Failas → Išsaugoti kaip Google Sheets</i>), 2) bendrinimas: „Visi, turintys nuorodą – žiūrėtojas“, 3) kode nurodytas teisingas lentelės ID, 4) lapų pavadinimai sutampa.</div>`}}
