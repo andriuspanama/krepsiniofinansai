@@ -8,7 +8,7 @@
   // Ryto kortelės foninė foto: išblukinta (beveik be raudonos), tamsi, neutrali
   // Klubo kortelė (PC): didesnis logotipas per dvi eilutes, „vėliava šalis · sezonas“ – lygiai su klubo pavadinimu
   {const st=document.createElement("style");st.id="rd-mblogo";st.textContent=".ps-p.a{background:rgba(255,176,32,.16);color:#ffc46b}.mb-div{margin-top:-2px}.mb-row .lw{margin:0}.mb-row .lg{width:34px;height:34px}.mb-chart .mbd.lgm.on .dot{transform:none}.mb-chart .mbd.lgm image{transition:opacity .35s ease}";document.head.appendChild(st)}
-  {const st=document.createElement("style");st.id="rd-clhead";st.textContent="@media(min-width:721px){#sh .cl:has(>.lw){position:relative;padding-left:78px;min-height:40px}#sh .cl:has(>.lw)>.lw{position:absolute;left:0;top:-4px;margin:0}#sh .cl:has(>.lw) .lg{width:64px;height:64px}#sh .cl:has(>.lw)+.sum{padding-left:78px;min-height:26px}}";document.head.appendChild(st)}
+  {const st=document.createElement("style");st.id="rd-clhead";st.textContent="@media(min-width:721px){#sh .cl:has(>.lw){position:relative;padding-left:78px;min-height:40px}#sh .cl:has(>.lw)>.lw{position:absolute;left:0;top:-4px;margin:0}#sh .cl:has(>.lw) .lg{width:64px;height:64px}#sh .cl:has(>.lw)+.sum{padding-left:78px;min-height:26px}}@media(max-width:720px){#sh .cl:has(>.lw){position:relative;padding-left:56px;min-height:38px}#sh .cl:has(>.lw)>.lw{position:absolute;left:0;top:0;margin:0}#sh .cl:has(>.lw)+.sum{padding-left:56px;min-height:14px}}";document.head.appendChild(st)}
   {const st=document.createElement("style");st.id="rd-bgfix";st.textContent=
    'html #sh.sheet.bg-photo{background:'+
    'radial-gradient(640px 280px at 50% 0%,rgba(200,16,46,.08),transparent 72%),'+

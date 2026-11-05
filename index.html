@@ -691,10 +691,24 @@ function render0(){
  out.dataset.view=S.tab;   // CSS žino, kuris skirtukas (ne data-tab – tas atributas reiškia skirtuko mygtuką paspaudimams)
  $tabs.innerHTML=TABS.map(([k,l])=>`<button role="tab" data-tab="${k}" aria-selected="${S.tab===k}">${tr(l)}</button>`).join("");
  const fid=document.activeElement&&["q","cq"].includes(document.activeElement.id)?document.activeElement.id:null;
- out.innerHTML=S.tab==="tax"?'<iframe src="basketball_tax_calculator_2026.html" title="Mokesčių skaičiuoklė" onload="syncTheme()"></iframe>'
+ const html=S.tab==="tax"?'<iframe src="basketball_tax_calculator_2026.html" title="Mokesčių skaičiuoklė" onload="syncTheme()"></iframe>'
   :S.tab==="cmp"?tr(cmpView())
   :table(S.tab,S.tab==="bud"?budgetRows():S.tab==="att"?D.att.filter(r=>r.season===S.aseason):D[S.tab]);
+ // Rašant paieškoje tas pats laukelis paliekamas vietoje (telefono klaviatūra kitaip „pameta“ raides) – atnaujinama tik visa kita
+ if(fid&&keepSearch(fid,html))return;
+ out.innerHTML=html;
  if(fid){const i=$(fid);if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}}}
+function keepSearch(fid,html){
+ const box=$(fid),bar=box&&box.parentNode;if(!bar||bar.parentNode!==out||!bar.classList.contains("bar"))return false;
+ const tmp=document.createElement("div");tmp.innerHTML=html;
+ const nbox=tmp.querySelector("#"+fid),nbar=nbox&&nbox.parentNode;if(!nbar||nbar.parentNode!==tmp)return false;
+ const kids=[...tmp.childNodes],at=kids.indexOf(nbar),bk=[...nbar.childNodes],ib=bk.indexOf(nbox);
+ [...out.childNodes].forEach(n=>{if(n!==bar)n.remove()});
+ [...bar.childNodes].forEach(n=>{if(n!==box)n.remove()});
+ bar.className=nbar.className;
+ bk.slice(0,ib).forEach(n=>bar.insertBefore(n,box));bk.slice(ib+1).forEach(n=>bar.appendChild(n));
+ kids.slice(0,at).forEach(n=>out.insertBefore(n,bar));kids.slice(at+1).forEach(n=>out.appendChild(n));
+ return true}
 const $=id=>document.getElementById(id),$tabs=$("tabs"),out=$("out");
 document.addEventListener("click",e=>{if(e.target.id==="md")return closeAll();
  if(e.target.closest("a"))return;
@@ -722,7 +736,8 @@ document.addEventListener("click",e=>{if(e.target.id==="md")return closeAll();
  render()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(SGO){e.preventDefault();return sgClose()}if(H.length){e.preventDefault();return closeAll()}if(document.querySelector(".am-card.on,.am-lb.on"))return;closeAll()}if(e.key==="Enter"&&e.target.matches("th[data-k]"))e.target.click()});
 document.addEventListener("change",e=>{if(e.target.id==="srole"){S.srole=e.target.value;return render()}if(e.target.id==="sone"){S.one=e.target.checked;return render()}if(e.target.id==="ms"){const k=e.target.value;S.sort[S.tab]=[k,k==="club"||k==="name"?1:-1];render()}});
-let QT=0;document.addEventListener("input",e=>{if(e.target.id==="q"){S.q=e.target.value;clearTimeout(QT);QT=setTimeout(render,120)}else if(e.target.id==="cq"){S.cmp.q=e.target.value;render()}});
+let QT=0;const QD=matchMedia("(hover:none)").matches?300:120;   // telefone lentelė perpiešiama, kai stabtelima (ne po kiekvienos raidės)
+document.addEventListener("input",e=>{if(e.target.id==="q"){S.q=e.target.value;clearTimeout(QT);QT=setTimeout(render,QD)}else if(e.target.id==="cq"){S.cmp.q=e.target.value;clearTimeout(QT);QT=setTimeout(render,QD)}});
 async function start(){
  setSt("Kraunama…");
  try{
@@ -746,9 +761,9 @@ if(TH)document.documentElement.setAttribute("data-t",TH);$("th").textContent=isD
 setLang(LANG);
 start();
 </script>
- <script src="redesign.js?v=20261105i" defer></script>
-<script src="brazys3d.js?v=20261105i" defer></script>
-<script src="arenamap.js?v=20261105i" defer></script>
+ <script src="redesign.js?v=20261105j" defer></script>
+<script src="brazys3d.js?v=20261105j" defer></script>
+<script src="arenamap.js?v=20261105j" defer></script>
 </body>
 </html>
 </body>
