@@ -491,3 +491,6 @@ p.sum .srcs.sg{vertical-align:middle;margin-left:4px}
  #sh.sbv::-webkit-scrollbar-thumb:hover,#sh.sbv::-webkit-scrollbar-thumb:active{background-color:color-mix(in srgb,var(--ink) 62%,transparent);border-width:3px}
  @supports not selector(::-webkit-scrollbar){#sh{scrollbar-width:thin;scrollbar-color:transparent transparent}#sh.sbv{scrollbar-color:color-mix(in srgb,var(--ink) 42%,transparent) transparent}}
 }
+/* Telefonai (be pelės): jokio mėlyno paspaudimo stačiakampio; eilutės „hover“ spalva ir juostelė tik įrenginiams su pele (kitaip po palietimo ar uždarius kortelę lieka nuspalvinti langeliai) */
+html{-webkit-tap-highlight-color:transparent}
+@media(hover:none){tr.c:hover td,tr.pc:hover td{background:transparent}tr.c:hover td.l:first-child,tr.pc:hover td.l:first-child{box-shadow:none}}
