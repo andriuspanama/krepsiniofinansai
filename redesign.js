@@ -75,8 +75,15 @@
     const nk=norm((host.querySelector("h3,.gm-n")||{}).textContent||""),ov=Object.keys(LGOV).find(k=>nk.indexOf(k)>=0),fx=ov?LGOV[ov]:LGTC[orig]||LGTC[want];lgTc(host,fx||(LGC[orig]||LGM[orig]||{}).c||LGSIL);if(img.getAttribute("src")!==want&&!(LGC[want]||{}).f)img.src=want;
     Promise.all([lgInfo(orig),lgFull(want)]).then(([o,v])=>{if(!img.isConnected||img.dataset.w!==want)return;lgTc(host,fx||o.c||LGSIL);const f=v&&v.f;if(f&&img.getAttribute("src")!==f)img.src=f;
       lgWhen(img,()=>{const x=lgBox(want,v||o);const y=x.b?x:lgBox(orig,o);lgXf(img,y.b,1,y.clip)})})}
+  // Moneyball grafiko burbulai (SVG): logotipas be tuščių kraštų užpildo baltą apskritimą, kampai nenukerpami; niekada ne mažesnis nei buvo
+  function lgSvg(el){if(el.dataset&&el.dataset.lb)return;el.setAttribute("data-lb","1");const u=el.getAttribute("href");if(!u)return;
+    const S=+el.getAttribute("width"),x0=+el.getAttribute("x"),y0=+el.getAttribute("y"),cx=x0+S/2,cy=y0+S/2;if(!S)return;
+    const im=new Image();im.onload=()=>lgInfo(u).then(r=>{if(!el.isConnected||!im.naturalWidth)return;const ar=im.naturalWidth/im.naturalHeight,w=Math.min(S,S*ar),h=w/ar,x=lgBox(u,r),b=x.b;if(!b)return;
+      let sc;if(x.clip||!(r&&r.r))sc=Math.min(S/((b[2]-b[0])*w),S/((b[3]-b[1])*h))*(x.clip?1:.9);else sc=S/2/(r.r*h);sc=Math.min(1.7,sc);if(!x.clip&&sc<1)sc=1;if(Math.abs(sc-1)<.04)return;
+      const W=S*sc,ox=((b[0]+b[2])/2-.5)*w*sc,oy=((b[1]+b[3])/2-.5)*h*sc;
+      el.setAttribute("width",W.toFixed(1));el.setAttribute("height",W.toFixed(1));el.setAttribute("x",(cx-W/2-ox).toFixed(1));el.setAttribute("y",(cy-W/2-oy).toFixed(1))});im.src=u}
   const LGSEL=".am-pin .in>img,.mg-lg>img,.am-sug .sl>img,.lw>img.lg,.am-head>img";
-  function lgScan(root){(root.matches&&root.matches(LGSEL)?[root]:[]).concat([...(root.querySelectorAll?root.querySelectorAll(LGSEL):[])]).forEach(img=>{
+  function lgScan(root){if(root.querySelectorAll)root.querySelectorAll(".mb-chart image").forEach(lgSvg);(root.matches&&root.matches(LGSEL)?[root]:[]).concat([...(root.querySelectorAll?root.querySelectorAll(LGSEL):[])]).forEach(img=>{
     if(img.closest("#sh .cl")||img.closest(".ry-fx"))return;const gm=img.closest(".gm-card"),am=img.closest(".am-body");if(gm||am)lgFloat(img,gm||am);else lgBub(img)})}
   new MutationObserver(ms=>ms.forEach(m=>m.addedNodes.forEach(n=>{if(n.nodeType===1)lgScan(n)}))).observe(document.documentElement,{childList:true,subtree:true});
   lgScan(document);
