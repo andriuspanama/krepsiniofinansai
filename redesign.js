@@ -744,8 +744,16 @@
       else if(sh.querySelector(".tw.ch"))hist=D.bud.filter(r=>r.total!=null&&same(r.club,name)).sort((a,b)=>a.season.localeCompare(b.season)).filter(uniq).map(r=>({l:r.season,v:r.total,t:(r.total/1e6).toFixed(1)+"M"}));
       hist=hist.slice(-6);
     }
+    // paveikslėlis: žaidėjui – jo nuotrauka (su tuo pačiu veido priartinimu #pf kaip kortelėje); klubui – toks pat logotipas kaip kortelėje (be burbulo, apkarpytas, be švytėjimo); Rytui – jo ženklelis be papildomo balto apskritimo
+    const ld=u=>new Promise(res=>{const i=new Image();i.crossOrigin="anonymous";const t=setTimeout(()=>res(null),5000);i.onload=()=>{clearTimeout(t);try{const c=document.createElement("canvas");c.width=c.height=2;c.getContext("2d").drawImage(i,0,0,2,2);c.getContext("2d").getImageData(0,0,1,1);res(i)}catch(e){res(null)}};i.onerror=()=>{clearTimeout(t);res(null)};i.src=u});
+    const ldAny=async u=>u?(await ld(u))||(u.startsWith("data:")?null:await ld("https://images.weserv.nl/?url="+encodeURIComponent(u)+"&output=png")):null;   // jei svetainė neleidžia – per paveikslėlių tarpininką
     const u=typeof LOGOS!=="undefined"&&LOGOS[norm(logoName)];let img=null;
-    if(u)img=await new Promise(res=>{const i=new Image();i.crossOrigin="anonymous";i.onload=()=>res(i);i.onerror=()=>res(null);setTimeout(()=>res(null),4000);i.src=u});
+    const fc=isP&&sh.querySelector(".phd .fc img"),li=!isP&&sh.classList.contains("lgg")&&sh.querySelector(".cl>.lw>img.lg"),ry=!isP&&!li&&sh.querySelector(".cl.ry .ry-logo");
+    if(fc){const fs=fc.getAttribute("src")||"",pm=fs.match(/#pf=([\d.]+),([\d.]+)/);img=await ldAny((fc.currentSrc||fc.src).split("#")[0]);if(img){opts.mode="photo";if(pm)opts.pf=[+pm[1],+pm[2]]}}
+    else if(ry){img=await ldAny(ry.getAttribute("src"));if(img){opts.mode="logo";opts.b=null}}
+    else if(li){const o=li.dataset.o||li.getAttribute("src"),w=li.dataset.w||o;img=await ldAny(li.getAttribute("src"));
+      if(img){const x0=LGVB[w]||LGVB[o],r=LGC[w]||LGM[w]||LGC[o]||LGM[o]||{};opts.mode="logo";opts.b=x0||r.b||LGBB[w]||LGBB[o]||null}}
+    if(!img&&u)img=await ldAny(u);
     try{await document.fonts.load("700 100px 'Barlow Condensed'");await document.fonts.load("600 40px 'JetBrains Mono'")}catch(e){}
     let blob;try{blob=await drawCard(name,sub,kp,hist,img,opts)}catch(e){blob=await drawCard(name,sub,kp,hist,null,opts)}
     showShare(blob,name);
@@ -760,10 +768,20 @@
     x.strokeStyle="rgba(122,134,158,.22)";x.lineWidth=3;[520,300].forEach(r=>{x.beginPath();x.arc(W,H,r,0,Math.PI*2);x.stroke()});
     x.fillStyle=AM;x.fillRect(72,72,96,6);
     x.fillStyle=MU;x.font="500 34px "+HD;x.textBaseline="alphabetic";x.fillText(T("Krepšinio klubų finansai","Basketball Club Finances"),72,128);
-    let nx=72;
-    if(img){x.save();x.beginPath();x.arc(152,262,80,0,Math.PI*2);x.closePath();x.fillStyle="#fff";x.fill();x.clip();
-      const k=Math.min(124/img.width,124/img.height);x.drawImage(img,152-img.width*k/2,262-img.height*k/2,img.width*k,img.height*k);x.restore();nx=262}
-    const ns=fit(name,W-72-nx,HD,"700",124,56);x.fillStyle=INK;x.fillText(name,nx,img?285:300);
+    let nx=72;const NB=img?285:300,BW=opts.mode==="logo"?168:160;
+    const ns0=fit(name,W-72-(img?72+BW+30:72),HD,"700",124,56)+2,cy=NB-ns0*.35;   // paveikslėlio centras – pavadinimo raidžių viduryje
+    if(img&&opts.mode==="logo"){const cx=72+BW/2;
+      const b=opts.b||[0,0,1,1],sx=b[0]*img.width,sy=b[1]*img.height,sw=(b[2]-b[0])*img.width,sh2=(b[3]-b[1])*img.height,k=Math.min(BW/sw,128/sh2);
+      x.drawImage(img,sx,sy,sw,sh2,cx-sw*k/2,cy-sh2*k/2,sw*k,sh2*k);nx=72+BW+30}
+    else if(img&&opts.mode==="photo"){const cx=72+BW/2,R=BW/2-4;x.save();x.beginPath();x.arc(cx,cy,R,0,Math.PI*2);x.closePath();x.fillStyle="#1a1f29";x.fill();x.clip();
+      const D=2*R,k=Math.max(D/img.width,D/img.height),dw=img.width*k,dh=img.height*k;
+      if(opts.pf){const s=opts.pf[0],oy=Math.max(0,Math.min(100,(s*opts.pf[1]-45)/(s-1)))/100*D,px0=D/2-D/(2*s),py0=oy*(1-1/s),pw=D/s,ox=(D-dw)/2;   // kaip kortelėje: object-position 50% 0 + scale(s) apie (50%, y%)
+        x.drawImage(img,(px0-ox)/k,py0/k,pw/k,pw/k,cx-R,cy-R,D,D)}
+      else x.drawImage(img,cx-dw/2,cy-R-(dh-2*R)*.18,dw,dh);x.restore();
+      x.beginPath();x.arc(cx,cy,R,0,Math.PI*2);x.strokeStyle="rgba(122,134,158,.45)";x.lineWidth=4;x.stroke();nx=72+BW+30}
+    else if(img){x.save();x.beginPath();x.arc(152,cy,80,0,Math.PI*2);x.closePath();x.fillStyle="#fff";x.fill();x.clip();
+      const k=Math.min(124/img.width,124/img.height);x.drawImage(img,152-img.width*k/2,cy-img.height*k/2,img.width*k,img.height*k);x.restore();nx=262}
+    const ns=fit(name,W-72-nx,HD,"700",124,56);x.fillStyle=INK;x.fillText(name,nx,NB);
     x.fillStyle=MU;x.font="400 38px "+SS;x.fillText(sub.slice(0,60),72,372);
     const cw=468,ch=190,gap=24,y0=430;
     kp.slice(0,4).forEach((p,i)=>{const cx=72+(i%2)*(cw+gap),cy=y0+Math.floor(i/2)*(ch+gap);
