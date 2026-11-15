@@ -1132,3 +1132,59 @@
   }
   // MAP-END
 })();
+
+// Paieška per visus sezonus: po paieškos laukeliu (Biudžetai, Lankomumas, Algos) – pasiūlymų sąrašas kaip žemėlapyje.
+// Biudžetai/Lankomumas: klubai iš visų sezonų; Algos: žaidėjai (ir komandos). Paspaudus – atsidaro kortelė. Lentelės filtravimas lieka kaip buvo.
+(function(){
+  let box=null,act=-1,IX=null,IXK="",raf=0;
+  const en=()=>typeof LANG!=="undefined"&&LANG==="en",esc2=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const fold=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
+  function index(){const k=(D.bud||[]).length+"/"+(D.att||[]).length+"/"+(D.sal||[]).length;if(IX&&IXK===k)return IX;IXK=k;
+    const C=new Map(),P=new Map(),addC=(n,nat,s)=>{if(!n)return;const key=norm(n);let c=C.get(key);if(!c)C.set(key,c={n,nat:nat||"",ss:new Set()});if(s)c.ss.add(s);if(!c.nat&&nat)c.nat=nat};
+    (D.bud||[]).forEach(r=>addC(r.club,r.nation,r.season));(D.att||[]).forEach(r=>addC(r.club,r.country||r.nation,r.season));
+    const T=new Map();(D.sal||[]).forEach(r=>{if(r.team){const key=norm(r.team);let t=T.get(key);if(!t)T.set(key,t={n:r.team,nat:r.country||"",ss:new Set()});if(r.season)t.ss.add(r.season)}
+      if(!r.name)return;const key=norm(r.name);let p=P.get(key);if(!p)P.set(key,p={n:r.name,last:""});if((r.season||"")>=p.last){p.last=r.season||"";p.team=r.team||"";p.role=r.role||""}});
+    T.forEach((t,key)=>{if(!C.has(key))C.set(key,t)});
+    return IX={C:[...C.values()],P:[...P.values()]}}
+  const rng=ss=>{const a=[...ss].sort();return a.length?(a.length>1?a[0]+"–"+a[a.length-1]:a[0]):""};
+  const hl=(n,q)=>{const f=fold(n),i=f.indexOf(q);return i<0?esc2(n):esc2(n.slice(0,i))+"<mark>"+esc2(n.slice(i,i+q.length))+"</mark>"+esc2(n.slice(i+q.length))};
+  const rank=(n,q)=>{const f=fold(n);if(f.startsWith(q))return 0;if(f.split(/[\s.\-–/]+/).some(w=>w.startsWith(q)))return 1;return f.includes(q)?2:9};
+  function find(list,q,lim){return list.map(x=>({x,r:rank(x.n,q)})).filter(o=>o.r<9).sort((a,b)=>a.r-b.r||a.x.n.length-b.x.n.length).slice(0,lim).map(o=>o.x)}
+  function clubBtn(c,q){const u=typeof LOGOS!=="undefined"&&LOGOS[norm(c.n)],nat=typeof dn==="function"?dn(c.nat):c.nat;
+    return`<button type="button" class="qs-i" data-club="${esc2(c.n)}" role="option">${u?`<span class="lw qs-l"><img class="lg" src="${esc2(u)}" alt="" loading="lazy" onerror="this.parentNode.classList.add('nl');this.remove()"></span>`:`<span class="lw qs-l nl"></span>`}<span class="qs-t"><b>${hl(c.n,q)}</b><small>${c.nat?(typeof flag==="function"?flag(c.nat):"")+esc2(nat)+" · ":""}${rng(c.ss)}</small></span></button>`}
+  function playerBtn(p,q){return`<button type="button" class="qs-i" data-p="${esc2(p.n)}" role="option">${typeof face==="function"?face(p.n):""}<span class="qs-t"><b>${hl(p.n,q)}</b><small>${esc2(p.team||"")}${p.last?" · "+esc2(p.last):""}</small></span></button>`}
+  const qk=()=>S.tab+"|"+(typeof LANG!=="undefined"?LANG:"");
+  function place(){const q=document.getElementById("q");if(!box||box.hidden)return;if(!q||!q.isConnected||q!==box._q||box._k!==qk()){if(q&&document.activeElement===q)update();else hide();return}const r=q.getBoundingClientRect(),w=Math.min(Math.max(r.width,320),innerWidth-16);
+    box.style.left=Math.max(8,Math.min(r.left,innerWidth-w-8))+"px";box.style.top=(r.bottom+6)+"px";box.style.width=w+"px";box.style.maxHeight=Math.max(160,Math.min(420,innerHeight-r.bottom-20))+"px"}
+  function loop(){place();if(box&&!box.hidden)raf=requestAnimationFrame(loop)}
+  function hide(){if(box){box.hidden=true;act=-1}cancelAnimationFrame(raf)}
+  function update(){const qi=document.getElementById("q");if(!qi||typeof D==="undefined"||!D.bud||typeof S==="undefined"||!/^(bud|att|sal)$/.test(S.tab))return hide();
+    const q=fold(qi.value.trim());if(q.length<2)return hide();
+    if(!box){box=document.createElement("div");box.className="qs";box.setAttribute("role","listbox");box.hidden=true;document.body.appendChild(box);box.addEventListener("click",()=>setTimeout(hide,0));box.addEventListener("mousedown",e=>e.preventDefault())}
+    const I=index();let h="";
+    if(S.tab==="sal"){const ps=find(I.P,q,8),cs=find(I.C,q,4);
+      if(ps.length)h+=`<div class="qs-h">${en()?"Players":"Žaidėjai"}</div>`+ps.map(p=>playerBtn(p,q)).join("");
+      if(cs.length)h+=`<div class="qs-h">${en()?"Teams":"Komandos"}</div>`+cs.map(c=>clubBtn(c,q)).join("")}
+    else{const cs=find(I.C,q,10);if(cs.length)h+=`<div class="qs-h">${en()?"Clubs · all seasons":"Klubai · visi sezonai"}</div>`+cs.map(c=>clubBtn(c,q)).join("")}
+    box._q=qi;box._k=qk();box.innerHTML=h||`<div class="qs-none">${en()?"No matches":"Nieko nerasta"}</div>`;act=-1;
+    const wasHidden=box.hidden;box.hidden=false;place();if(wasHidden)loop()}
+  let ut=0;
+  document.addEventListener("input",e=>{if(e.target.id==="q"){clearTimeout(ut);ut=setTimeout(update,120)}});
+  document.addEventListener("focusin",e=>{if(e.target.id==="q")setTimeout(update,0)});
+  document.addEventListener("keydown",e=>{if(e.target.id!=="q"||!box||box.hidden)return;const its=[...box.querySelectorAll(".qs-i")];
+    if(e.key==="Escape"){hide();return}
+    if(e.key==="ArrowDown"||e.key==="ArrowUp"){e.preventDefault();if(!its.length)return;act=(act+(e.key==="ArrowDown"?1:-1)+its.length)%its.length;its.forEach((b,i)=>b.classList.toggle("on",i===act));its[act].scrollIntoView({block:"nearest"})}
+    else if(e.key==="Enter"&&act>=0&&its[act]){e.preventDefault();its[act].click()}});
+  document.addEventListener("pointerdown",e=>{if(box&&!box.hidden&&!e.target.closest(".qs")&&e.target.id!=="q")hide()},true);
+  addEventListener("resize",place);
+  const st=document.createElement("style");
+  st.textContent=`.qs{position:fixed;z-index:60;overflow:auto;overscroll-behavior:contain;background:var(--card,#0F1420);border:1px solid var(--line,#1E2638);border-radius:14px;box-shadow:0 14px 34px rgba(0,0,0,.45);padding:4px}.qs[hidden]{display:none}
+.qs-h{padding:8px 10px 4px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute,#7A869E)}
+.qs-i{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:6px 10px;border:0;border-radius:10px;background:none;color:var(--ink,#E8ECF4);text-align:left;font:inherit;font-size:14px;cursor:pointer}
+.qs-i.on,.qs-i:hover{background:color-mix(in srgb,var(--line,#1E2638) 80%,transparent)}
+.qs .lw.qs-l{flex:none;width:30px;height:30px;display:grid;place-items:center}.qs .lw.qs-l>img.lg{width:30px;height:30px}.qs .lw.qs-l.nl{border-radius:50%;background:color-mix(in srgb,var(--line,#1E2638) 70%,transparent)}
+.qs .fc{flex:none;width:34px;height:34px}
+.qs-t{min-width:0;flex:1}.qs-t b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.qs-t small{display:block;color:var(--mute,#7A869E);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qs mark{background:none;color:var(--a,#FFB020);font-weight:700}.qs-none{padding:12px;color:var(--mute,#7A869E);font-size:13px}`;
+  document.head.appendChild(st);
+})();
