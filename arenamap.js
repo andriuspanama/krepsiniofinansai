@@ -867,9 +867,17 @@
       var svg = d3.select(wrap.querySelector('.am-svg')), g = svg.select('.am-g');
       var features = topojson.feature(topo, topo.objects.countries).features.filter(function (f) {
         if (f.properties.name === 'Russia') return true;
-        var b = d3.geoBounds(f); return b[1][0] > bx[0] - 5 && b[0][0] < bx[2] + 5 && b[1][1] > bx[1] - 8 && b[0][1] < bx[3] + 3;
+        // šalys per 180° dienovidinį (pvz. Naujoji Zelandija su Chathamo salomis): geoBounds vakarinis kraštas > rytinio – ilguma laikoma tinkama
+        var b = d3.geoBounds(f), wrap180 = b[0][0] > b[1][0];
+        return (wrap180 || (b[1][0] > bx[0] - 5 && b[0][0] < bx[2] + 5)) && b[1][1] > bx[1] - 8 && b[0][1] < bx[3] + 3;
       });
       var nations = {}; items.forEach(function (i) { if (i.nation) nations[enName(i.nation)] = 1; });
+      // paryškinama ir šalis, kurioje stovi arena (klubai be šalies duomenyse, pvz. tik iš Europos taurių, ar „New Zealand Breakers“, žaidžiantys Australijos lygoje)
+      (function () { var fb = features.map(function (f) { return d3.geoBounds(f); });
+        var hit = function (lo, la) { for (var k = 0; k < features.length; k++) { var b = fb[k]; if (la < b[0][1] - .3 || la > b[1][1] + .3) continue; if (b[0][0] <= b[1][0] && (lo < b[0][0] - .3 || lo > b[1][0] + .3)) continue; if (d3.geoContains(features[k], [lo, la])) return features[k].properties.name; } return null; };
+        // pakrantės arenos (pvz. Aucklando Spark Arena) supaprastintame kontūre gali atsidurti jūroje – tada tikrinami taškai ~10 km aplink
+        var OFF = [[0, 0], [.1, 0], [-.1, 0], [0, .1], [0, -.1], [.1, .1], [-.1, .1], [.1, -.1], [-.1, -.1], [.25, 0], [-.25, 0], [0, .25], [0, -.25]];
+        items.forEach(function (i) { if (!i.e || !isFinite(i.e.lat) || !isFinite(i.e.lon)) return; for (var o = 0; o < OFF.length; o++) { var n = hit(+i.e.lon + OFF[o][0], +i.e.lat + OFF[o][1]); if (n) { nations[n] = 1; break; } } }); })();
       var unfix = { Czechia: 'Czech Republic', 'Bosnia and Herz.': 'Bosnia and Herzegovina', Macedonia: 'North Macedonia' };
       var labName = function (n) { var e = unfix[n] || n; return T(NAT_[e] || e, e); };
       var proj, path, ext, kMin = 1, cT = d3.zoomIdentity, sel = null, raf = 0, mtoken = 0, openedAt = 0;
@@ -1429,9 +1437,17 @@
       var svg = d3.select(wrap.querySelector('.am-svg')), g = svg.select('.am-g');
       var features = topojson.feature(topo, topo.objects.countries).features.filter(function (f) {
         if (f.properties.name === 'Russia') return true;
-        var b = d3.geoBounds(f); return b[1][0] > bx[0] - 5 && b[0][0] < bx[2] + 5 && b[1][1] > bx[1] - 8 && b[0][1] < bx[3] + 3;
+        // šalys per 180° dienovidinį (pvz. Naujoji Zelandija su Chathamo salomis): geoBounds vakarinis kraštas > rytinio – ilguma laikoma tinkama
+        var b = d3.geoBounds(f), wrap180 = b[0][0] > b[1][0];
+        return (wrap180 || (b[1][0] > bx[0] - 5 && b[0][0] < bx[2] + 5)) && b[1][1] > bx[1] - 8 && b[0][1] < bx[3] + 3;
       });
       var nations = {}; items.forEach(function (i) { if (i.nation) nations[enName(i.nation)] = 1; });
+      // paryškinama ir šalis, kurioje stovi arena (klubai be šalies duomenyse, pvz. tik iš Europos taurių, ar „New Zealand Breakers“, žaidžiantys Australijos lygoje)
+      (function () { var fb = features.map(function (f) { return d3.geoBounds(f); });
+        var hit = function (lo, la) { for (var k = 0; k < features.length; k++) { var b = fb[k]; if (la < b[0][1] - .3 || la > b[1][1] + .3) continue; if (b[0][0] <= b[1][0] && (lo < b[0][0] - .3 || lo > b[1][0] + .3)) continue; if (d3.geoContains(features[k], [lo, la])) return features[k].properties.name; } return null; };
+        // pakrantės arenos (pvz. Aucklando Spark Arena) supaprastintame kontūre gali atsidurti jūroje – tada tikrinami taškai ~10 km aplink
+        var OFF = [[0, 0], [.1, 0], [-.1, 0], [0, .1], [0, -.1], [.1, .1], [-.1, .1], [.1, -.1], [-.1, -.1], [.25, 0], [-.25, 0], [0, .25], [0, -.25]];
+        items.forEach(function (i) { if (!i.e || !isFinite(i.e.lat) || !isFinite(i.e.lon)) return; for (var o = 0; o < OFF.length; o++) { var n = hit(+i.e.lon + OFF[o][0], +i.e.lat + OFF[o][1]); if (n) { nations[n] = 1; break; } } }); })();
       var unfix = { Czechia: 'Czech Republic', 'Bosnia and Herz.': 'Bosnia and Herzegovina', Macedonia: 'North Macedonia' };
       var labName = function (n) { var e = unfix[n] || n; return T(NAT_[e] || e, e); };
       var labels = [];   // žaidime šalių pavadinimų nėra – būtų per didelė užuomina

@@ -24,7 +24,7 @@
   // LGCF – herbai, kurių baltas vidus nuo išorės atskirtas tik siaurais tarpais: užpildomi ir tie plotai (tik patikrinti: Anwil, Igokea)
   const LGCF=new Set(["https://upload.wikimedia.org/wikipedia/en/2/24/Anwil_W%C5%82oc%C5%82awek_2019_logo.png","https://upload.wikimedia.org/wikipedia/en/f/fa/Igokea-logo.png","https://thumb.wikimedia.org/wikipedia/en/thumb/f/fa/Igokea-logo.png/330px-Igokea-logo.png"]);
   // LGNF – logotipai, kuriems baltas užpildas netinka (originale tų vietų nėra baltų)
-  const LGNF=new Set(["https://assets.fiba.basketball/image/upload/w_200/f_auto/q_auto/.logoflag--dark--organisation_1129","https://assets.fiba.basketball/image/upload/w_200/f_auto/q_auto/.logoflag--dark--organisation_797","https://upload.wikimedia.org/wikipedia/commons/3/3b/Shinagawa_City_BC_logo.png"]);
+  const LGNF=new Set(["https://thumb.wikimedia.org/wikipedia/en/thumb/0/0c/KB_Bashkimi_1945.svg/330px-KB_Bashkimi_1945.svg.png","https://assets.fiba.basketball/image/upload/w_200/f_auto/q_auto/.logoflag--dark--organisation_1129","https://assets.fiba.basketball/image/upload/w_200/f_auto/q_auto/.logoflag--dark--organisation_797","https://upload.wikimedia.org/wikipedia/commons/3/3b/Shinagawa_City_BC_logo.png"]);
   // atstumas iki artimiausio taško, kuriam src(p) – tiesa (dviejų praėjimų įvertis)
   const lgDT=(w,h,src)=>{const N=w*h,D=new Float32Array(N),b=1.414;for(let p=0;p<N;p++)D[p]=src(p)?0:1e9;
     for(let y=0;y<h;y++)for(let X=0;X<w;X++){const p=y*w+X;let v=D[p];if(X>0)v=Math.min(v,D[p-1]+1);if(y>0){v=Math.min(v,D[p-w]+1);if(X>0)v=Math.min(v,D[p-w-1]+b);if(X<w-1)v=Math.min(v,D[p-w+1]+b)}D[p]=v}
