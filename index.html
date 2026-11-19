@@ -247,6 +247,8 @@ const CF=(h,on)=>on?`<span class="cfe">${h}</span>`:h,CFL=(on,k)=>on?`<span clas
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const wd=s=>String(s??"").toLowerCase().replace(/ł/g,"l").replace(/đ/g,"d").replace(/ø/g,"o").replace(/ı/g,"i").replace(/ß/g,"ss").normalize("NFD").replace(/[\u0300-\u036f]/g,"").split(/[^a-z0-9]+/).filter(Boolean);
 const mt=(t,q)=>{const qt=wd(q);if(!qt.length)return true;const W=wd(t);return qt.every(x=>W.some(w=>w.startsWith(x)))};
+// Sezonų tvarka: "98/99" yra 1998 m., todėl rikiuojame pagal pilnus metus (50–99 → 19xx, 00–49 → 20xx), ne pagal tekstą.
+const sY=s=>{const m=/^(\d\d)\/\d\d$/.exec(String(s==null?"":s).trim());return m?(+m[1]>=50?1900:2000)+ +m[1]:-1},sCmp=(a,b)=>sY(a)-sY(b)||String(a==null?"":a).localeCompare(String(b==null?"":b)),sPrev=t=>{const[a,b]=String(t).split("/").map(Number);return String((a+99)%100).padStart(2,"0")+"/"+String((b+99)%100).padStart(2,"0")};
 const NMC=new Map(),norm=s=>{s=String(s);let r=NMC.get(s);if(r===undefined){r=s.toLowerCase().normalize("NFD").replace(/[^a-z0-9]/g,"");if(NMC.size<50000)NMC.set(s,r)}return r};   // rezultatai įsimenami – kviečiama dešimtis tūkstančių kartų
 const nat=n=>NAT[n]||n;
 const num=v=>{if(v==null)return null;const s=String(v).replace(/[\s\u00a0€$%~≈*]/g,"").replace(/,/g,"");if(!/^-?\d/.test(s))return null;const n=parseFloat(s);return isNaN(n)?null:n};
@@ -302,7 +304,7 @@ function inferNation(rs){const cnt={};let tot=0;for(const x of rs){const n=natio
 // Google CSV kartais „pameta“ tekstą skaitiniame stulpelyje (lygų pavadinimai B stulpelyje), todėl blokai skiriami pagal antraštės eilutę „Club“,
 // o lyga ir sezonas, jei pavadinimo nėra, nustatomi pagal klubus
 function attendance(rows,def){const dv=rows.some(r=>(r[2]||"").trim()==="Club")?1:0,blks=[];let pend="",cur=null;
- const prev=t=>{const[a,b]=t.split("/").map(Number);return String(a-1).padStart(2,"0")+"/"+String(b-1).padStart(2,"0")};
+ const prev=sPrev;
  for(const r of rows){const first=(r[1]||"").trim(),a=(r[1+dv]||"").trim();
   if(dv&&!a&&first&&!/^\d+$/.test(first)&&first!=="Division"){pend=first;cur=null;continue}
   if(a==="Club"||a==="Klubas"){cur={title:pend,rows:[]};blks.push(cur);pend="";continue}
@@ -334,7 +336,7 @@ function liveWarm(){GJ={};getJ("data/main_arenas.json");getJ("data/fan_index.jso
  getJ("data/leagues.json").then(man=>{const dirs=man&&Array.isArray(man.leagues)&&man.leagues.length?man.leagues.map(l=>l.dir):LIVE_DIRS;dirs.forEach(d=>{getJ(d+"/attendance_averages.json");getJ(d+"/capacity.json")})})}
 // lentelės klubas (biudžetai, o jei ten nėra – senesnis lankomumas) pagal pavadinimą
 const isCountry=n=>C.some(c=>c[1]===n);
-function liveRef(nm){const k=norm(nm),rec=(a,b)=>String(b.season).localeCompare(String(a.season));
+function liveRef(nm){const k=norm(nm),rec=(a,b)=>sCmp(b.season,a.season);
  for(const L of [D.bud.filter(r=>r.club&&FL[r.nation]),D.att.filter(r=>!r.live&&r.club)]){const x=L.filter(r=>norm(r.club)===k).sort(rec)[0]||L.filter(r=>same(r.club,nm)).sort(rec)[0];if(x)return x}
  return null}
 // lygos grupė puslapyje: tokia pat kaip senesniuose lankomumo lapuose (pvz. „ABA“, „Latvijos–Estijos lyga“, „Ispanija“);
@@ -484,8 +486,8 @@ const attBlock=(a,AR,ctx)=>{const k=[["Vid. lankomumas",E(n0(a.avg),a.avg!=null&
  add("Namų rungtynės",n0(a.games),a.games!=null);add("Mažiausias",n0(a.min),a.min!=null);add("Didžiausias",n0(a.max),a.max!=null);
  add("Tikėtinas lankomumas tokioje rinkoje Europoje",n0(a.expE),a.expE!=null);add("Sirgalių traukos indeksas vs Europos konkurentai",f2(a.idxE),a.idxE!=null);
  add("Tikėtinas lankomumas tokioje rinkoje savoje lygoje",n0(a.expL),a.expL!=null);add("Sirgalių traukos indeksas vs vietiniai konkurentai",f2(a.idxL),a.idxL!=null);
- const hs=[...AR].sort((x,y)=>x.season.localeCompare(y.season)).filter(r=>r.avg!=null||r.expE!=null).map(r=>({s:r.season,real:r.avg,exp:r.expE,part:!!r.live,n:r.games}));
- return`<h3>Lankomumas 20${a.season.slice(0,2)}/${a.season.slice(3)}</h3><div class="kp">${k.map(([l,v])=>kp(l,v)).join("")}</div>${a.live?`<p class="sum">Šio sezono duomenys dalinai – atnaujinami po kiekvieno turo; arenos talpa ir užpildymas – pagal šio sezono rungtynių arenas; sirgalių traukos indeksai ir profiliai – preliminarūs.</p>`:""}${a.profile?`<p class="sum"><b>Profilis:</b> <span class="pf" tabindex="0">${esc(pl(a.profile))}${pd(a.profile)?` ⓘ<span class="tip">${esc(pd(a.profile))}</span>`:""}</span></p>`:""}${hs.length>1?"<h3>Lankomumo istorija</h3>"+linech(hs,a.season)+`<div class="pills">${hs.map(p=>`<button class="chip" ${ctx||""} data-ca="${p.s}" aria-pressed="${p.s===a.season}">${p.s}</button>`).join("")}</div><div class="lgd"><span><i style="background:var(--a)"></i>Realus lankomumas</span><span><i style="background:var(--sv)"></i>Tikėtinas (Europos kontekste)</span></div>`:""}`};
+ const hs=[...AR].sort((x,y)=>sCmp(x.season,y.season)).filter(r=>r.avg!=null||r.expE!=null).map(r=>({s:r.season,real:r.avg,exp:r.expE,part:!!r.live,n:r.games}));
+ return`<h3>Lankomumas ${sY(a.season)}/${a.season.slice(3)}</h3><div class="kp">${k.map(([l,v])=>kp(l,v)).join("")}</div>${a.live?`<p class="sum">Šio sezono duomenys dalinai – atnaujinami po kiekvieno turo; arenos talpa ir užpildymas – pagal šio sezono rungtynių arenas; sirgalių traukos indeksai ir profiliai – preliminarūs.</p>`:""}${a.profile?`<p class="sum"><b>Profilis:</b> <span class="pf" tabindex="0">${esc(pl(a.profile))}${pd(a.profile)?` ⓘ<span class="tip">${esc(pd(a.profile))}</span>`:""}</span></p>`:""}${hs.length>1?"<h3>Lankomumo istorija</h3>"+linech(hs,a.season)+`<div class="pills">${hs.map(p=>`<button class="chip" ${ctx||""} data-ca="${p.s}" aria-pressed="${p.s===a.season}">${p.s}</button>`).join("")}</div><div class="lgd"><span><i style="background:var(--a)"></i>Realus lankomumas</span><span><i style="background:var(--sv)"></i>Tikėtinas (Europos kontekste)</span></div>`:""}`};
 const kp=(l,v)=>`<div><small>${l}</small><b>${v}</b></div>`;
 const RN=["","I","II","III","IV","V"],dvf=v=>v==null?'<span class="na">–</span>':(RN[v]||v);
 const pct=n=>n==null?"–":Math.round(n*100)+"%";
@@ -521,14 +523,14 @@ function draw(){const m=$("md"),b=document.body;
  $("sh").innerHTML=tr(`<div class="top"><button id="bk" style="margin:0">← Atgal</button><button id="cl">Uždaryti ✕</button></div>`+cur);m.classList.add("o");$("sh").scrollTop=0;chInit($("sh"));tblInit($("sh"));requestAnimationFrame(()=>{$("sh").scrollTop=0})}
 function club(name,nation,season,rep,mode,as){
  if(rep){H.pop();RP=true}
- const m=r=>(!nation||r.nation===nation||r.country===nation)&&same(r.club,name),AR=D.att.filter(m).sort((x,y)=>y.season.localeCompare(x.season)),ases=AR.map(r=>r.season),aS=ases.includes(as)?as:ases[0],A=AR.find(r=>r.season===aS),
-  ss=[...new Set([...D.bud.filter(r=>m(r)&&(r.total!=null||r.sal!=null)).map(r=>r.season),...D.sal.filter(p=>same(p.team,name)).map(p=>p.season)])].filter(Boolean).sort().reverse(),
+ const m=r=>(!nation||r.nation===nation||r.country===nation)&&same(r.club,name),AR=D.att.filter(m).sort((x,y)=>sCmp(y.season,x.season)),ases=AR.map(r=>r.season),aS=ases.includes(as)?as:ases[0],A=AR.find(r=>r.season===aS),
+  ss=[...new Set([...D.bud.filter(r=>m(r)&&(r.total!=null||r.sal!=null)).map(r=>r.season),...D.sal.filter(p=>same(p.team,name)).map(p=>p.season)])].filter(Boolean).sort(sCmp).reverse(),
   at=!!A&&(mode==="att"||!ss.length);
  if(!at&&ss.length&&!ss.includes(season))season=ss[0];
  const b=budgetRows(season).find(m),a=A,
   ps=at?[]:D.sal.filter(p=>p.season===season&&same(p.team,name)).sort((x,y)=>(y.month||0)-(x.month||0)),nm=b?b.club:a?a.club:name,nt=b?b.nation:a?(a.country||a.nation):nation,
   tabs=A&&ss.length?`<div class="ctabs" role="tablist">${[["bud","Biudžetai"],["att","Lankomumas"]].map(([k,l])=>`<button role="tab" data-ct="${k}" data-n="${esc(name)}" data-nat="${esc(nation)}" data-ss="${season}" aria-selected="${(k==="att")===at}">${l}</button>`).join("")}</div>`:"";
- const bh=[...new Map(D.bud.filter(m).filter(r=>r.total!=null).sort((x,y)=>x.season.localeCompare(y.season)).map(r=>[r.season,r])).values()];
+ const bh=[...new Map(D.bud.filter(m).filter(r=>r.total!=null).sort((x,y)=>sCmp(x.season,y.season)).map(r=>[r.season,r])).values()];
  show(`<div class="cl" style="gap:12px;flex-wrap:nowrap">${/rytas/i.test(nm)?RL:""}<h2 style="min-width:0">${esc(nm)}</h2></div><p class="sum" data-se="${at?"":season}">${flag(nt)}${esc(nt)}</p>`+tabs
  +(at&&ases.length>1?sx(aS,ases,s=>`<button class="chip" data-ca="${s}" data-n="${esc(name)}" data-nat="${esc(nation)}" data-ss="${season}" aria-pressed="${s===aS}">${s}</button>`):"")
  +(!at&&ss.length>1?sx(season,ss,s=>`<button class="chip" data-cs="${s}" data-n="${esc(name)}" data-nat="${esc(nation)}" aria-pressed="${s===season}">${s}</button>`):"")
@@ -538,7 +540,7 @@ function club(name,nation,season,rep,mode,as){
  +(at&&a?attBlock(a,AR,`data-n="${esc(name)}" data-nat="${esc(nation)}" data-ss="${season}"`):"")
  +(ps.length?`<h3>Žaidėjai ir algos (${season})</h3><div class="tw"><table><thead><tr><th class="l">Vardas</th><th>Pareigos</th><th>Mėnesio alga</th><th>Sutarties vertė</th></tr></thead><tbody>${ps.map(p=>`<tr class="pc" data-p="${esc(p.name)}"><td class="l">${face(p.name,p.photo)}<b>${esc(p.name)}</b></td><td data-lb="Pareigos">${esc(p.role)||"–"}</td><td data-lb="Mėnesio alga">${eE(p.month,p.est&&p.est.month)}</td><td data-lb="Sutarties vertė">${eE(p.value,p.est&&p.est.value)}</td></tr>`).join("")}</tbody></table></div><p class="sum">Spauskite žaidėją, kad matytumėte visą algų istoriją.</p>`:""))}
 function player(name){
- const h=D.sal.filter(p=>norm(p.name)===norm(name)).sort((x,y)=>(x.season||"").localeCompare(y.season||"")),mx=Math.max(...h.map(p=>p.month||0),1),w=Math.max(320,h.length*64),hd=h.some(p=>p.div!=null);
+ const h=D.sal.filter(p=>norm(p.name)===norm(name)).sort((x,y)=>sCmp(x.season,y.season)),mx=Math.max(...h.map(p=>p.month||0),1),w=Math.max(320,h.length*64),hd=h.some(p=>p.div!=null);
  const svg=chart(h.map(p=>({l:p.season,v:p.month,s:(p.team||"").slice(0,9),t:(p.role?p.role+" · ":"")+(p.team||"")+" "+(p.season||""),a:`data-club="${esc(p.team)}" data-season="${esc(p.season)}"`})),null,"Mėnesio algos pokytis");
  const last=h[h.length-1]||{},pk=h.filter(p=>p.month!=null).sort((x,y)=>y.month-x.month)[0],
   kpi=h.length?`<div class="kp">${kp("Komanda · "+esc(last.season||""),esc(last.team)||"–")}${kp("Pareigos",esc(last.role)||"–")}${kp("Mėnesio alga",eE(last.month,last.est&&last.est.month))}${pk?kp("Didžiausia mėnesio alga",eE(pk.month,pk.est&&pk.est.month)):""}${kp("Sezonų skaičius",n0(new Set(h.map(p=>p.season)).size))}</div>`:"";
@@ -561,7 +563,7 @@ function dedupe(a){const o=[];for(const x of a){
  const m=o.find(y=>y.season===x.season&&(norm(y.club)===norm(x.club)||(y.nation===x.nation&&(x._s==null||y._s!==x._s)&&same(y.club,x.club))));
  if(!m)o.push({...x});else{for(const k in x)if(k!=="src"&&k!=="est"&&(m[k]==null||m[k]==="")){m[k]=x[k];if(x.est&&x.est[k])(m.est=m.est||{})[k]=true;if(x.cf&&k in x.cf)(m.cf={...(m.cf||{})})[k]=x.cf[k]};if(x.src)m.src=[...new Set([...(m.src||[]),...x.src])]}}return o}
 function budgetRows(se=S.season){
- const key=(s,r)=>s+"|"+r.nation+"|"+norm(r.club),M=new Map(D.bud.map(r=>[key(r.season,r),r])),pv=String(+se.slice(0,2)-1).padStart(2,"0")+"/"+String(+se.slice(3)-1).padStart(2,"0");
+ const key=(s,r)=>s+"|"+r.nation+"|"+norm(r.club),M=new Map(D.bud.map(r=>[key(r.season,r),r])),pv=sPrev(se);
  return D.bud.filter(r=>r.season===se).map(r=>{const p=M.get(key(pv,r));
   return{...r,share:r.total&&r.sal!=null?r.sal/r.total:null,chg:r.total&&p&&p.total?r.total/p.total-1:null}})}
 const COLS={
@@ -584,7 +586,7 @@ const COLS={
   {k:"src",cls:"sc",label:"Šaltiniai",nosort:1,v:r=>r.src.length||"",f:links}]};
 function sorted(rows,key,cols){const[k,d]=S.sort[key],c=cols.find(x=>x.k===k)||cols[0];
  return[...rows].sort((a,b)=>{const x=c.v(a),y=c.v(b),nx=x==null||x==="",ny=y==null||y==="";if(nx||ny)return nx-ny;
-  return(typeof x==="string"?x.localeCompare(y,"lt"):x-y)*d})}
+  return(c.k==="season"?sCmp(x,y):typeof x==="string"?x.localeCompare(y,"lt"):x-y)*d})}
 // Europos turnyrai iš stulpelio „Participation in European tournament“, pvz. „Euroleague - regular season / Eurocup - Round of 32“
 const EUF=String.fromCodePoint(127466,127482)+" ";
 const EUC=["Euroleague","Eurocup","BCL","Fiba Europe Cup","ENBL","Alpe Adria Cup"];
@@ -594,14 +596,14 @@ const RLG=[["ABA","ABA lyga"],["LEBL","Latvijos–Estijos lyga"]];
 const rlg=r=>{const t=(r&&r.lg)||"";return /\bABA\b/i.test(t)?"ABA":/latvi\w*\s*[-–]\s*estoni/i.test(t)?"LEBL":r&&!/latvi|estoni/i.test(t)&&(r.nation==="Latvija"||r.nation==="Estija")&&(r.div==null||r.div===1)?"LEBL":""};
 const euc=v=>{const o=[];for(const m of String(v||"").matchAll(/\b(Euroleague|Eurocup|BCL|Fiba Europe Cup|ENBL|Alpe Adria Cup)\b/gi)){const c=EUC.find(x=>x.toLowerCase()===m[1].toLowerCase());if(!o.includes(c))o.push(c)}return o};
 function table0(key,all){
- const SEAS=[...new Set(D.bud.filter(r=>r.total!=null||r.sal!=null).map(r=>r.season))].sort().reverse(),ASEAS=[...new Set(D.att.map(r=>r.season))].sort().reverse();
+ const SEAS=[...new Set(D.bud.filter(r=>r.total!=null||r.sal!=null).map(r=>r.season))].sort(sCmp).reverse(),ASEAS=[...new Set(D.att.map(r=>r.season))].sort(sCmp).reverse();
  const inE=r=>key!=="bud"||!S.eu||(RLG.some(x=>x[0]===S.eu)?rlg(r)===S.eu:euc(r.eu).includes(S.eu));
  const qt=wd(S.q),q=qt.length,nations=[...new Set([...all.filter(inE).map(r=>r.nation||r.country),S.nation])].filter(Boolean).sort((x,y)=>dn(x).localeCompare(dn(y),LANG==="en"?"en":"lt"));
  const hit=W=>qt.every(x=>W.some(w=>w.startsWith(x))),inN=r=>!S.nation||(r.nation||r.country)===S.nation;
  let rows=all.filter(inN).filter(inE);
  if(key==="sal"){if(S.srole)rows=rows.filter(r=>S.srole==="Coach"?/coach|treneris/i.test(r.role)&&!/assist/i.test(r.role):S.srole==="Assistant"?/assist/i.test(r.role):new RegExp(S.srole,"i").test(r.role||""));
   if(S.sseason)rows=rows.filter(r=>r.season===S.sseason);
-  if(S.one){const m=new Map();rows.forEach(r=>{const k=norm(r.name),o=m.get(k);if(!o||String(r.season).localeCompare(String(o.season))>0)m.set(k,r)});rows=[...m.values()]}}
+  if(S.one){const m=new Map();rows.forEach(r=>{const k=norm(r.name),o=m.get(k);if(!o||sCmp(r.season,o.season)>0)m.set(k,r)});rows=[...m.values()]}}
  if(q){const P=rows.filter(r=>hit(r._p||(r._p=wd(key==="sal"?r.name:r.club))));rows=P.length?P:rows.filter(r=>hit(r._w||(r._w=wd([r.club,r.name,r.team,r.nation,r.country,LT2EN[r.nation],LT2EN[r.country]].join(" ")))))}
  const cols=COLS[key].filter(c=>rows.some(r=>{const v=c.v(r);return v!=null&&v!==""})||c.k==="club");
  rows=sorted(rows,key,cols);
@@ -612,7 +614,7 @@ function table0(key,all){
  const seasons=key==="bud"?sx("Sezonas "+S.season,SEAS,s=>`<button class="chip" data-season="${s}" aria-pressed="${S.season===s}">Sezonas ${s}</button>`):key==="att"?sx("Sezonas "+S.aseason,ASEAS,s=>`<button class="chip" data-aseason="${s}" aria-pressed="${S.aseason===s}">Sezonas ${s}</button>`):"";
  let stat="";if(key==="att"&&S.nation){const v=rows.filter(r=>r.avg!=null).sort((x,y)=>x.avg-y.avg);if(v.length>1){const md=v.length%2?v[(v.length-1)/2].avg:(v[v.length/2-1].avg+v[v.length/2].avg)/2;stat=`<div class="kp">${kp("Mažiausias · "+esc(v[0].club),n0(v[0].avg))}${kp("Mediana",n0(Math.round(md)))}${kp("Didžiausias · "+esc(v[v.length-1].club),n0(v[v.length-1].avg))}</div>`}}
  const liveNote=key==="att"&&rows.some(r=>r.live)?`<p class="sum">Šio sezono duomenys dalinai – atnaujinami po kiekvieno turo; arenos talpa ir užpildymas – pagal šio sezono rungtynių arenas; sirgalių traukos indeksai ir profiliai – preliminarūs.</p>`:"";
- const SSE=key==="sal"?[...new Set(D.sal.map(r=>r.season).filter(s=>/^\d\d\/\d\d$/.test(s)))].sort().reverse():[];
+ const SSE=key==="sal"?[...new Set(D.sal.map(r=>r.season).filter(s=>/^\d\d\/\d\d$/.test(s)))].sort(sCmp).reverse():[];
  const salF=key==="sal"?sx(S.sseason?"Sezonas "+S.sseason:"Visi sezonai",["",...SSE],s=>`<button class="chip" data-sseason="${s}" aria-pressed="${S.sseason===s}">${s?"Sezonas "+s:"Visi sezonai"}</button>`):"";
  const ROLES=[["","Visos pareigos"],["Player","Žaidėjas"],["Coach","Treneris"],["Assistant","Asistentas"],["Advisor","Patarėjas"]],rl=v=>(ROLES.find(x=>x[0]===v)||ROLES[0])[1];
  const salR=key==="sal"?`${sx(rl(S.srole),ROLES.map(x=>x[0]),v=>`<button class="chip" data-srole="${v}" aria-pressed="${S.srole===v}">${rl(v)}</button>`).replace('<div class="sx">','<div class="sx sxr">')}<label class="tgl"><input type="checkbox" id="sone"${S.one?" checked":""}><i aria-hidden="true"></i>Vienas įrašas žmogui (naujausia sutartis)</label>`:"";
@@ -663,7 +665,7 @@ function cmpAct(d){const C=S.cmp;if(d.cra!==undefined)d={cra:unk(d.cra)};else if
  else if(d.cra!==undefined){const mx=C.mode==="cseason"?1:4;if(!C.items.includes(d.cra))C.items=[...C.items,d.cra].slice(-mx);C.q=""}
  else if(d.crm!==undefined)C.items=C.items.filter(k=>k!==d.crm)}
 function cmpView(){const C=S.cmp,m=C.mode,MODES=[["club","Klubai"],["league","Lygos"],["cseason","Klubo sezonai"],["player","Žaidėjai"]],
- SE=[...new Set([...D.bud.map(r=>r.season),...D.att.map(r=>r.season)])].filter(Boolean).sort().reverse(),
+ SE=[...new Set([...D.bud.map(r=>r.season),...D.att.map(r=>r.season)])].filter(Boolean).sort(sCmp).reverse(),
  lab=k=>{if(m==="player")return k;const[n,x]=k.split("|");if(m==="league")return n==="ABA"?"ABA":n+(+x?" · Lyga "+(RN[x]||x):"");return x},
  q=norm(C.q);let cand=[];
  if(m==="league")cand=leagueOpts().filter(o=>mt(o.label+" "+(LT2EN[o.label]||""),C.q));
@@ -673,8 +675,8 @@ function cmpView(){const C=S.cmp,m=C.mode,MODES=[["club","Klubai"],["league","Ly
  if(C.items.length){
   if(m==="club")cols=C.items.map(k=>{const[n,name]=k.split("|");return{h:name,sub:n,ctx:cmClub({n,name},C.season)}}),rows=CR;
   else if(m==="league")cols=C.items.map(k=>({h:lab(k),sub:"",ctx:cmLeague(k,C.season)})),rows=LR;
-  else if(m==="cseason"){const[n,name]=C.items[0].split("|"),mm=r=>(r.nation===n||r.country===n)&&same(r.club,name),se=[...new Set([...D.bud.filter(mm).map(r=>r.season),...D.att.filter(mm).map(r=>r.season)])].sort().slice(-8);cols=se.map(x=>({h:x,sub:"",ctx:cmClub({n,name},x)}));rows=CR;hint=`${name} · ${n}`}
-  else cols=C.items.map(k=>{const P=D.sal.filter(p=>p.name===k).sort((x,y)=>(x.season||"").localeCompare(y.season||"")),last=P[P.length-1]||{},peak=P.filter(p=>p.month!=null).sort((x,y)=>y.month-x.month)[0];return{h:k,sub:"",ctx:{P,last,peak}}}),rows=PR}
+  else if(m==="cseason"){const[n,name]=C.items[0].split("|"),mm=r=>(r.nation===n||r.country===n)&&same(r.club,name),se=[...new Set([...D.bud.filter(mm).map(r=>r.season),...D.att.filter(mm).map(r=>r.season)])].sort(sCmp).slice(-8);cols=se.map(x=>({h:x,sub:"",ctx:cmClub({n,name},x)}));rows=CR;hint=`${name} · ${n}`}
+  else cols=C.items.map(k=>{const P=D.sal.filter(p=>p.name===k).sort((x,y)=>sCmp(x.season,y.season)),last=P[P.length-1]||{},peak=P.filter(p=>p.month!=null).sort((x,y)=>y.month-x.month)[0];return{h:k,sub:"",ctx:{P,last,peak}}}),rows=PR}
  const ok=v=>v!=null&&v!==false&&v!==""&&!(typeof v==="number"&&isNaN(v));
  const body=rows.map(([l,f,fmt,hl])=>{const vals=cols.map(c=>{try{return f(c.ctx)}catch(e){return null}});if(!vals.some(ok))return"";
   const nums=vals.filter(v=>typeof v==="number"&&ok(v)),best=hl&&nums.length>1&&new Set(nums).size>1?(hl==="max"?Math.max(...nums):Math.min(...nums)):null;
@@ -747,7 +749,7 @@ async function start(){
   const[a,b,at,sa,hi,ha]=await Promise.all(Object.entries(SHEETS).map(([k,n],i)=>{const q=load(n,i===0,GID[k]);return/^Historical/.test(n[0])?q.catch(()=>[]):q}));
   D.bud=dedupe([budgets(a,"26/27"),budgets(b,"25/26"),budgets(hi,"H")].flatMap((l,i)=>l.map(r=>(r._s=i,r))));D.att=dedupe([...attendance(at,"25/26"),...attendance(ha,"24/25")]);D.sal=salaries(sa);buildDist();buildNt();
   for(const a of D.att){a.country=a.nation;if(!FL[a.nation]){const b=D.bud.find(r=>FL[r.nation]&&norm(r.club)===norm(a.club))||D.bud.find(r=>FL[r.nation]&&same(r.club,a.club));if(b)a.country=b.nation}}
-  await addLive();if(!D.att.some(r=>r.season===S.aseason))S.aseason=D.att.map(r=>r.season).sort().pop()||S.aseason;
+  await addLive();if(!D.att.some(r=>r.season===S.aseason))S.aseason=D.att.map(r=>r.season).sort(sCmp).pop()||S.aseason;
   try{LOGOS=Object.fromEntries(Object.entries(await lgP).map(([k,v])=>[norm(k),v]))}catch(e){}
   for(const k in TLC)delete TLC[k];   // „Atnaujinti“: komandų logotipai iš naujo pagal naują logos.json
   try{PHOTOS=Object.fromEntries(Object.entries(await phP).filter(([k,v])=>v).map(([k,v])=>[norm(k),v]))}catch(e){}
@@ -761,9 +763,9 @@ if(TH)document.documentElement.setAttribute("data-t",TH);$("th").textContent=isD
 setLang(LANG);
 start();
 </script>
- <script src="redesign.js?v=20261119a" defer></script>
-<script src="brazys3d.js?v=20261119a" defer></script>
-<script src="arenamap.js?v=20261119a" defer></script>
+ <script src="redesign.js?v=20261119b" defer></script>
+<script src="brazys3d.js?v=20261119b" defer></script>
+<script src="arenamap.js?v=20261119b" defer></script>
 </body>
 </html>
 </body>

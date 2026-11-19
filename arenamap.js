@@ -1187,7 +1187,7 @@
         if (b && sel && typeof deps.club === 'function') {
           var D0 = deps.D, sm = deps.same || function (x, y) { return N(x) === N(y); }, nat = sel.nation;
           var mine = function (r) { return (!nat || r.nation === nat || r.country === nat) && sm(r.club, sel.name); };
-          var last = function (L, has) { return L.filter(function (r) { return has(r) && mine(r); }).map(function (r) { return r.season; }).sort().pop() || ''; };
+          var last = function (L, has) { return L.filter(function (r) { return has(r) && mine(r); }).map(function (r) { return r.season; }).sort(sCmp).pop() || ''; };
           var bS = last(D0.bud || [], function (r) { return r.total != null; }), aS = last(D0.att || [], function (r) { return r.avg != null; });
           var prevS = season.replace(/^(\d\d)\/(\d\d)$/, function (m, x, y) { var p = function (v) { return ('0' + ((+v + 99) % 100)).slice(-2); }; return p(x) + '/' + p(y); });
           var toAtt = aS && (!bS || (aS > bS && (aS === season || aS === prevS)));
