@@ -433,7 +433,9 @@ function setTheme(t){TH=t;document.documentElement.setAttribute("data-t",t);try{
 let LOGOS={},V=[],H=[];
 const TKC=new Map(),tk=s=>{s=String(s||"");let r=TKC.get(s);if(!r){r=s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").split(/[^a-z0-9]+/).filter(Boolean);if(TKC.size<50000)TKC.set(s,r)}return r};   // įsimenama (same() kviečiamas labai dažnai); grąžinto masyvo nekeisti
 // skirtingi klubai, kuriuos same() kitaip sulietų (pvz. Kipro „AEK Larnaca B.C.“ ir Graikijos „AEK B.C.“)
-const NOTSAME=new Set(["aeklarnacabc~aekbc","aekbc~aeklarnacabc","aeklarnaca~aekbc","aekbc~aeklarnaca"]);
+const NOTSAME=new Set(["aeklarnacabc~aekbc","aekbc~aeklarnacabc","aeklarnaca~aekbc","aekbc~aeklarnaca",
+ "bckrasnyekryliasamara~bcsamara","bcsamara~bckrasnyekryliasamara",   // Krasnye Krylia (2009–2015) – kitas klubas nei BC Samara (CSK VVS linija)
+ "kkcedevita~kkcedevitaolimpija","kkcedevitaolimpija~kkcedevita"]);
 const same=(a,b)=>{const x=tk(a),y=tk(b);if(!x.length||!y.length)return false;if(x.join("")===y.join(""))return true;if(NOTSAME.has(x.join("")+"~"+y.join("")))return false;if(DIST&&DIST.has(x.join("")+"~"+y.join("")))return false;const[s,l]=x.length<=y.length?[x,y]:[y,x];return s.join("").length>3&&s.every(w=>l.includes(w))};
 // skirtingi klubai panašiais pavadinimais (pvz. „KK Mladost Zemun“ ir „KK Zemun“): jei abu yra tą patį sezoną tos pačios šalies lentelėje,
 // tai du klubai – same() jų nebelaiko tuo pačiu (kitaip kortelės grafike susimaišo biudžetai)
@@ -765,9 +767,9 @@ if(TH)document.documentElement.setAttribute("data-t",TH);$("th").textContent=isD
 setLang(LANG);
 start();
 </script>
- <script src="redesign.js?v=20261125a" defer></script>
-<script src="brazys3d.js?v=20261125a" defer></script>
-<script src="arenamap.js?v=20261125a" defer></script>
+ <script src="redesign.js?v=20261125b" defer></script>
+<script src="brazys3d.js?v=20261125b" defer></script>
+<script src="arenamap.js?v=20261125b" defer></script>
 </body>
 </html>
 </body>
