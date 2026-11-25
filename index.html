@@ -435,7 +435,13 @@ const TKC=new Map(),tk=s=>{s=String(s||"");let r=TKC.get(s);if(!r){r=s.toLowerCa
 // skirtingi klubai, kuriuos same() kitaip sulietų (pvz. Kipro „AEK Larnaca B.C.“ ir Graikijos „AEK B.C.“)
 const NOTSAME=new Set(["aeklarnacabc~aekbc","aekbc~aeklarnacabc","aeklarnaca~aekbc","aekbc~aeklarnaca",
  "bckrasnyekryliasamara~bcsamara","bcsamara~bckrasnyekryliasamara",   // Krasnye Krylia (2009–2015) – kitas klubas nei BC Samara (CSK VVS linija)
- "kkcedevita~kkcedevitaolimpija","kkcedevitaolimpija~kkcedevita"]);
+ "kkcedevita~kkcedevitaolimpija","kkcedevitaolimpija~kkcedevita",
+ "kkolimpija~kkcedevitaolimpija","kkcedevitaolimpija~kkolimpija",   // susijungimai: atskiros kortelės iki ir po susijungimo (Olimpija + Cedevita → Cedevita Olimpija 2019; Reims + Châlons → Champagne Basket 2010)
+ "reimschampagnebasket~champagnebasket","champagnebasket~reimschampagnebasket",
+ "ssbasketnapoli~napolibasket","napolibasket~ssbasketnapoli",   // skirtingi klubai tuo pačiu miestu/pavadinimu (senasis klubas likviduotas, vėliau įkurtas naujas)
+ "celleida~forcalleidace","forcalleidace~celleida",
+ "cbgranada~granada","granada~cbgranada",
+ "cbtenerife~cbcanariastenerife","cbcanariastenerife~cbtenerife"]);
 const same=(a,b)=>{const x=tk(a),y=tk(b);if(!x.length||!y.length)return false;if(x.join("")===y.join(""))return true;if(NOTSAME.has(x.join("")+"~"+y.join("")))return false;if(DIST&&DIST.has(x.join("")+"~"+y.join("")))return false;const[s,l]=x.length<=y.length?[x,y]:[y,x];return s.join("").length>3&&s.every(w=>l.includes(w))};
 // skirtingi klubai panašiais pavadinimais (pvz. „KK Mladost Zemun“ ir „KK Zemun“): jei abu yra tą patį sezoną tos pačios šalies lentelėje,
 // tai du klubai – same() jų nebelaiko tuo pačiu (kitaip kortelės grafike susimaišo biudžetai)
