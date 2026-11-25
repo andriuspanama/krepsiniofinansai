@@ -796,7 +796,7 @@
     const ldAny=async u=>u?(await ld(u))||(u.startsWith("data:")?null:await ld("https://images.weserv.nl/?url="+encodeURIComponent(u)+"&output=png")):null;   // jei svetainė neleidžia – per paveikslėlių tarpininką
     const u=typeof LOGOS!=="undefined"&&LOGOS[norm(logoName)];let img=null;
     const fc=isP&&sh.querySelector(".phd .fc img"),li=!isP&&sh.classList.contains("lgg")&&sh.querySelector(".cl>.lw>img.lg"),ry=!isP&&!li&&sh.querySelector(".cl.ry .ry-logo");
-    if(fc){const fs=fc.getAttribute("src")||"",pm=fs.match(/#pf=([\d.]+),([\d.]+)/);img=await ldAny((fc.currentSrc||fc.src).split("#")[0]);if(img){opts.mode="photo";if(pm)opts.pf=[+pm[1],+pm[2]]}}
+    if(fc){const fs=fc.getAttribute("src")||"",pm=fs.match(/#pf=([\d.]+),([\d.]+)/);img=await ldAny((fc.currentSrc||fc.src).split("#")[0]);if(img){opts.mode="photo";if(pm)opts.pf=[+pm[1],+pm[2]];if(/eurobasket\.com\/|realgm\.com\/images\//.test(fs))opts.ct=1}}
     else if(ry){img=await ldAny(ry.getAttribute("src"));if(img){opts.mode="logo";opts.b=null}}
     else{const L=await shLogo(li?li.dataset.o||li.getAttribute("src"):u);if(L){img=L.img;opts.mode="logo";opts.b=L.b;opts.dk=L.dk}else if(li){img=await ldAny(li.getAttribute("src"));if(img){opts.mode="logo";opts.b=null}}}
     try{await document.fonts.load("700 100px 'Barlow Condensed'");await document.fonts.load("600 40px 'JetBrains Mono'")}catch(e){}
@@ -822,6 +822,7 @@
       const D=2*R,k=Math.max(D/img.width,D/img.height),dw=img.width*k,dh=img.height*k;
       if(opts.pf){const s=opts.pf[0],oy=Math.max(0,Math.min(100,(s*opts.pf[1]-45)/(s-1)))/100*D,px0=D/2-D/(2*s),py0=oy*(1-1/s),pw=D/s,ox=(D-dw)/2;   // kaip kortelėje: object-position 50% 0 + scale(s) apie (50%, y%)
         x.drawImage(img,(px0-ox)/k,py0/k,pw/k,pw/k,cx-R,cy-R,D,D)}
+      else if(opts.ct){const kc=Math.min(D/img.width,D/img.height);x.fillStyle="#fff";x.fillRect(cx-R,cy-R,D,D);x.drawImage(img,cx-img.width*kc/2,cy-img.height*kc/2,img.width*kc,img.height*kc)}   // eurobasket/RealGM portretas – visas, kaip kortelėje
       else x.drawImage(img,cx-dw/2,cy-R-(dh-2*R)*.18,dw,dh);x.restore();
       x.beginPath();x.arc(cx,cy,R,0,Math.PI*2);x.strokeStyle="rgba(122,134,158,.45)";x.lineWidth=4;x.stroke();nx=72+BW+30}
     else if(img){x.save();x.beginPath();x.arc(152,cy,80,0,Math.PI*2);x.closePath();x.fillStyle="#fff";x.fill();x.clip();
